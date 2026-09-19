@@ -1,21 +1,8 @@
 /** Handmade routes. All positions are in world metres, +y up.
  * Pads name their TOP surface; rectangles use their bottom-left corner.
  */
-const rect = (x, y, w, h, style = 'plaster') => ({
-  x,
-  y,
-  w,
-  h,
-  style
-});
-const pad = (x, y, name, w = 3.6) => ({
-  x,
-  y,
-  name,
-  w
-});
-const block = (x, top, w, style = 'plaster', bottom = 0) => rect(x - w / 2, bottom, w, top - bottom, style);
-const BASE = () => [rect(-12, -5, 80, 5, 'earth')];
+import { rect, pad, block, BASE } from '#game/routes/shapes';
+import { movingRoutes } from '#game/routes/on-the-move';
 export const levels = [
   {
     name: 'First fare',
@@ -192,5 +179,11 @@ export const levels = [
     start: 0,
     cable: 3.4,
     tip: 'A good catch: move the engine toward the incoming cabin, then ease both to a stop.'
-  }
+  },
+  ...movingRoutes
 ];
+
+// Array indices are persistent save IDs; never insert before an existing route.
+export const serviceRoutes = levels.map((_, i) => i).filter(i => !levels[i].practice);
+export const routeNumber = index => serviceRoutes.indexOf(index) + 1;
+export const nextRoute = index => serviceRoutes[serviceRoutes.indexOf(index) + 1] ?? null;

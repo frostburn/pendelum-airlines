@@ -1,6 +1,7 @@
 import { DT, G, N, MIN, MAX } from '#game/constants';
 import { clamp, wrap } from '#game/math';
 import { levels } from '#game/levels';
+import { stopAt, deckAt } from '#game/moving-stops';
 /**
  * DOM-free, fixed-step simulation. Massive, freely hinged, tension-only cable
  * links use positional constraints. Winching does work; the rotor applies
@@ -94,7 +95,10 @@ export class Sim {
   constructor(index = 0) {
     this.index = index;
     this.level = levels[index];
-    const p = this.level.pads[this.level.start];
+    this.pads = this.level.pads.map(p => stopAt(p, 0));
+    this.platforms = this.level.pads.flatMap((p, i) => p.motion ? [{pad: i, ...deckAt(this.pads[i])}] : []);
+    this.terrain = [...this.level.terrain, ...this.platforms];
+    const p = this.pads[this.level.start];
     this.engine = new Body(p.x, p.y + .565 + .60 + this.level.cable + .32, 3.6, .78, 'engine');
     this.cabin = new Body(p.x, p.y + .565, 2.5, .58, 'cabin');
     this.length = this.level.cable;
@@ -127,6 +131,13 @@ export class Sim {
     this.stats = { bumps: 0, pickups: 0 };
     this.assisted = false;
   }
+  updateStops() {
+    for (const platform of this.platforms) {
+      const i = platform.pad;
+      Object.assign(this.pads[i], stopAt(this.level.pads[i], this.time));
+      Object.assign(platform, deckAt(this.pads[i]));
+    }
+  }
   end(i) {
     return i === 0 ? point(this.engine, 0, -.32) : i === N ? point(this.cabin, 0, .60) : point(this.nodes[i - 1]);
   }
@@ -158,16 +169,17 @@ export class Sim {
     const samples = b.kind === 'engine' ? ENG_SAMPLES : b.kind === 'cabin' ? CAB_SAMPLES : [[0, 0, .043]];
     for (let s = 0; s < samples.length; s++) {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
-      for (let k = 0; k < this.level.terrain.length; k++) {
-        const t = this.level.terrain[k], c = circleRect(p.x, p.y, r, t);
+      for (let k = 0; k < this.terrain.length; k++) {
+        const t = this.terrain[k], c = circleRect(p.x, p.y, r, t);
         if (!c)
           continue;
         const j = c.depth / eff(p, c.nx, c.ny);
         move(p, c.nx, c.ny, j);
         // Keep one contact per sample / terrain pair, from the earliest collision.
-        const key = s * 100 + k;
+        const key = s * this.terrain.length + k;
         if (!b.contacts.some(z => z.key === key)) {
-          const v = vel(p), incoming = -(v.x * c.nx + v.y * c.ny);
+          const v = vel(p), surfaceVX = t.vx || 0, surfaceVY = t.vy || 0;
+          const incoming = -((v.x - surfaceVX) * c.nx + (v.y - surfaceVY) * c.ny);
           const ca = Math.cos(b.a), sa = Math.sin(b.a);
           b.contacts.push({
             key,
@@ -176,6 +188,8 @@ export class Sim {
             nx: c.nx,
             ny: c.ny,
             incoming,
+            surfaceVX,
+            surfaceVY,
             depth: c.depth
           });
           if (b.kind !== 'node')
@@ -187,7 +201,7 @@ export class Sim {
   collideCable(i) {
     // Mid-link collision samples stop the visible cable cutting through corners.
     const a = this.end(i), b = this.end(i + 1), x = (a.x + b.x) * .5, y = (a.y + b.y) * .5;
-    for (const t of this.level.terrain) {
+    for (const t of this.terrain) {
       const c = circleRect(x, y, .03, t);
       if (!c)
         continue;
@@ -217,6 +231,7 @@ export class Sim {
     if (this.failed || this.done)
       return;
     this.time += DT;
+    this.updateStops();
     this.hitCooldown = Math.max(0, this.hitCooldown - DT);
     this.controls(u);
     this.wind = this.windAt(this.engine.x, this.engine.y);
@@ -265,7 +280,10 @@ export class Sim {
       b.vy = (b.y - b.oy) / DT;
       b.w = (b.a - b.oa) / DT;
       for (const c of b.contacts) {
-        const p = point(b, c.lx, c.ly), v = vel(p), vn = v.x * c.nx + v.y * c.ny;
+        const p = point(b, c.lx, c.ly), v = vel(p);
+        v.x -= c.surfaceVX;
+        v.y -= c.surfaceVY;
+        const vn = v.x * c.nx + v.y * c.ny;
         const normal = Math.max(0, -vn / eff(p, c.nx, c.ny));
         if (normal)
           impulse(p, c.nx, c.ny, normal);
@@ -311,9 +329,9 @@ export class Sim {
       return;
     const c = this.cabin;
     let found = -1;
-    for (let i = 0; i < this.level.pads.length; i++) {
-      const p = this.level.pads[i];
-      if (Math.abs(c.x - p.x) < Math.max(.2, p.w / 2 - .50) && Math.abs(c.y - .565 - p.y) < .20 && Math.abs(wrap(c.a)) < .25 && Math.hypot(c.vx, c.vy) < .68 && Math.abs(c.w) < .8) {
+    for (let i = 0; i < this.pads.length; i++) {
+      const p = this.pads[i];
+      if (Math.abs(c.x - p.x) < Math.max(.2, p.w / 2 - .50) && Math.abs(c.y - .565 - p.y) < .20 && Math.abs(wrap(c.a)) < .25 && Math.hypot(c.vx - p.vx, c.vy - p.vy) < .68 && Math.abs(c.w) < .8) {
         found = i;
         break;
       }
@@ -398,6 +416,7 @@ export class Sim {
       failed: this.failed,
       jobs: this.jobs.map(j => ({ ...j })),
       service: this.service,
+      stops: this.pads.map(({x, y, vx, vy, name}) => ({x, y, vx, vy, name})),
       tension: [this.tensionX, this.tensionY]
     };
   }

@@ -62,13 +62,13 @@ test('the first render frames the initial aircraft on a phone-sized viewport', (
   const context = new Proxy({
     measureText: text => ({width: text.length * 6}),
   }, {get: (target, key) => key in target ? target[key] : () => {}});
-  const renderer = createRenderer({getContext: () => context}, {reduced: true});
+  const renderer = createRenderer({getContext: () => context});
   const sim = new Sim(0);
   const width = 390;
   renderer.resize(width, 520);
   renderer.render(sim, {alpha: 1, panel: true});
   const {camera} = renderer.view();
   const engineScreenX = (sim.engine.x - camera.x) * camera.scale + width / 2;
-  assert.ok(engineScreenX >= 0 && engineScreenX <= width,
+  assert.ok(engineScreenX >= 1.3 * camera.scale && engineScreenX <= width - 1.3 * camera.scale,
     `initial engine should be visible, got screen x=${engineScreenX}`);
 });

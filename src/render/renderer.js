@@ -1,3 +1,6 @@
+import { DT } from '#game/constants';
+import { stopAt } from '#game/moving-stops';
+import { drawMovingStop } from '#game/render/platforms';
 import { clamp } from '#game/math';
 import { point } from '#game/physics';
 import { C, sans } from '#game/ui/theme';
@@ -8,7 +11,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
   if (!ctx)
     throw new Error('A 2D canvas is required.');
   let width = 1, height = 1, dpr = 1, sim;
-  let cam, renderCam;
+  let cam, renderCam, snapCamera = true;
   function resize(w, h, ratio = 1) {
     width = Math.max(1, w);
     height = Math.max(1, h);
@@ -17,6 +20,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     canvas.height = Math.round(height * dpr);
   }
   function reset(state) {
+    snapCamera = true;
     cam = { x: state.engine.x + 4, y: Math.max(8, state.engine.y - .5), scale: 42 };
     renderCam = { ...cam };
   }
@@ -219,7 +223,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     box(p.x - p.w / 2, p.y + .035, p.w, .085, active ? '#eebc65' : '#baceaf');
     for (let xx = p.x - p.w / 2 + .10; xx < p.x + p.w / 2 - .08; xx += .33)
       line([[xx, p.y + .045], [xx + .12, p.y + .11]], '#536e5555', .045);
-    text(p.x, p.y - .42, p.name.toUpperCase(), Math.min(.23, p.w / Math.max(8, p.name.length) * 1.5), '#294f43', 'center', 750);
+    text(p.x, p.y - (p.motion ? 1.55 : .42), p.name.toUpperCase(), Math.min(.23, p.w / Math.max(8, p.name.length) * 1.5), '#294f43', 'center', 750);
     const post = p.x - p.w / 2 - .16;
     line([[post, p.y + .04], [post, p.y + .8]], '#416754', .045);
     circle(post, p.y + .92, .19, active ? C.yellow : '#c4d4b7', '#456750', .035);
@@ -235,8 +239,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
     if (sim.servicing === i) {
       const w = p.w * .7;
-      box(p.x - w / 2, p.y - .75, w, .07, '#b1bfa2');
-      box(p.x - w / 2, p.y - .75, w * clamp(sim.service / .55, 0, 1), .07, C.teal);
+      box(p.x - w / 2, p.y - (p.motion ? 1.8 : .75), w, .07, '#b1bfa2');
+      box(p.x - w / 2, p.y - (p.motion ? 1.8 : .75), w * clamp(sim.service / .55, 0, 1), .07, C.teal);
     }
   }
   function windsock(x, y, t) {
@@ -314,10 +318,11 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     ty = clamp(ty, halfH - 2, Math.max(halfH - 2, sim.level.height + 14 - halfH));
     tx = Math.min(tx, e.x + halfW - 1.6, c.x + halfW - 1.6);
     tx = Math.max(tx, e.x - halfW + 1.6, c.x - halfW + 1.6);
-    const blend = reduced ? 1 : 1 - Math.exp(-elapsed * 3.5);
+    const blend = reduced || snapCamera ? 1 : 1 - Math.exp(-elapsed * 3.5);
     cam.x += (tx - cam.x) * blend;
     cam.y += (ty - cam.y) * blend;
     cam.scale = scale;
+    snapCamera = false;
     renderCam = map ? { x: sim.level.width / 2, y: sim.level.height / 2 - 1, scale: Math.min(width / (sim.level.width + 5), height / (sim.level.height + 3)) } : { ...cam };
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     background(clock);
@@ -336,7 +341,13 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
     for (const r of sim.level.terrain)
       building(r);
-    sim.level.pads.forEach((p, i) => station(p, i, clock));
+    // Match platform motion to the interpolated rig, even on paused frames.
+    const sceneTime = Math.max(0, sim.time - (1 - alpha) * DT);
+    const pads = sim.level.pads.map(p => stopAt(p, sceneTime));
+    pads.forEach((p, i) => {
+      if (p.motion) drawMovingStop(ctx, p, sim.level.pads[i], map);
+      station(p, i, clock);
+    });
     if (sim.level.wind) {
       windsock(12, 2.4, clock);
       windsock(22, 7.0, clock);
@@ -375,7 +386,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     // Off-screen stop labels stay legible and do not obscure the aircraft.
     if (!map && !panel) {
       sim.targetStops().forEach((i, n) => {
-        const p = sim.level.pads[i], x = sx(p.x), y = sy(p.y + 2);
+        const p = pads[i], x = sx(p.x), y = sy(p.y + 2);
         if (x < 20 || x > width - 20 || y < 60 || y > height - 55) {
           const cx = clamp(x, 76, width - 76), cy = clamp(y, 104, height - 72 - n * 28), angle = Math.atan2(y - cy, x - cx);
           ctx.save();
