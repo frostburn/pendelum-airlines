@@ -1,0 +1,1147 @@
+:root {
+  color-scheme:light;
+  --paper:#f6f1e5;
+  --ink:#253f41;
+  --muted:#718481;
+  --line:#d4d8cb;
+  --teal:#37796c;
+  --orange:#ce7046;
+  --yellow:#eebc65;
+  --mono:ui-monospace,SFMono-Regular,Consolas,'Liberation Mono',monospace;
+  --sans:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+* {
+  box-sizing:border-box;
+}
+
+html,body {
+  margin:0;
+  height:100%;
+  width:100%;
+  overflow:hidden;
+  background:var(--paper);
+  font-family:var(--sans);
+  color:var(--ink);
+}
+
+body {
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+button,input {
+  font:inherit;
+}
+
+button {
+  font-size:12px;
+  font-weight:650;
+  line-height:1.2;
+  padding:9px 13px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:transparent;
+  color:var(--ink);
+  cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+
+button:hover {
+  background:#e7e8dc;
+  border-color:#a4b4a7;
+}
+
+button:focus-visible,input:focus-visible,canvas:focus-visible {
+  outline:3px solid var(--orange);
+  outline-offset:3px;
+}
+
+button.primary {
+  background:var(--teal);
+  color:#fffbed;
+  border-color:var(--teal);
+  padding:12px 20px;
+}
+
+button.primary:hover {
+  background:#285f54;
+}
+
+button.active {
+  color:var(--teal);
+  background:#e1eadf;
+  border-color:#86b39e;
+}
+
+button.icon {
+  width:35px;
+  padding:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+button svg {
+  width:16px;
+  height:16px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+button:disabled {
+  opacity:.45;
+  cursor:default;
+}
+
+kbd {
+  display:inline-block;
+  padding:2px 5px;
+  min-width:21px;
+  text-align:center;
+  font:10px var(--mono);
+  border:1px solid #bdc8ba;
+  border-bottom-width:2px;
+  border-radius:3px;
+  background:#f9f5ed;
+  color:var(--ink);
+}
+
+#app {
+  display:grid;
+  grid-template-rows:67px minmax(0,1fr) 110px;
+  height:100%;
+  height:100dvh;
+}
+
+header {
+  padding:0 27px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  border-bottom:1px solid var(--line);
+  z-index:3;
+  background:var(--paper);
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+
+.brand svg {
+  width:39px;
+  height:42px;
+}
+
+.wordmark {
+  font-weight:850;
+  letter-spacing:-1px;
+  font-size:23px;
+  line-height:1;
+}
+
+.wordmark small {
+  display:block;
+  font:8px var(--mono);
+  letter-spacing:3.7px;
+  margin-top:6px;
+  margin-left:2px;
+}
+
+.strap {
+  margin-left:25px;
+  padding-left:22px;
+  border-left:1px solid var(--line);
+  font-size:11px;
+  color:var(--muted);
+}
+
+nav {
+  display:flex;
+  gap:7px;
+  align-items:center;
+}
+
+#viewport {
+  min-height:0;
+  min-width:0;
+  position:relative;
+  overflow:hidden;
+  background:#dfe9de;
+}
+
+canvas {
+  width:100%;
+  height:100%;
+  display:block;
+  touch-action:none;
+  outline:none;
+}
+
+#routeTag {
+  position:absolute;
+  top:25px;
+  left:28px;
+  pointer-events:none;
+  max-width:55%;
+}
+
+.eyeline {
+  font:10px var(--mono);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  color:#5d7873;
+  margin-bottom:7px;
+}
+
+#routeName {
+  font-size:25px;
+  letter-spacing:-.9px;
+  font-weight:780;
+  line-height:1.12;
+  text-wrap:balance;
+}
+
+#routeSub {
+  font-size:11px;
+  color:#5e7873;
+  margin-top:7px;
+  line-height:1.5;
+}
+
+#fareCounter {
+  position:absolute;
+  right:28px;
+  top:26px;
+  text-align:right;
+  pointer-events:none;
+}
+
+#fareCounter strong {
+  font:22px var(--mono);
+  letter-spacing:-1px;
+}
+
+#fareCounter span {
+  display:block;
+  font:9px var(--mono);
+  letter-spacing:1px;
+  margin-top:4px;
+  color:#5e7873;
+}
+
+#flightTip {
+  position:absolute;
+  bottom:16px;
+  left:25px;
+  font-size:11px;
+  line-height:1.6;
+  color:#375a55;
+  background:#f6f1e5dd;
+  padding:8px 11px;
+  border-left:2px solid var(--orange);
+  max-width:min(500px,68%);
+  pointer-events:none;
+}
+
+#mapLabel {
+  position:absolute;
+  left:50%;
+  top:23px;
+  transform:translateX(-50%);
+  font:11px var(--mono);
+  background:var(--paper);
+  border:1px solid var(--line);
+  padding:8px 12px;
+  border-radius:4px;
+  white-space:nowrap;
+}
+
+#mapLabel[hidden] {
+  display:none;
+}
+
+#toast {
+  position:absolute;
+  bottom:64px;
+  left:50%;
+  transform:translateX(-50%) translateY(5px);
+  max-width:85%;
+  padding:12px 17px;
+  border-radius:6px;
+  background:#294f46f2;
+  color:#fff8e7;
+  font-size:13px;
+  text-align:center;
+  box-shadow:0 3px 12px #17352d1a;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .15s,transform .15s;
+}
+
+#toast.show {
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+#instruments {
+  z-index:3;
+  border-top:1px solid var(--line);
+  display:grid;
+  grid-template-columns:145px minmax(220px,1fr) 185px 137px 225px;
+  align-items:stretch;
+  background:var(--paper);
+  padding:18px 26px;
+  gap:23px;
+}
+
+.instrument {
+  min-width:0;
+  position:relative;
+}
+
+.instrument:not(:last-child) {
+  border-right:1px solid var(--line);
+  padding-right:21px;
+}
+
+.label {
+  font:9px var(--mono);
+  text-transform:uppercase;
+  letter-spacing:1.15px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+.clock {
+  font:28px var(--mono);
+  letter-spacing:-1.7px;
+  line-height:1.1;
+}
+
+.micro {
+  font:9px var(--mono);
+  color:var(--muted);
+  margin-top:6px;
+  line-height:1.5;
+}
+
+.micro strong {
+  font-weight:500;
+  color:var(--ink);
+}
+
+#objective {
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.25px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#ticketDetail {
+  font-size:10px;
+  margin-top:7px;
+  line-height:1.5;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.progress {
+  height:3px;
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:22px;
+  background:#e0e1d5;
+}
+
+.progress i {
+  display:block;
+  height:100%;
+  background:var(--teal);
+  width:0;
+}
+
+#lineRow {
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  align-items:center;
+}
+
+#cableReadout {
+  font:12px var(--mono);
+}
+
+input[type=range] {
+  width:100%;
+  accent-color:var(--teal);
+  height:15px;
+  margin:9px 0 0;
+  cursor:pointer;
+}
+
+#integrity {
+  font:22px var(--mono);
+  letter-spacing:-1px;
+}
+
+.integrity-bar {
+  height:4px;
+  margin-top:9px;
+  background:#dcded2;
+}
+
+.integrity-bar i {
+  display:block;
+  background:var(--teal);
+  height:100%;
+  width:100%;
+}
+
+#hands {
+  display:grid;
+  grid-template-columns:72px 1fr;
+  align-content:center;
+  gap:7px;
+  font-size:10px;
+  line-height:1.3;
+}
+
+.controlKey {
+  font:10px var(--mono);
+  font-weight:650;
+  color:#a25334;
+}
+
+.controlName {
+  color:#5f7470;
+}
+
+.dialog-wrap {
+  position:fixed;
+  inset:0;
+  z-index:10;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:#253f412b;
+  backdrop-filter:blur(6px);
+}
+
+.dialog-wrap[hidden] {
+  display:none;
+}
+
+.dialog {
+  background:var(--paper);
+  border:1px solid #fff9ec;
+  border-radius:12px;
+  box-shadow:0 24px 100px #263f4138;
+  width:min(610px,100%);
+  padding:36px 39px;
+  max-height:calc(100dvh - 40px);
+  overflow:auto;
+  position:relative;
+}
+
+.dialog.wide {
+  width:min(850px,100%);
+}
+
+.dialog h1 {
+  font-size:51px;
+  line-height:1.02;
+  letter-spacing:-2.9px;
+  margin:5px 0 17px;
+  font-weight:850;
+}
+
+.dialog h2 {
+  font-size:32px;
+  letter-spacing:-1.3px;
+  line-height:1.15;
+  margin:0 0 12px;
+}
+
+.dialog h3 {
+  font-size:14px;
+  letter-spacing:-.2px;
+  margin:22px 0 8px;
+}
+
+.dialog p {
+  font-size:13px;
+  line-height:1.75;
+  color:#5f7670;
+  margin:10px 0;
+}
+
+.dialog .lead {
+  font-size:15px;
+  color:#405e55;
+  line-height:1.7;
+}
+
+.dialog .actions {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-top:25px;
+  flex-wrap:wrap;
+}
+
+.dialog .close {
+  position:absolute;
+  top:17px;
+  right:18px;
+}
+
+.intro-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:30px;
+}
+
+.intro-art {
+  width:135px;
+  height:170px;
+  flex-shrink:0;
+}
+
+.manual {
+  display:grid;
+  grid-template-columns:83px 1fr;
+  gap:11px 17px;
+  padding:22px 0;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  margin:24px 0 14px;
+  font-size:12px;
+  align-items:center;
+}
+
+.manual strong {
+  font:11px var(--mono);
+  color:#a25334;
+}
+
+.note {
+  font-size:11px;
+  line-height:1.7;
+  color:#73817a;
+}
+
+.note b {
+  color:var(--teal);
+  font-weight:650;
+}
+
+.help-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 26px;
+}
+
+.help-grid p {
+  font-size:12px;
+}
+
+.route-list {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:24px 0 15px;
+}
+
+.route-button {
+  padding:16px 17px;
+  text-align:left;
+  position:relative;
+  border:1px solid #cdd7c8;
+}
+
+.route-button.current {
+  border-color:var(--teal);
+  background:#e9eee1;
+}
+
+.route-button .number {
+  font:10px var(--mono);
+  color:var(--orange);
+  margin-right:8px;
+}
+
+.route-button strong {
+  font-size:12px;
+}
+
+.route-button p {
+  font-size:11px;
+  margin:7px 0 8px;
+  line-height:1.5;
+}
+
+.route-button small {
+  font:9px var(--mono);
+  color:var(--muted);
+}
+
+.result-clock {
+  font:52px var(--mono);
+  letter-spacing:-3px;
+  margin:23px 0 2px;
+  color:var(--teal);
+}
+
+.result-caption {
+  font:10px var(--mono);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:#a25334;
+}
+
+.result-stats {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:17px 0;
+  margin-top:23px;
+}
+
+.result-stats strong {
+  display:block;
+  font:20px var(--mono);
+  margin-bottom:7px;
+}
+
+.result-stats span {
+  font:9px var(--mono);
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+.touch {
+  display:none;
+  position:absolute;
+  bottom:55px;
+  left:18px;
+  right:18px;
+  justify-content:space-between;
+  align-items:flex-end;
+  pointer-events:none;
+}
+
+#joystick {
+  width:118px;
+  height:118px;
+  border-radius:50%;
+  border:1px solid #567e6b88;
+  background:#f6f1e59c;
+  pointer-events:auto;
+  position:relative;
+  touch-action:none;
+}
+
+#joystick:before,#joystick:after {
+  content:'';
+  position:absolute;
+  background:#6a8a7566;
+}
+
+#joystick:before {
+  height:1px;
+  left:15px;
+  right:15px;
+  top:58px;
+}
+
+#joystick:after {
+  width:1px;
+  top:15px;
+  bottom:15px;
+  left:58px;
+}
+
+#joystick i {
+  position:absolute;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  background:#37796cd9;
+  top:35px;
+  left:35px;
+  pointer-events:none;
+}
+
+.touch-winch {
+  display:flex;
+  gap:7px;
+  pointer-events:auto;
+}
+
+.touch-winch button {
+  width:60px;
+  min-height:56px;
+  background:#f6f1e5e8;
+  border-color:#8ca991;
+  touch-action:none;
+  font-size:11px;
+}
+
+.touch-winch button.pressed {
+  background:#c5dcca;
+}
+
+#touchToggle {
+  display:none;
+}
+
+@media(max-width:1200px) {
+  .strap {
+    display:none;
+  }
+
+  #instruments {
+    grid-template-columns:130px minmax(190px,1fr) 165px 110px 180px;
+    gap:16px;
+    padding:18px 21px;
+  }
+
+  #hands {
+    grid-template-columns:64px 1fr;
+    font-size:9px;
+    gap:7px;
+  }
+
+  .instrument:not(:last-child) {
+    padding-right:15px;
+  }
+
+  header {
+    padding:0 22px;
+  }
+
+  .wordmark {
+    font-size:21px;
+  }
+
+  #routeName {
+    font-size:23px;
+  }
+
+}
+
+@media(max-width:980px) {
+  #hands {
+    display:none;
+  }
+
+  #instruments {
+    grid-template-columns:120px minmax(200px,1fr) 170px 110px;
+    gap:17px;
+  }
+
+  .instrument:nth-last-child(2) {
+    border:0;
+    padding:0;
+  }
+
+  nav button {
+    font-size:11px;
+    padding:8px 10px;
+  }
+
+  .wordmark {
+    font-size:20px;
+  }
+
+  header {
+    padding:0 17px;
+  }
+
+  #routeTag {
+    left:20px;
+    top:20px;
+  }
+
+  #fareCounter {
+    right:20px;
+    top:21px;
+  }
+
+  #touchToggle {
+    display:flex;
+  }
+
+}
+
+@media(max-width:640px) {
+  #app {
+    grid-template-rows:57px minmax(0,1fr) 126px;
+  }
+
+  header {
+    padding:0 11px;
+    gap:8px;
+  }
+
+  .brand {
+    gap:6px;
+  }
+
+  .brand svg {
+    width:29px;
+  }
+
+  .wordmark {
+    font-size:18px;
+  }
+
+  .wordmark small {
+    font-size:7px;
+    letter-spacing:3px;
+  }
+
+  .hide-phone {
+    display:none!important;
+  }
+
+  nav {
+    gap:4px;
+  }
+
+  nav button {
+    font-size:10px;
+    padding:7px 8px;
+  }
+
+  .button-label {
+    display:none;
+  }
+
+  #instruments {
+    padding:12px 14px;
+    grid-template-columns:100px 1fr 110px;
+    grid-template-rows:49px 42px;
+    gap:10px 13px;
+  }
+
+  .run-panel {
+    grid-column:1;
+    grid-row:1;
+  }
+
+  .fare-panel {
+    grid-column:2/4;
+    grid-row:1;
+    border:0!important;
+    padding:0!important;
+  }
+
+  .line-panel {
+    grid-column:2/4;
+    grid-row:2;
+    display:grid;
+    grid-template-columns:90px 1fr;
+    column-gap:12px;
+    align-items:center;
+    border:0!important;
+    padding:0!important;
+  }
+
+  .line-panel .label {
+    grid-column:1;
+    margin:0;
+  }
+
+  .line-panel #lineRow {
+    grid-column:1;
+    grid-row:2;
+  }
+
+  .line-panel input {
+    grid-column:2;
+    grid-row:1/3;
+  }
+
+  .line-panel .micro {
+    display:none;
+  }
+
+  .hull-panel {
+    grid-column:1;
+    grid-row:2;
+    border-right:1px solid var(--line)!important;
+    padding-right:12px!important;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    align-items:center;
+  }
+
+  .hull-panel .label {
+    font-size:8px;
+    margin:0;
+  }
+
+  .hull-panel .micro {
+    display:none;
+  }
+
+  #integrity {
+    font-size:16px;
+    justify-self:end;
+  }
+
+  .integrity-bar {
+    grid-column:1/3;
+    margin-top:4px;
+  }
+
+  .label {
+    font-size:8px;
+    margin-bottom:5px;
+  }
+
+  .clock {
+    font-size:22px;
+    letter-spacing:-1px;
+  }
+
+  .micro {
+    font-size:8px;
+    margin-top:3px;
+  }
+
+  #objective {
+    font-size:13px;
+  }
+
+  #ticketDetail {
+    font-size:9px;
+    margin-top:4px;
+  }
+
+  .progress {
+    bottom:-2px;
+    right:0;
+  }
+
+  #routeTag {
+    top:16px;
+    left:16px;
+    max-width:73%;
+  }
+
+  #routeName {
+    font-size:20px;
+  }
+
+  #routeSub {
+    display:none;
+  }
+
+  .eyeline {
+    font-size:8px;
+    letter-spacing:.9px;
+    margin-bottom:6px;
+  }
+
+  #fareCounter {
+    top:17px;
+    right:15px;
+  }
+
+  #fareCounter strong {
+    font-size:18px;
+  }
+
+  #fareCounter span {
+    font-size:7px;
+    letter-spacing:0;
+  }
+
+  #flightTip {
+    left:12px;
+    bottom:10px;
+    font-size:9px;
+    max-width:calc(100% - 24px);
+    padding:6px 8px;
+  }
+
+  #toast {
+    bottom:157px;
+    font-size:11px;
+  }
+
+  .dialog-wrap {
+    padding:12px;
+  }
+
+  .dialog {
+    padding:28px 23px;
+    max-height:calc(100dvh - 24px);
+  }
+
+  .dialog h1 {
+    font-size:40px;
+    letter-spacing:-2px;
+  }
+
+  .intro-art {
+    width:97px;
+    height:144px;
+  }
+
+  .intro-header {
+    gap:14px;
+  }
+
+  .dialog h2 {
+    font-size:27px;
+  }
+
+  .dialog .lead {
+    font-size:13px;
+  }
+
+  .manual {
+    font-size:11px;
+    grid-template-columns:68px 1fr;
+    gap:10px;
+    padding:18px 0;
+    margin:20px 0 12px;
+  }
+
+  .manual strong {
+    font-size:10px;
+  }
+
+  .route-list {
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+
+  .route-button {
+    padding:13px 15px;
+  }
+
+  .help-grid {
+    grid-template-columns:1fr;
+    gap:0;
+  }
+
+  .result-clock {
+    font-size:43px;
+  }
+
+  #mapLabel {
+    top:80px;
+    font-size:9px;
+  }
+
+  .touch {
+    bottom:55px;
+  }
+
+  .dialog .close {
+    top:12px;
+    right:12px;
+  }
+
+}
+
+@media(max-height:650px) and (min-width:641px) {
+  #app {
+    grid-template-rows:54px minmax(0,1fr) 86px;
+  }
+
+  #instruments {
+    padding-top:12px;
+    padding-bottom:12px;
+  }
+
+  .label {
+    margin-bottom:6px;
+  }
+
+  .clock {
+    font-size:24px;
+  }
+
+  #routeTag {
+    top:16px;
+  }
+
+  #routeName {
+    font-size:20px;
+  }
+
+  #routeSub {
+    font-size:10px;
+  }
+
+  #flightTip {
+    font-size:10px;
+    bottom:11px;
+  }
+
+  .dialog {
+    padding:26px 31px;
+  }
+
+  .dialog h1 {
+    font-size:40px;
+  }
+
+  .intro-art {
+    height:135px;
+    width:108px;
+  }
+
+  .manual {
+    margin-top:17px;
+    padding:16px 0;
+    gap:9px;
+  }
+
+  .dialog .actions {
+    margin-top:18px;
+  }
+
+  .touch {
+    bottom:48px;
+  }
+
+}
+
+@media(pointer:coarse) {
+  .touch {
+    display:flex;
+  }
+
+  #touchToggle {
+    display:flex;
+  }
+
+}
+
+@media(prefers-reduced-motion:reduce) {
+  * {
+    transition:none!important;
+  }
+
+}
