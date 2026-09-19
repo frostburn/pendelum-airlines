@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Pendulum Airlines: a little flying taxi, a long cable, and a very lively passenger cabin. A little flying taxi with a swinging cabin. Play offline or in your browser.">
+<link rel="icon" href="data:,">
+<title>Pendulum Airlines — please mind the swing</title>
+<link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+<div id="app">
+<header>
+<div class="brand">
+<svg viewBox="0 0 40 48" aria-hidden="true">
+<path d="M5 8h30M20 5v7M11 13h18l-3 6H14Z" stroke="#253f41" stroke-width="2.2" fill="#ce7046" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20 19 24 35" stroke="#253f41" stroke-width="1.8"/>
+<path d="m17 34 13-2 1 9-12 2Z" fill="#eebc65" stroke="#253f41" stroke-width="2" stroke-linejoin="round"/>
+</svg>
+<div class="wordmark">pendulum<small>AIRLINES</small>
+</div>
+<span class="strap">Please mind the swing.</span>
+</div>
+<nav aria-label="Game controls">
+<button id="routesBtn">Routes</button>
+<button id="restartBtn" title="Restart this route (R)">Restart<span class="hide-phone"> · R</span>
+</button>
+<button id="pauseBtn" title="Pause / resume (P)">Pause</button>
+<button id="mapBtn" class="hide-phone" title="Hold V for a paused overview">Map · V</button>
+<button id="soundBtn" class="hide-phone" title="Toggle sound (M)" aria-pressed="false">Sound off</button>
+<button id="helpBtn">Help</button>
+<button id="fullscreenBtn" class="icon hide-phone" title="Full screen (F)" aria-label="Full screen">
+<svg viewBox="0 0 20 20">
+<path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4"/>
+</svg>
+</button>
+</nav>
+</header>
+<main id="viewport">
+<canvas id="game" tabindex="0" aria-label="Pendulum Airlines. Fly with WASD or arrow keys. Q reels the cabin in; E lowers it. Space enables slower precision flight. Land the cabin on the highlighted stops to board or drop passengers. R restarts; H opens help.">Please enable JavaScript and HTML canvas to play.</canvas>
+<div id="routeTag">
+<div class="eyeline" id="routeNumber">
+</div>
+<div id="routeName">
+</div>
+<div id="routeSub">
+</div>
+</div>
+<div id="fareCounter">
+<strong id="fareCount">0 / 1</strong>
+<span>DELIVERED</span>
+</div>
+<div id="flightTip">
+</div>
+<div id="mapLabel" hidden>ROUTE MAP · FLIGHT PAUSED</div>
+<div id="toast" role="status" aria-live="polite">
+</div>
+<div class="touch" id="touchControls">
+<div id="joystick" role="application" aria-label="Drag to fly">
+<i>
+</i>
+</div>
+<div class="touch-winch">
+<button data-touch="in" aria-label="Reel cabin in">Reel<br>in</button>
+<button data-touch="out" aria-label="Lower cabin">Lower<br>out</button>
+</div>
+</div>
+</main>
+<section id="instruments" aria-label="Flight instruments">
+<div class="instrument run-panel">
+<div class="label">Route time</div>
+<div class="clock" id="clock">0:00.00</div>
+<div class="micro">BEST <strong id="bestTime">—</strong>
+</div>
+</div>
+<div class="instrument fare-panel">
+<div class="label" id="ticketLabel">Next fare</div>
+<div id="objective">Pine Stop</div>
+<div id="ticketDetail">Land the cabin, not the engine.</div>
+<div class="progress">
+<i id="serviceBar">
+</i>
+</div>
+</div>
+<div class="instrument line-panel">
+<div class="label">Winch / cable</div>
+<div id="lineRow">
+<span>
+<kbd>Q</kbd> <kbd>E</kbd>
+</span>
+<strong id="cableReadout">3.20 m</strong>
+</div>
+<input type="range" min="1.65" max="7.5" step="0.05" id="cableSlider" value="3.2" aria-label="Target cable length">
+<div class="micro">SHORTER <span style="float:right">LONGER</span>
+</div>
+</div>
+<div class="instrument hull-panel">
+<div class="label">Cabin integrity</div>
+<div id="integrity">100%</div>
+<div class="integrity-bar">
+<i id="integrityBar">
+</i>
+</div>
+<div class="micro" id="cabinSpeed">CABIN 0.0 m/s</div>
+</div>
+<div class="instrument" id="hands">
+<span class="controlKey">WASD / ↕↔</span>
+<span class="controlName">Fly the engine</span>
+<span class="controlKey">Q / E</span>
+<span class="controlName">Reel in / lower</span>
+<span class="controlKey">SPACE</span>
+<span class="controlName">Precision flight</span>
+<span class="controlKey">R / G</span>
+<span class="controlName">Restart / ghost</span>
+</div>
+</section>
+</div>
+<div class="dialog-wrap" id="modal" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+<div class="dialog" id="dialog">
+</div>
+</div>
+<noscript>This game needs JavaScript. Everything else is already in this file.</noscript>
+<!-- Standalone, original procedural vector art: separate moving rotors, rigid cabin,
+     terrain and cable are drawn directly to match their collision geometry.
+     No external scripts, fonts, images, network calls, or runtime dependencies. -->
+<!-- GAME_MODULES -->
+<script type="module">import "#game/main";</script>
+</body>
+</html>
