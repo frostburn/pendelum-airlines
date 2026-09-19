@@ -55,6 +55,12 @@ export function drawMovingStop(ctx, p, origin, map) {
   ctx.strokeRect(deck.x, deck.y, deck.w, deck.h);
   line([[deck.x + .06, p.y - .14], [deck.x + deck.w - .06, p.y - .14]], '#e2d4a6', .07);
   if (p.vehicle === 'ferry') {
+    line([[deck.x + .03, .08], [deck.x + deck.w - .03, .08]], '#a9c9bc', .12);
+    for (let x = deck.x + .65; x < deck.x + deck.w - .35; x += .9) {
+      ctx.beginPath();
+      ctx.arc(x, p.y - .65, .10, 0, Math.PI * 2);
+      ctx.fillStyle = '#c3d6c1'; ctx.fill();
+    }
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.arc(p.x + side * (p.w / 2 - .16), p.y - .26, .12, 0, Math.PI * 2);
@@ -64,12 +70,13 @@ export function drawMovingStop(ctx, p, origin, map) {
   // A velocity arrow shows the approaching reversal without hiding a timer.
   const speed = Math.hypot(p.vx, p.vy);
   if (speed > .08) {
+    const color = p.vehicle === 'ferry' ? '#e9dbc0' : '#355b4d';
     const ux = p.vx / speed, uy = p.vy / speed;
     const x = p.x, y = p.y - .98, length = .3 + speed * .28;
     const tipX = x + ux * length, tipY = y + uy * length;
-    line([[x - ux * length, y - uy * length], [tipX, tipY]], '#355b4d', .05);
+    line([[x - ux * length, y - uy * length], [tipX, tipY]], color, .05);
     line([[tipX - ux * .17 - uy * .12, tipY - uy * .17 + ux * .12],
-      [tipX, tipY], [tipX - ux * .17 + uy * .12, tipY - uy * .17 - ux * .12]], '#355b4d', .05);
+      [tipX, tipY], [tipX - ux * .17 + uy * .12, tipY - uy * .17 - ux * .12]], color, .05);
   }
   ctx.restore();
 }

@@ -223,7 +223,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     box(p.x - p.w / 2, p.y + .035, p.w, .085, active ? '#eebc65' : '#baceaf');
     for (let xx = p.x - p.w / 2 + .10; xx < p.x + p.w / 2 - .08; xx += .33)
       line([[xx, p.y + .045], [xx + .12, p.y + .11]], '#536e5555', .045);
-    text(p.x, p.y - (p.motion ? 1.55 : .42), p.name.toUpperCase(), Math.min(.23, p.w / Math.max(8, p.name.length) * 1.5), '#294f43', 'center', 750);
+    text(p.x, p.y - (p.motion ? 1.55 : .42), p.name.toUpperCase(), Math.min(.23, p.w / Math.max(8, p.name.length) * 1.5), p.vehicle === 'ferry' ? '#f6f1e5' : '#294f43', 'center', 750);
     const post = p.x - p.w / 2 - .16;
     line([[post, p.y + .04], [post, p.y + .8]], '#416754', .045);
     circle(post, p.y + .92, .19, active ? C.yellow : '#c4d4b7', '#456750', .035);

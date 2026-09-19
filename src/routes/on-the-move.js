@@ -1,7 +1,8 @@
 import { pad, block, BASE } from '#game/routes/shapes';
 
 const moving = (x, y, name, w, vehicle, dx, dy, period, phase = 0) =>
-  ({...pad(x, y, name, w), vehicle, motion: {dx, dy, period, phase}});
+  ({...pad(x, y, name, w), vehicle, hullDepth: vehicle === 'ferry' ? y + .2 : .42,
+    motion: {dx, dy, period, phase}});
 const fare = (from, to, name, color = '#bf6f42') => ({from, to, name, color});
 
 /** One mechanic, six variations. Every moving stop is also a solid platform.
@@ -40,7 +41,8 @@ export const movingRoutes = [
     pads: [pad(3, 2, 'Goods Yard', 4.2),
       moving(20, 2.3, 'Shuttle Wagon', 3.4, 'train', 8, 0, 28, -.25),
       pad(35, 6.5, 'Signal House', 4.2)],
-    terrain: [...BASE(), block(3, 2, 5, 'teal'), block(35, 6.5, 5, 'plaster')],
+    terrain: [...BASE(), block(3, 2, 5, 'teal'), block(20, 1.42, 21.5, 'earth'),
+      block(35, 6.5, 5, 'plaster')],
     jobs: [fare(1, 2, 'Raili', '#c88f3b')], start: 0, cable: 3.0,
     tip: 'Space limits engine speed. Release it when you need to keep pace with the shuttle.'
   },

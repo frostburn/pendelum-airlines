@@ -19,7 +19,7 @@ export function stopAt(pad, time) {
 
 /** The landing strip and the solid deck are generated from the same pose. */
 export function deckAt(pad) {
-  const h = .42;
+  const h = pad.hullDepth ?? .42;
   return {x: pad.x - pad.w / 2 - .25, y: pad.y - h,
     w: pad.w + .5, h, vx: pad.vx, vy: pad.vy, style: 'deck'};
 }

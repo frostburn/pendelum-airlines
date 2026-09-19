@@ -101,7 +101,9 @@ is a numerical game approximation, not an engineering solver.
 
 Moving stops declare `motion: {dx, dy, period, phase}` on a pad. `dx` and `dy`
 are half-travel distances; `period` is seconds; `phase` is a fraction of a cycle.
-`vehicle` selects ferry, lift, or train decoration. Powered platforms follow smooth
+`vehicle` selects ferry, lift, or train decoration. `hullDepth` sets the solid
+depth below the deck (default 0.42 m); ferry hulls extend below the waterline.
+Powered platforms follow smooth
 sinusoidal paths and act as kinematic scenery. Contacts use surface-relative
 velocity for normal response, friction, and impact damage. Boarding uses relative
 speed too. Pads, collision decks, and rendered stations share the same motion
