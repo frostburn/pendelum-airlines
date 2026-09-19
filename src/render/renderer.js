@@ -8,7 +8,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
   if (!ctx)
     throw new Error('A 2D canvas is required.');
   let width = 1, height = 1, dpr = 1, sim;
-  let cam = { x: 15, y: 8, scale: 42 }, renderCam = { ...cam };
+  let cam, renderCam;
   function resize(w, h, ratio = 1) {
     width = Math.max(1, w);
     height = Math.max(1, h);
@@ -18,6 +18,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
   }
   function reset(state) {
     cam = { x: state.engine.x + 4, y: Math.max(8, state.engine.y - .5), scale: 42 };
+    renderCam = { ...cam };
   }
   function sx(x) {
     return (x - renderCam.x) * renderCam.scale + width / 2;
@@ -301,6 +302,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
   }
   function render(state, { alpha = 1, elapsed = 1 / 60, clock = 0, map = false, panel = false, ghost = null } = {}) {
     sim = state;
+    if (!cam)
+      reset(sim);
     const e = interpolateBody(sim.engine, alpha), c = interpolateBody(sim.cabin, alpha);
     let scale = clamp(height / 16.6, 27, 52);
     if (width < 640)
@@ -405,6 +408,6 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     render,
     resize,
     reset,
-    view: () => ({ camera: { ...renderCam }, width, height })
+    view: () => ({ camera: renderCam ? { ...renderCam } : null, width, height })
   };
 }

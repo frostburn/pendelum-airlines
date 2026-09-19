@@ -17,6 +17,7 @@ let panel = 'intro', returnPanel = null, overTime = 0, record = [], lastRecorded
 let last = 0, acc = 0, uiAccumulator = 0, toastTimer = 0;
 let soundOn = saved.sound;
 const renderer = createRenderer(canvas, { reduced: matchMedia('(prefers-reduced-motion: reduce)').matches });
+renderer.reset(sim);
 const audio = createAudio();
 function toast(text) {
   $('#toast').textContent = text;

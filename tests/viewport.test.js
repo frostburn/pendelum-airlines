@@ -58,3 +58,17 @@ test('the real renderer draws the chimney facade while flying high', () => {
   assert.ok(draws.some(rect => ['x','y','w','h'].every(key => rect[key] === chimney[key])));
   assert.equal(JSON.stringify(sim), before, 'rendering cannot change the simulation');
 });
+test('the first render frames the initial aircraft on a phone-sized viewport', () => {
+  const context = new Proxy({
+    measureText: text => ({width: text.length * 6}),
+  }, {get: (target, key) => key in target ? target[key] : () => {}});
+  const renderer = createRenderer({getContext: () => context}, {reduced: true});
+  const sim = new Sim(0);
+  const width = 390;
+  renderer.resize(width, 520);
+  renderer.render(sim, {alpha: 1, panel: true});
+  const {camera} = renderer.view();
+  const engineScreenX = (sim.engine.x - camera.x) * camera.scale + width / 2;
+  assert.ok(engineScreenX >= 0 && engineScreenX <= width,
+    `initial engine should be visible, got screen x=${engineScreenX}`);
+});
