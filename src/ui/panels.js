@@ -27,7 +27,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>`;
   else if (kind === 'routes')
     return `${closeButton}<h2 id="dialogTitle">Local routes.<br>Questionable connections.</h2>
-<p>${serviceRoutes.length} fares and a practice yard. Six new routes in <b>On the move</b>. Every route is open from the start.</p>
+<p>${serviceRoutes.length} fares and a practice yard. Discover six new routes in <b>Around the bend</b>. Every route is open from the start.</p>
 <div class="route-list">${[...serviceRoutes, ...levels.map((_, i) => i).filter(i => levels[i].practice)].map(i => { const l = levels[i]; return `<button class="route-button ${i === sim.index ? 'current' : ''}" data-route="${i}">
 <span class="number">${l.practice ? '∞' : String(routeNumber(i)).padStart(2, '0')}</span>
 <strong>${l.name}</strong>
@@ -57,6 +57,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
 <p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
 <h3>Make the swing work for you</h3>
+<p><b>Brass cable guides</b> let the cable bend and slide around a fixed rim. Fly the engine past a guide to redirect the hanging cabin, then reel in or climb to pull it clear. The rim is solid for the engine and cabin too. Pale supports are behind the flight path. A guide brightens while the cable is touching it.</p>
 <p>Start braking before the cabin reaches its destination. To catch a swing, move the engine in the direction the cabin is travelling, then ease both to a stop. A shorter cable fits through tighter routes; a longer one reaches under eaves and into shafts.</p>
 </div>
 </div>

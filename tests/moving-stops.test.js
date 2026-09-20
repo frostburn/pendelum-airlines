@@ -141,11 +141,12 @@ test('legacy route IDs and saved ghosts survive the expansion', () => {
   assert.deepEqual(parseSaved(JSON.stringify(saved), levels.length), saved);
   assert.equal(nextRoute(6), 8);
   assert.equal(routeNumber(8), 8);
-  assert.equal(nextRoute(13), null);
-  assert.equal(serviceRoutes.length, 13);
+  assert.equal(nextRoute(13), 14);
+  assert.equal(nextRoute(19), null);
+  assert.equal(serviceRoutes.length, 19);
   const markup = panelMarkup('routes', {sim: new Sim(8), saved});
-  assert.equal((markup.match(/data-route=/g) || []).length, 14);
-  assert.ok(markup.indexOf('data-route="13"') < markup.indexOf('data-route="7"'));
+  assert.equal((markup.match(/data-route=/g) || []).length, 20);
+  assert.ok(markup.indexOf('data-route="19"') < markup.indexOf('data-route="7"'));
   assert.match(panelMarkup('result', {sim: new Sim(6), saved}), /data-action="next"/);
-  assert.doesNotMatch(panelMarkup('result', {sim: new Sim(13), saved}), /data-action="next"/);
+  assert.doesNotMatch(panelMarkup('result', {sim: new Sim(19), saved}), /data-action="next"/);
 });

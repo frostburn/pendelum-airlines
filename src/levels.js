@@ -3,6 +3,7 @@
  */
 import { rect, pad, block, BASE } from '#game/routes/shapes';
 import { movingRoutes } from '#game/routes/on-the-move';
+import { guideRoutes } from '#game/routes/around-the-bend';
 export const levels = [
   {
     name: 'First fare',
@@ -180,7 +181,8 @@ export const levels = [
     cable: 3.4,
     tip: 'A good catch: move the engine toward the incoming cabin, then ease both to a stop.'
   },
-  ...movingRoutes
+  ...movingRoutes,
+  ...guideRoutes
 ];
 
 // Array indices are persistent save IDs; never insert before an existing route.

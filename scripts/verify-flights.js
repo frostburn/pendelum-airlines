@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Sim } from '#game/physics';
 import { DT } from '#game/constants';
-import { clamp } from '#game/math';
+import { steer } from './flight-controls.js';
 
 // Playability witnesses, not a player aid. This controller only sends ordinary
 // flight inputs. It never edits a body, the clock, cargo, damage, or a platform.
@@ -14,15 +14,6 @@ const itineraries = [
   {route: 12, stops: [1, 2, 3], cruise: 18},
   {route: 13, stops: [1, 2, 3, 0], cruise: 14},
 ];
-
-function steer(s, x, y, vx = 0, vy = 0) {
-  const e = s.engine, c = s.cabin;
-  // Feedback from both masses damps the swing while following the stop.
-  const tx = vx + 1.007 * (x - e.x) - .538 * (x - c.x) -
-    .251 * (e.vx - vx) - .051 * (c.vx - vx);
-  const ty = vy + 1.3 * (y + .92 + s.length - e.y);
-  return {x: clamp(tx / 5, -1, 1), y: clamp(ty / 3.8, -1, 1)};
-}
 
 for (const {route, stops, cruise} of itineraries) {
   const s = new Sim(route);

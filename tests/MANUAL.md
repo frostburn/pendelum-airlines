@@ -11,7 +11,7 @@ of `dist/index.html`. Check the console for errors throughout.
    Continue up until its base is below the viewport. The roof and upper facade
    should remain visible until their complete visual bounds leave the screen.
    Descend and repeat at another window size; there should be no pop-out/pop-in.
-4. Check all fourteen entries in the route picker. Board and deliver on First fare;
+4. Check all twenty entries in the route picker. Board and deliver on First fare;
    restart and check the best-run ghost. Debug-assisted runs must not save records.
 5. At a phone-sized viewport with touch enabled, use the thumb stick and both
    winch buttons. Releasing or cancelling a touch should release its control.
@@ -24,7 +24,7 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
 
 ## On the move
 
-1. In the route picker, confirm 13 numbered services and Sunday service last.
+1. In the route picker, confirm 19 numbered services and Sunday service last.
    Finish The last collection: Next route should open The stop is leaving.
    Existing best times and ghosts should still belong to the same original routes.
 2. On The stop is leaving, follow Little Ferry sideways and descend. DECK Δ should
@@ -45,3 +45,24 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
    Both the cabin and the rotor must be fully visible on the first frame. Check
    route names, the DECK Δ readout, and both columns of the route picker at desktop
    width and the single-column layout on a phone.
+
+## Around the bend and stable skyline
+
+1. Fly left and right across a route. Distant buildings should translate smoothly
+   and keep their shape. Reverse direction and open/close the map; buildings should
+   retain their identities. Repeat after resizing the window.
+2. On A little guidance, fly gently toward the brass rim with the engine above it
+   and cabin below. Watch the cable bend around the rim and its colour brighten.
+   Climb or reel in gradually to pull the cabin clear, then continue to Workshop.
+   The cable should release freely, with no extra button. Check the rim is solid
+   to both bodies and the pale mounting supports can be flown through.
+3. On An indirect approach, use the long cable and Q/E to try the same crossing.
+   Reverse across a guide, pay out to make slack, and lift clear again. Pause and
+   restart while touching it; neither action should leave a phantom attachment.
+4. Complete Two points of contact with both passengers and try the chimney's
+   guide in Reel around the chimney. Check that clearance includes the cabin.
+5. On Guidance is not a timetable, release from the guide before settling on the
+   moving lift. Complete A roundabout way home with a shared outward trip and a
+   return fare. Check that Next route ends here; previous bests retain their IDs.
+6. At phone and desktop sizes, inspect all six maps, guide labels, the route picker,
+   and the help text. Repeat a completed guide route with its saved ghost.

@@ -1,8 +1,28 @@
 # Pendulum Airlines
 
 A tiny flying taxi, a long cable, and a passenger cabin with its own plans.
-Thirteen handmade routes, a practice yard, touch controls, synthesized sound,
+Nineteen handmade routes, a practice yard, touch controls, synthesized sound,
 personal bests, and interpolated best-run ghosts.
+
+## Around the bend
+
+Six new routes introduce **cable guides**: fixed brass fairleads that the cable
+can bend and slide around. Pass the engine above a guide, then climb or reel in
+gently to lift the cabin clear. The rim brightens while carrying the cable. It is
+solid for the engine and cabin too; its pale supports sit behind the flight path.
+There is no new button, latch, or automatic release.
+
+| Route | Challenge |
+| --- | --- |
+| A little guidance | Learn to catch a guide and pull the cabin clear |
+| An indirect approach | Redirect a longer cable between low and high offices |
+| Two points of contact | Use two guides while delivering two different tickets |
+| Reel around the chimney | Winch around a guide before clearing the brickwork |
+| Guidance is not a timetable | Combine guides with a moving construction lift |
+| A roundabout way home | Collect two fares and return their teacher past the guides |
+
+The distant skyline also keeps stable building identities as the camera moves.
+Crossing a parallax tile boundary no longer reshuffles their widths and heights.
 
 ## On the move
 
@@ -37,7 +57,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, six simulated flights, and a standalone build
+npm run verify   # syntax, tests, twelve simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```
@@ -70,8 +90,9 @@ mass, and the two seats can hold passengers with different destinations.
 - `src/physics.js`: DOM-free simulation, contacts, cable, rotor, and fares.
 - `src/constants.js`, `src/math.js`, `src/levels.js`: units, helpers, and route data.
 - `src/moving-stops.js`: analytic platform motion and solid deck geometry.
-- `src/routes/`: shared geometry helpers and the On the move route collection.
-- `src/render/`: drawing and camera; viewport culling is independently testable.
+- `src/cable-guides.js`: circular contact geometry for fixed cable guides.
+- `src/routes/`: shared geometry helpers and the two expansion collections.
+- `src/render/`: drawing and camera; stable city slots and viewport culling.
 - `src/ui/`: dialog templates and shared drawing colors/fonts.
 - `src/main.js`: lifecycle, controls, HUD, event dispatch, and the frame loop.
 - `src/audio.js`, `src/ghost.js`, `src/storage.js`: optional sound, replay, and saves.
@@ -111,6 +132,14 @@ function; mutable poses belong to each simulation, not the route definitions.
 Guide rails are background artwork; the moving deck is solid to both the rig and
 its cable. Add static scenery below railways when a solid embankment is wanted.
 
+Cable guides declare `guides: [{x, y, r}]` on a route. Their fixed circular rims
+participate in the same body, cable-node, and cable-midpoint collision passes as
+terrain. They redirect tension through physical contact, with no attachment
+state. Keep radii at least 0.5 m so the cable's collision samples cover the curve
+at maximum extension. Current routes use forgiving 0.8 m rims. The simulation
+owns its guide data and exposes current contacts and cumulative visits in its
+debug snapshot. These observations do not gate fares or change scoring.
+
 Rendering interpolates between physics steps and must not mutate simulation
 state. The visibility fix tests **the full building bounds**, including roof
 trim. A base below the viewport is not grounds to hide a roof that is still visible.
@@ -119,7 +148,8 @@ trim. A base below the viewport is not grounds to hide a roof that is still visi
 
 The original `pendulum-airlines-v1` storage key and 20 Hz ghost format are retained.
 Route array indices are persistent save IDs: the original seven services stay at
-0–6, Sunday service stays at 7, and the expansion occupies 8–13. The picker lists
+0–6, Sunday service stays at 7, On the move occupies 8–13, and Around the bend
+occupies 14–19. The picker lists
 practice last, and Next route skips it. Append routes rather than inserting them.
 Invalid saves are ignored; blocked or full storage falls back to session-only play.
 Browsers scope storage to the origin, so moving from a downloaded file to a hosted
@@ -144,11 +174,17 @@ a chimney's base far below the screen while its facade still intersects the
 viewport, plus a test that calls the actual renderer and checks it draws that
 facade without changing simulation state.
 
-`npm run test:flights` completes all six expansion routes using normal analog
-flight inputs. It asserts every fare is delivered without damaging impacts;
+City regressions cross the old wrap boundary in both directions and check the
+real renderer. Guide tests cover contact geometry, both vehicle bodies, cable
+nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
+
+`npm run test:flights` completes all twelve expansion routes using normal analog
+flight and winch inputs. It asserts every fare is delivered without damaging impacts;
 it does not teleport the rig or bypass service logic. These are playability
 witnesses, not claims about how easy the routes are for a human pilot. The check
-also runs as part of `npm run verify`.
+also runs as part of `npm run verify`. Every new guide must carry the cable for
+at least half a second and release before the finish. The flights also check
+continuous cable segments for penetration between their collision samples.
 
 CI has **one Ubuntu job, one Node version (22.16.0), and no matrix**. It runs
 `npm run verify` and uploads `dist/index.html` as the `pendulum-airlines` artifact.
