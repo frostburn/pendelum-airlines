@@ -77,23 +77,25 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
    Every world has twelve selectable tiles on one screen, with no scrolling.
    Switch worlds by pointer and keyboard, and verify focus remains on the chosen
    world button. Best times and the current-route highlight stay with their IDs.
-2. Hold X and drag the magnet through each ore bed. Black grains collect; sand moves aside.
-   Observe the mass and swing change. Release X or the tool button over the hopper:
+2. Without holding J, drag the magnet through each ore bed. Black grains collect; sand moves aside.
+   Observe the mass and swing change. Hold J or the tool button over the hopper:
    grains should detach and fall, and only grains entering it should count.
 3. Fill the ladle below the tap, then back out before climbing. Fly abruptly to
-   slosh or spill. Hold X to tip over a mould; release to level the vessel. Inspect
+   slosh or spill. Hold J to tip over a mould; release to level the vessel. Inspect
    the connected liquid lobes, overflow, cooling, and the resulting physical ingot.
    Refill after a spill. Both moulds must be complete on the two-mould job.
-4. Start a forging job with X released: the ingot stays loose. Hold X above it
-   to attract and carry it; release X and confirm it falls. Pick it up again, pay
-   out cable, and dangle the end into the hammer stroke. There must be no anvil
-   jaws or fixed cargo position. Each downstroke shoves/spins the hanging load
-   and makes a permanent bend/dent, including in its collision outline. Three
-   good hits finish forging; lingering in contact must not add extra hits. Misses,
-   slow touches and blows to the magnet/engine alone must not count. Deliberately
-   put the engine in the lane: it must get shoved without losing integrity. The
-   double shift requires three blows in press order 1 → 2 → 1. Release/regrab the
-   bent ingot and check it keeps its shape and can be delivered normally.
+4. Start a forging job: the magnet picks up without a tool key. Hold J and
+   confirm the ingot falls; release J to pick it up again. X must do nothing.
+   Use WASD with the left hand and J with the right, then try the on-screen button.
+   Forge the ingot both while suspended and after leaving it loose on the anvil.
+   There must be no anvil jaws or fixed cargo position. Each downstroke shoves/spins
+   the metal and makes a permanent bend/dent, including in its collision outline.
+   Three good hits finish forging in either state; releasing or reattaching during
+   one stroke must not count it twice. Misses, slow touches and blows to the bare
+   magnet/engine alone must not count. The loose-piece counter must remain visible.
+   Deliberately put the engine in the lane: it must get shoved without losing
+   integrity. The double shift requires press order 1 → 2 → 1. Collect the bent
+   ingot, finish any processing, and hold J to deliver it at Dispatch.
 5. Maintain contact with the lathe and the left face of the belt. Confirm the
    moving surfaces pull the payload; shaping/polishing stops when contact ends.
    The workpiece changes profile and shine. An unfinished part cannot be dispatched.

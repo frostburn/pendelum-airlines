@@ -38,9 +38,9 @@ export function pieceBottom(piece) {
 export function deformPiece(piece, contact, angle) {
   const ca = Math.cos(angle), sa = Math.sin(angle);
   const nx = ca * contact.nx + sa * contact.ny, ny = -sa * contact.nx + ca * contact.ny;
-  // The struck end bends in the impact direction and gets thinner. Keep the
-  // centre under the magnet intact; the projecting end takes most of the blow.
-  const x = contact.lx - .20;
+  // Contact coordinates are local to the workpiece, whether it is held or loose.
+  // Metal near the impact bends and gets thinner; distant sections stay intact.
+  const x = contact.lx;
   for (const section of piece.sections) {
     const weight = Math.exp(-Math.pow((section.x - x) / .46, 2));
     const bend = .14 * weight;

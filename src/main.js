@@ -217,7 +217,7 @@ window.addEventListener('keydown', e => {
   }
   if (e.target.matches('input') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(key))
     return;
-  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyX'].includes(key))
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyJ'].includes(key))
     e.preventDefault();
   if (!e.repeat) {
     if (key === 'KeyR') {
@@ -353,7 +353,7 @@ function inputs() {
     y: clamp((keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) + touch.y, -1, 1),
     winch: (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0) + touch.winch,
     precision: keys.has('Space'),
-    action: keys.has('KeyX') || touch.action
+    action: keys.has('KeyJ') || touch.action
   };
 }
 function events() {
@@ -436,7 +436,7 @@ function updateUI() {
     $('#ticketDetail').textContent = order.detail;
     $('#serviceBar').style.width = clamp(order.progress * 100, 0, 100) + '%';
     $('#flightTip').textContent = order.detail;
-    toolButton.textContent = work.tool === 'ladle' ? 'Hold X · pour right' : 'Hold X · attract / carry';
+    toolButton.textContent = work.tool === 'ladle' ? 'Hold J · pour right' : 'Hold J · magnet off';
     toolButton.classList.toggle('pressed', work.action);
     toolButton.setAttribute('aria-pressed', String(work.action));
   }

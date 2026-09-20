@@ -7,16 +7,17 @@ tiles onto one screen; switch worlds instead of scrolling. All jobs are open.
 
 ## Metal works
 
-The third world replaces the passenger cabin with industrial tools. **Hold X**
-or hold the on-screen tool button to energise the magnet and attract/carry metal,
-or tip the ladle right. Release X to drop metal or level the ladle again. Both
-ore and workpiece magnets start unpowered; ingots must be picked up.
+The third world replaces the passenger cabin with industrial tools. Both magnets
+are **on by default**: fly the head above a workpiece or rake it through ore to
+collect metal. **Hold J** with your right hand, or hold the on-screen tool button,
+to turn the magnet off and drop the load. Release J to turn it back on. The ladle
+uses J to pour right; release it to level the vessel.
 
 | Jobs | Work |
 | --- | --- |
 | A magnetic personality / Buried treasure, mostly sand | Rake black magnetite out of loose sand, carry it to the refinery hopper, and release it inside. The second order exceeds one magnet load. |
 | Do not drink the orange / Two moulds, one bad idea | Fill below a furnace tap, back out from under it, and pour into one or two moulds. Missed droplets cool into slag; the tap provides refills. |
-| The hammer has right of way / The double shift | Dangle a bar into three real downstroke impacts. The hammer knocks, bends and flattens the free load. On The double shift, visit presses 1 → 2 → 1 for those three blows. Keep the engine clear. |
+| The hammer has right of way / The double shift | Put a bar under three real downstroke impacts, either held by the magnet or loose on the anvil. The hammer knocks, bends and flattens the free load. On The double shift, visit presses 1 → 2 → 1 for those three blows. Keep the engine clear. |
 | A turn for the better / Against the grain | Maintain contact with the spinning lathe or moving belt. The surfaces pull on the workpiece as it is shaped and polished. |
 | Some assembly required / Three-part harmony | Bring separate parts to free jig marks and release them. The three-part order requires every part to be polished before welding. Pick up the assembly and deliver it. |
 | From orange to shiny / The complete works | Cast, exchange the ladle at the Tool rack, collect the casting, forge, turn, polish, and deliver. The final order also needs a ready-made bracket and welding. |
@@ -27,8 +28,9 @@ its processing requirements are met. Proximity to a machine does not do work:
 forging needs actual downward hammer contacts with the metal; turning and
 polishing need workpiece contact with moving surfaces. The welding jig consumes
 distinct qualified pieces and releases one collectible assembly. There is no
-anvil clamp or forge position override. Five deforming cross-sections drive both
-the ingot silhouette and its held/free collision shapes. A stroke counts once,
+anvil clamp or forge position override; released pieces collide with the hammer
+and qualify for the same three-hit order as suspended pieces. Five deforming
+cross-sections drive both the ingot silhouette and its held/free collision shapes. A stroke counts once,
 requires an incoming contact speed above 2 m/s, and must hit the workpiece rather
 than just the magnet or engine. Industrial collisions still shove and spin the
 rig, but never calculate integrity damage.
@@ -100,7 +102,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, 22 simulated flights, and a standalone build
+npm run verify   # syntax, tests, 23 simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```
@@ -119,7 +121,7 @@ use the dev server or build it rather than opening that template directly.
 | Q / E | Reel in / lower the cabin |
 | Mouse wheel / cable slider | Set the winch target |
 | Space | Precision flight |
-| Hold X / tool button | Energise magnet to attract/carry metal, or tip ladle right; release X to drop metal |
+| Hold J / tool button | Switch the normally-on magnet off to drop metal, or tip the ladle right |
 | R | Restart the current route |
 | Hold V | Paused route overview |
 | P / Escape | Pause / resume |
@@ -239,7 +241,7 @@ City regressions cross the old wrap boundary in both directions and check the
 real renderer. Guide tests cover contact geometry, both vehicle bodies, cable
 nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
 
-`npm run test:flights` completes 22 moving-stop, freight, and foundry jobs using normal analog
+`npm run test:flights` completes 23 moving-stop, freight, and foundry jobs using normal analog
 flight, winch and tool-button inputs. Every job must complete at full integrity.
 Passenger jobs must avoid damaging impacts; industrial jobs allow physical hits
 without integrity loss. The witnesses never teleport the rig or bypass service logic. These are playability
@@ -252,9 +254,10 @@ off the ground. This checks that the new mechanic supplies necessary work.
 
 Foundry witnesses fill real moulds, count real hammer strokes and machine contacts,
 release separate pieces into welding jigs, and set the qualified product down at
-Dispatch. They also check material caps and guard against contact-driven launches.
-Focused tests cover active pickup/release and momentum, permanent collision-mesh
-deformation, exactly three distinct downstroke contacts, rejected near-misses,
+Dispatch. An additional anvil flight leaves the ingot loose, forges it, picks it
+up again, and delivers it. They also check material caps and guard against
+contact-driven launches. Focused tests cover normally-on magnets, release momentum,
+loose-piece forging, permanent collision-mesh deformation, exactly three distinct downstroke contacts, rejected near-misses,
 fluid retention/spills, magnet selectivity, bounded neighbour search, machine
 timing, processing requirements, and renderer immutability.
 

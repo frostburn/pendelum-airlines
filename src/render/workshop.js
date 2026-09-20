@@ -52,7 +52,7 @@ export function drawWorkshop(ctx, sim, draw, time) {
     box(b.x - b.w / 2 + .05, b.y, b.w - .10, fill * .75, '#34484b');
     stripes(b.x - b.w / 2, b.y - .15, b.w);
     text(b.x, b.y + 1.75, `REFINERY · ${w.material.deposited} / ${config.quota}`, .32, edge);
-    text(b.x, b.y + 1.3, 'RELEASE X TO DROP', .20, '#7d7157');
+    text(b.x, b.y + 1.3, 'HOLD J TO DROP', .20, '#7d7157');
   }
   for (const tap of config.taps || []) {
     box(tap.x - 2.75, 0, 1.7, 4.6, '#8e6860', edge);
@@ -76,17 +76,18 @@ export function drawWorkshop(ctx, sim, draw, time) {
   w.hammers.forEach((h, i) => {
     if (h.warning) box(h.x + .7, h.y + .4, 2.2, 7.5, '#cf694227');
     box(h.x + .65, 9.05, 3.35, .32, steel, edge);
-    box(h.x + 1.58, h.y + .43, .43, 8.4 - h.y, '#768c8e');
+    box(h.x + 1.58, h.y + .18, .43, 8.4 - h.y, '#768c8e');
     const y = h.collider.y;
     box(h.x + .7, y, 2.2, .9, rust, edge);
     box(h.x + .64, y, 2.32, .18, '#a6b7b1', edge);
     stripes(h.x + .77, y + .49, 2.05, .25);
     circle(h.x + 3.63, 8.4, .14, h.warning ? '#f79257' : '#94b69a', edge);
     stripes(h.x - 1.1, h.y - .14, 1.65);
-    text(h.x - .2, h.y + 1.25, 'DANGLE INTO STROKE →', .22, edge);
+    text(h.x - .2, h.y + 1.25, 'WORKPIECE HERE →', .22, edge);
     text(h.x + 1.8, 10.0, `PRESS ${i + 1} · ${h.warning ? 'STAND CLEAR' : 'CYCLING'}`, .30, edge);
-    if (w.heldPiece && w.nextHammer(w.heldPiece) === i)
-      text(h.x - 1.7, h.y + 2.05, `${w.heldPiece.forge} / 3 GOOD HITS`, .30, '#a45736');
+    const part = w.heldPiece && w.nextHammer(w.heldPiece) === i ? w.heldPiece : w.pieceAtHammer(i);
+    if (part && w.nextHammer(part) === i)
+      text(h.x - 1.7, h.y + 2.05, `${part.forge} / 3 GOOD HITS`, .30, '#a45736');
   });
   for (const lathe of w.lathes) {
     box(lathe.x - 1.25, 0, 2.5, .4, steel, edge);
@@ -157,9 +158,9 @@ export function drawTool(ctx, sim, body, draw, ghost = false) {
     box(-.55, -.13, 1.1, .34, steel, edge);
     box(-.42, -.18, .84, .10, yellow, edge);
     for (const x of [-.30, 0, .30]) line([[x, -.11], [x + .10, .18]], rust, .065);
-    circle(0, .32, .09, w.action ? '#bde7aa' : '#96745c', edge);
+    circle(0, .32, .09, w.action ? '#96745c' : '#bde7aa', edge);
     if (w.heldPiece && !ghost) workpiece(ctx, {...w.heldPiece, x: .20, y: -.18, a: 0}, draw);
-    if (w.action) {
+    if (!w.action) {
       ctx.setLineDash([.09, .14]);
       ctx.beginPath(); ctx.ellipse(0, -.20, .9, .65, 0, Math.PI, Math.PI * 2);
       ctx.strokeStyle = '#719fa778'; ctx.lineWidth = .03; ctx.stroke(); ctx.setLineDash([]);

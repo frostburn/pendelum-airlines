@@ -37,8 +37,8 @@ const hammer = (x, period = 5.2, phase = 0) => ({x, y: 1.2, period, phase});
 export const metalRoutes = [
   workshop({
     name: 'A magnetic personality', sub: 'Sand is not on the purchase order.',
-    hint: 'Drag the magnet through the ore bed. Carry black magnetite to the refinery hopper and release X to drop it.',
-    tip: 'Hold X to energise the magnet and collect. Release X to drop the load. Only black grains count.',
+    hint: 'Drag the magnet through the ore bed. Carry black magnetite to the refinery hopper and hold J to drop it.',
+    tip: 'The magnet is on by default. Hold J to switch it off and drop the load; release J to collect again. Only black grains count.',
     work: {tool: 'magnet', goal: 'ore', quota: 12, pits: [{x: 10, y: 0, w: 7, count: 108}], bin: {x: 23, y: .55, w: 4}},
     gold: 65, silver: 110
   }),
@@ -52,27 +52,27 @@ export const metalRoutes = [
   }),
   workshop({
     name: 'Do not drink the orange', sub: 'One ladle. One mould. Several opportunities.',
-    hint: 'Hold the upright ladle below the furnace tap to fill it. Move to the mould, then hold X to tip to the right.',
-    tip: 'Collect at the glowing tap. Hold X to pour right; release to level the ladle. Spilled metal is lost, but the tap never runs out.',
+    hint: 'Hold the upright ladle below the furnace tap to fill it. Move to the mould, then hold J to tip to the right.',
+    tip: 'Collect at the glowing tap. Hold J to pour right; release to level the ladle. Spilled metal is lost, but the tap never runs out.',
     work: {tool: 'ladle', goal: 'cast', taps: [{x: 10, y: 4.1}], molds: [mold(23)]}, gold: 70, silver: 120
   }),
   workshop({
     name: 'Two moulds, one bad idea', sub: 'The second customer also wants metal.',
     hint: 'Cast two ingots. Pour only as much as each mould needs, return upright, and refill when necessary.',
-    tip: 'Release X early to stop a pour. Each mould must fill and cool; splashing across its rim does not count.',
+    tip: 'Release J early to stop a pour. Each mould must fill and cool; splashing across its rim does not count.',
     width: 43, work: {tool: 'ladle', goal: 'cast', taps: [{x: 10, y: 4.1}], molds: [mold(23, 20), mold(33, 20)]},
     gold: 115, silver: 190
   }),
   workshop({
     name: 'The hammer has right of way', sub: 'Your workpiece is welcome. Your rotors are not.',
-    hint: 'Hold X to attract the ingot, then dangle its right end into the hammer stroke. Three good hits will bend it into shape.',
-    tip: 'No clamps: the hammer knocks the load around. Hold X, pay out cable, and keep the flying bit clear. Release X at Dispatch.',
+    hint: 'Bring the ingot under the hammer. Keep it on the magnet or hold J to leave it on the anvil. Three good hits will bend it into shape.',
+    tip: 'The hammer knocks metal around, held or loose. Keep the flying bit clear, then collect the forged bar. Hold J at Dispatch.',
     work: {startPiece: blank, requires: {forge: 3}, hammers: [hammer(15)]}, gold: 65, silver: 110
   }),
   workshop({
     name: 'The double shift', sub: 'Left, right, left. Still only three blows.',
-    hint: 'Take one hit at press 1, one at press 2, then return to press 1 for the final blow. Keep X held as you carry the bent bar.',
-    tip: 'Red means the hammer is about to fall. Catch the free swing after each hit, then fly over the frame to the next press.',
+    hint: 'Take one hit at press 1, one at press 2, then return to press 1 for the final blow. Leave J released as you carry the bent bar.',
+    tip: 'Red means the hammer is about to fall. Both held and loose workpieces count. Collect the bar after each hit, then fly over the frame to the next press.',
     width: 49, work: {startPiece: blank, requires: {forge: 3}, hammerOrder: [0, 1, 0], hammers: [hammer(14, 4.8), hammer(31, 4.2, .4)]},
     gold: 110, silver: 185
   }),
@@ -86,13 +86,13 @@ export const metalRoutes = [
   workshop({
     name: 'Against the grain', sub: 'Hold it there. No, there.',
     hint: 'Push the workpiece against the left side of the moving belt. Keep contact until it shines, then deliver it.',
-    tip: 'The belt drags downward. Keep the rotors above the work and push sideways with the cable. Keep X held while working; release it at Dispatch.',
+    tip: 'The belt drags downward. Keep the rotors above the work and push sideways with the cable. The magnet stays on while you work. Hold J to release at Dispatch.',
     work: {startPiece: shaped, requires: {polish: 1}, belts: [{x: 18, y: 1.2, h: 3.7}]}, gold: 60, silver: 105
   }),
   workshop({
     name: 'Some assembly required', sub: 'The airline now ships in one piece.',
-    hint: 'Pick up each part, set it on a free welding-jig mark, and release X to drop it. Fetch the welded assembly and deliver.',
-    tip: 'Hold X to attract and carry a nearby part. Release X to let go. The jig welds only after both separate pieces arrive.',
+    hint: 'Pick up each part, set it on a free welding-jig mark, and hold J to drop it. Fetch the welded assembly and deliver.',
+    tip: 'The magnet attracts and carries nearby parts automatically. Hold J to let go. The jig welds only after both separate pieces arrive.',
     width: 42, work: {stocks: [{x: 9, y: 1.56, ...finished}, {x: 17, y: 3.56, ...finished}],
       jig: {x: 28, y: 1.2, count: 2}, requires: {assembled: 2}}, gold: 100, silver: 165
   }),

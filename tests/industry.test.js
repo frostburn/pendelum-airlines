@@ -37,28 +37,28 @@ test('magnet selects iron, releasing it removes payload mass, and sand cannot fu
   const s = new Sim(24), w = s.industry;
   w.material.rocks = [true, false].map((iron, id) => ({id, iron, x: s.cabin.x + id * .15, y: s.cabin.y - .30, r: .12, vx: 0, vy: 0}));
   const mass = s.cabin.m;
-  advance(s, .06, {action: true});
+  advance(s, .06);
   assert.equal(w.material.held().length, 1);
   assert.ok(w.material.held()[0].iron);
   assert.ok(s.cabin.m > mass);
-  advance(s, .06);
+  advance(s, .06, {action: true});
   assert.equal(w.material.held().length, 0);
   assert.equal(s.cabin.m, mass);
   assert.equal(w.material.deposited, 0);
   assert.ok(!s.done);
 });
 
-test('workpiece magnet starts off, actively attracts a loose ingot, and releases with its momentum', () => {
+test('workpiece magnet starts on, attracts without input, and releases with momentum while its key is held', () => {
   const s = new Sim(28), w = s.industry, p = w.pieces[0], c = s.cabin;
   assert.equal(w.heldPiece, null);
   Object.assign(c, {x: p.x - .20, y: p.y + 1.05, a: 0});
-  for (let i = 0; i < 30; i++) { w.beforeStep(s, {}, DT); w.afterStep(s, DT); }
-  assert.equal(w.heldPiece, null, 'proximity alone cannot energise a magnet');
+  for (let i = 0; i < 30; i++) { w.beforeStep(s, {action: true}, DT); w.afterStep(s, DT); }
+  assert.equal(w.heldPiece, null, 'holding the key keeps the magnet off');
   const floorY = p.y;
   for (let i = 0; i < 180 && !w.heldPiece; i++) {
     // This fixture holds the magnet in place, like the rotor holding altitude.
     c.vx = c.vy = 0;
-    w.beforeStep(s, {action: true}, DT); w.afterStep(s, DT);
+    w.beforeStep(s, {}, DT); w.afterStep(s, DT);
   }
   assert.ok(p.y > floorY + .03, 'the free ingot must move upward before capture');
   assert.equal(w.heldPiece, p);
@@ -66,7 +66,7 @@ test('workpiece magnet starts off, actively attracts a loose ingot, and releases
   w.afterStep(s, DT);
   Object.assign(c, {vx: 1.2, vy: .5, w: .8});
   const expected = {vx: c.vx - c.w * (p.y - c.y), vy: c.vy + c.w * (p.x - c.x)};
-  w.beforeStep(s, {}, DT);
+  w.beforeStep(s, {action: true}, DT);
   assert.equal(w.heldPiece, null); assert.equal(p.attached, false);
   assert.equal(p.vx, expected.vx); assert.equal(p.vy, expected.vy); assert.equal(p.w, c.w);
   w.updateMass(s); assert.equal(c.m, 2.5);
@@ -86,7 +86,7 @@ test('three physical hammer strikes bend the free rig and change held and loose 
     s.time = h.period * (stroke + .60);
     h.collider.y = hammerPose(h, s.time).bottom;
     const shape = structuredClone(p.colliders), startY = s.cabin.y;
-    for (let i = 0; i < 80 && p.forge === stroke; i++) s.step({action: true});
+    for (let i = 0; i < 80 && p.forge === stroke; i++) s.step({});
     assert.equal(p.forge, stroke + 1);
     assert.notDeepEqual(p.colliders, shape);
     assert.deepEqual(p.colliders, pieceSamples(p));
@@ -105,8 +105,50 @@ test('three physical hammer strikes bend the free rig and change held and loose 
   const held = w.samples().filter(sample => sample[3] === 'piece');
   p.colliders.forEach(([x, y, r], i) => assert.deepEqual(held[i], [x + .20, y - .18, r, 'piece']));
   const permanent = structuredClone(p.sections);
-  w.beforeStep(s, {}, DT); w.movePieces(s, DT);
+  w.beforeStep(s, {action: true}, DT); w.movePieces(s, DT);
   assert.deepEqual(p.sections, permanent, 'dropping the piece must preserve its dents');
+});
+
+test('a loose ingot on the anvil receives three real blows, deforms and remains collectible', () => {
+  const s = new Sim(28), w = s.industry, p = w.pieces[0], h = w.hammers[0];
+  Object.assign(p, {x: h.x + 1.65, y: h.y + .36});
+  const original = structuredClone(p.sections), hits = [];
+  assert.match(w.order(s).title, /loose workpiece/);
+  for (let i = 0; i < h.period * 3 / DT; i++) {
+    const previous = p.forge;
+    s.step({action: true});
+    assert.equal(w.heldPiece, null);
+    if (p.forge > previous) {
+      hits.push(s.time);
+      assert.ok(Math.abs(p.vy) > .5 || Math.abs(p.w) > .5, 'hammer must transfer momentum to loose metal');
+    }
+  }
+  assert.equal(p.forge, 3);
+  assert.equal(hits.length, 3);
+  assert.ok(hits[1] - hits[0] > h.period * .8 && hits[2] - hits[1] > h.period * .8);
+  assert.notDeepEqual(p.sections, original);
+  assert.deepEqual(p.colliders, pieceSamples(p));
+  assert.ok(meetsOrder(p, w.config.requires));
+  Object.assign(s.cabin, {x: p.x - .20, y: p.y + .55, a: 0, vx: 0, vy: 0});
+  w.beforeStep(s, {}, DT); w.afterStep(s, DT);
+  assert.equal(w.heldPiece, p, 'the forged loose ingot can be picked up again');
+  assert.equal(p.forge, 3);
+  assert.equal(s.hull, 100);
+});
+
+test('changing between held and loose during a stroke cannot count the same blow twice', () => {
+  const s = new Sim(28), w = s.industry, p = w.pieces[0], h = w.hammers[0];
+  Object.assign(p, {x: h.x + 1.65, y: h.y + .36});
+  while (!p.forge && s.time < h.period) s.step({action: true});
+  assert.equal(p.forge, 1);
+  const shape = structuredClone(p.sections);
+  const contact = {lx: .8, ly: .32, nx: 0, ny: -1, incoming: 8};
+  p.attached = true; w.heldPiece = p;
+  w.strike(s, p, 0, contact, 0);
+  p.attached = false; w.heldPiece = null;
+  w.strike(s, p, 0, contact, 0);
+  assert.equal(p.forge, 1);
+  assert.deepEqual(p.sections, shape);
 });
 
 test('upright ladle holds fluid, tipping spills it through the rim, and waste stays bounded', () => {
@@ -149,13 +191,13 @@ test('hammer motion repeats without mutating its anvil height or phase offset', 
   for (const config of before) for (const t of [0, .3, 2, 7, 80]) {
     const a = hammerPose(config, t), b = hammerPose(config, t + config.period);
     assert.ok(Math.abs(a.bottom - b.bottom) < 1e-10);
-    assert.ok(a.bottom >= config.y + .43 - 1e-9 && a.bottom <= config.y + 6.63 + 1e-9);
+    assert.ok(a.bottom >= config.y + .18 - 1e-9 && a.bottom <= config.y + 6.63 + 1e-9);
   }
   advance(s, 3);
   assert.deepEqual(s.level.industry.hammers, before);
   s.industry.hammers.forEach((h, i) => {
     assert.equal(h.y, before[i].y); assert.equal(h.phase, before[i].phase);
-    assert.ok(h.collider.y >= h.y + .43 && h.collider.y <= h.y + 6.63);
+    assert.ok(h.collider.y >= h.y + .18 && h.collider.y <= h.y + 6.63);
   });
   assert.equal(s.industry.pieces[0].forge, 0, 'cycling a press does not forge a distant blank');
 });
