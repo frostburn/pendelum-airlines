@@ -37,8 +37,8 @@ const hammer = (x, period = 5.2, phase = 0) => ({x, y: 1.2, period, phase});
 export const metalRoutes = [
   workshop({
     name: 'A magnetic personality', sub: 'Sand is not on the purchase order.',
-    hint: 'Drag the magnet through the ore bed. Carry black magnetite to the refinery hopper and hold X to release it.',
-    tip: 'The magnet is on by default. Hold X to switch it off; release X to collect again. Only black grains count.',
+    hint: 'Drag the magnet through the ore bed. Carry black magnetite to the refinery hopper and release X to drop it.',
+    tip: 'Hold X to energise the magnet and collect. Release X to drop the load. Only black grains count.',
     work: {tool: 'magnet', goal: 'ore', quota: 12, pits: [{x: 10, y: 0, w: 7, count: 108}], bin: {x: 23, y: .55, w: 4}},
     gold: 65, silver: 110
   }),
@@ -65,15 +65,15 @@ export const metalRoutes = [
   }),
   workshop({
     name: 'The hammer has right of way', sub: 'Your workpiece is welcome. Your rotors are not.',
-    hint: 'Set the ingot on the striped anvil mark. Its jaws hold it for three hammer strokes. Keep the engine left of the hammer.',
-    tip: 'The cable stays attached in the forge. Use the long cable to keep the flying bit out of the red hammer lane. Deliver with X.',
+    hint: 'Hold X to attract the ingot, then dangle its right end into the hammer stroke. Three good hits will bend it into shape.',
+    tip: 'No clamps: the hammer knocks the load around. Hold X, pay out cable, and keep the flying bit clear. Release X at Dispatch.',
     work: {startPiece: blank, requires: {forge: 3}, hammers: [hammer(15)]}, gold: 65, silver: 110
   }),
   workshop({
-    name: 'The double shift', sub: 'Three blows here. Three blows over there.',
-    hint: 'Forge the bar at both anvils. Each press stamps it three times; a second visit to the same press cannot replace the other.',
-    tip: 'Red means the hammer is about to fall. The jaws release after three blows; lift out and go over the machine frame.',
-    width: 49, work: {startPiece: blank, requires: {forge: 6}, hammers: [hammer(14, 4.8), hammer(31, 4.2, .4)]},
+    name: 'The double shift', sub: 'Left, right, left. Still only three blows.',
+    hint: 'Take one hit at press 1, one at press 2, then return to press 1 for the final blow. Keep X held as you carry the bent bar.',
+    tip: 'Red means the hammer is about to fall. Catch the free swing after each hit, then fly over the frame to the next press.',
+    width: 49, work: {startPiece: blank, requires: {forge: 3}, hammerOrder: [0, 1, 0], hammers: [hammer(14, 4.8), hammer(31, 4.2, .4)]},
     gold: 110, silver: 185
   }),
   workshop({
@@ -86,13 +86,13 @@ export const metalRoutes = [
   workshop({
     name: 'Against the grain', sub: 'Hold it there. No, there.',
     hint: 'Push the workpiece against the left side of the moving belt. Keep contact until it shines, then deliver it.',
-    tip: 'The belt drags downward. Keep the rotors above the work and push sideways with the cable. Hold X only at Dispatch.',
+    tip: 'The belt drags downward. Keep the rotors above the work and push sideways with the cable. Keep X held while working; release it at Dispatch.',
     work: {startPiece: shaped, requires: {polish: 1}, belts: [{x: 18, y: 1.2, h: 3.7}]}, gold: 60, silver: 105
   }),
   workshop({
     name: 'Some assembly required', sub: 'The airline now ships in one piece.',
-    hint: 'Pick up each part, set it on a free welding-jig mark, and hold X to release it. Fetch the welded assembly and deliver.',
-    tip: 'The magnetic clamp grabs nearby parts automatically. Hold X to let go. The jig welds only after both separate pieces arrive.',
+    hint: 'Pick up each part, set it on a free welding-jig mark, and release X to drop it. Fetch the welded assembly and deliver.',
+    tip: 'Hold X to attract and carry a nearby part. Release X to let go. The jig welds only after both separate pieces arrive.',
     width: 42, work: {stocks: [{x: 9, y: 1.56, ...finished}, {x: 17, y: 3.56, ...finished}],
       jig: {x: 28, y: 1.2, count: 2}, requires: {assembled: 2}}, gold: 100, silver: 165
   }),
@@ -106,7 +106,7 @@ export const metalRoutes = [
   }),
   workshop({
     name: 'From orange to shiny', sub: 'Please keep the entire factory attached.',
-    hint: 'Cast an ingot. Return the empty ladle to the tool rack to exchange it for a magnetic clamp, then forge, turn, polish and deliver.',
+    hint: 'Cast an ingot. Return the empty ladle to the tool rack to exchange it for a workpiece magnet, then forge, turn, polish and deliver.',
     tip: 'Follow the work order. Return to the Tool rack after casting; the empty ladle changes there. The cast ingot is a real pickup.',
     width: 57, work: {tool: 'ladle', taps: [{x: 9, y: 4.1}], molds: [mold(17)],
       hammers: [hammer(27)], lathes: [{x: 38, y: 1.25, r: .8, spin: -3}], belts: [{x: 46, y: 1.2, h: 3.7}],

@@ -90,7 +90,7 @@ export class MaterialField {
     }
     let held = this.held().length;
     for (const p of this.rocks) {
-      if (!p.held && p.iron && work.tool === 'magnet' && !work.action && held < MATERIAL_LIMITS.held) {
+      if (!p.held && p.iron && work.tool === 'magnet' && work.action && held < MATERIAL_LIMITS.held) {
         const face = worldPoint(c, 0, -.27), dx = face.x - p.x, dy = face.y - p.y, d = Math.hypot(dx, dy);
         const local = localPoint(c, p.x, p.y);
         if (d < .62 || circleBox(local.x, local.y, p.r + .08, MAGNET)) { p.held = true; held++; }

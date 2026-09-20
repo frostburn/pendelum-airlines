@@ -77,18 +77,23 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
    Every world has twelve selectable tiles on one screen, with no scrolling.
    Switch worlds by pointer and keyboard, and verify focus remains on the chosen
    world button. Best times and the current-route highlight stay with their IDs.
-2. Drag the magnet through each ore bed. Black grains collect; sand moves aside.
-   Observe the mass and swing change. Hold X or the tool button over the hopper:
+2. Hold X and drag the magnet through each ore bed. Black grains collect; sand moves aside.
+   Observe the mass and swing change. Release X or the tool button over the hopper:
    grains should detach and fall, and only grains entering it should count.
 3. Fill the ladle below the tap, then back out before climbing. Fly abruptly to
    slosh or spill. Hold X to tip over a mould; release to level the vessel. Inspect
    the connected liquid lobes, overflow, cooling, and the resulting physical ingot.
    Refill after a spill. Both moulds must be complete on the two-mould job.
-4. Pay out cable and approach an anvil from its left. Set the bar on its mark.
-   Confirm the jaws hold it while the engine can move on the still-attached cable.
-   Stay clear for three strokes. Deliberately put the engine in the hammer lane
-   on another attempt; it must collide and lose integrity. Each press is required
-   on The double shift, and returning to the first cannot replace the second.
+4. Start a forging job with X released: the ingot stays loose. Hold X above it
+   to attract and carry it; release X and confirm it falls. Pick it up again, pay
+   out cable, and dangle the end into the hammer stroke. There must be no anvil
+   jaws or fixed cargo position. Each downstroke shoves/spins the hanging load
+   and makes a permanent bend/dent, including in its collision outline. Three
+   good hits finish forging; lingering in contact must not add extra hits. Misses,
+   slow touches and blows to the magnet/engine alone must not count. Deliberately
+   put the engine in the lane: it must get shoved without losing integrity. The
+   double shift requires three blows in press order 1 → 2 → 1. Release/regrab the
+   bent ingot and check it keeps its shape and can be delivered normally.
 5. Maintain contact with the lathe and the left face of the belt. Confirm the
    moving surfaces pull the payload; shaping/polishing stops when contact ends.
    The workpiece changes profile and shine. An unfinished part cannot be dispatched.

@@ -1,9 +1,9 @@
 import { clamp, wrap } from '#game/math';
 import { MaterialField, CUP_WALLS } from '#game/industry/materials';
-import { circleBox, worldPoint } from '#game/industry/geometry';
+import { circleBox, worldPoint, localPoint } from '#game/industry/geometry';
+import { blankSections, pieceSamples, pieceBottom, deformPiece } from '#game/industry/workpiece';
 
 export const PIECE_LIMIT = 8;
-const pieceSamples = [[-.43, -.43, .135], [.85, -.43, .135], [-.43, .10, .15], [.85, .10, .15], [0, .06, .32], [0, .46, .14]];
 const cupSamples = CUP_WALLS.flatMap(w => [[w.x + .08, w.y + .08, .08], [w.x + w.w - .08, w.y + w.h - .08, .08]]);
 const magnetSamples = [[-.45, 0, .18], [.45, 0, .18], [0, .40, .19]];
 export const meetsOrder = (piece, requires = {}) => Object.entries(requires).every(([key, value]) => (piece[key] || 0) >= value - .0001);
@@ -20,7 +20,7 @@ export class Workshop {
     this.config = sim.level.industry;
     this.tool = this.config.tool;
     this.action = false; this.tick = 0; this.pieces = []; this.serial = 0;
-    this.heldPiece = null; this.pin = null; this.sparks = []; this.dockTime = 0;
+    this.heldPiece = null; this.sparks = []; this.dockTime = 0;
     this.material = new MaterialField(this.config, sim.index);
     this.molds = (this.config.molds || []).map(m => ({...m, fill: 0, cool: 0, ready: false}));
     this.hammers = (this.config.hammers || []).map((h, i) => {
@@ -33,20 +33,21 @@ export class Workshop {
     this.jig = this.config.jig ? {...this.config.jig, slots: [], weld: 0, complete: false} : null;
     for (const stock of this.config.stocks || []) this.addPiece(stock);
     if (this.config.startPiece) {
-      this.heldPiece = this.addPiece({x: sim.cabin.x, y: sim.cabin.y, ...this.config.startPiece});
-      this.heldPiece.attached = true;
+      this.addPiece({x: sim.cabin.x + .20, y: this.config.rack.y + .36, ...this.config.startPiece});
     }
     this.updateMass(sim);
   }
   addPiece(spec) {
     if (this.pieces.length >= PIECE_LIMIT) return null;
     const p = {id: this.serial++, x: 0, y: 0, a: 0, vx: 0, vy: 0, w: 0,
-      forge: 0, cut: 0, polish: 0, assembled: 0, stamps: {}, attached: false, settle: 0, ...spec};
+      forge: 0, cut: 0, polish: 0, assembled: 0, stamps: {}, lastStroke: {}, sections: blankSections(spec.assembled), attached: false, settle: 0, ...spec};
+    p.colliders = pieceSamples(p);
     this.pieces.push(p); return p;
   }
   samples() {
     if (this.tool === 'ladle') return cupSamples;
-    if (this.heldPiece) return pieceSamples;
+    if (this.heldPiece) return this.heldPiece.rigSamples ||= [...magnetSamples,
+      ...this.heldPiece.colliders.map(([x, y, r]) => [x + .20, y - .18, r, 'piece'])];
     return magnetSamples;
   }
   updateMass(sim) {
@@ -69,48 +70,67 @@ export class Workshop {
       // space and must cross its rotating rim to leave it.
       const target = this.action ? -2.05 : 0;
       c.w += clamp(wrap(target - c.a) * 100 - c.w * 18, -80, 80) * dt;
-    } else if (this.action && !this.pin) {
+    } else if (!this.action) {
       this.material.release(c);
       if (this.heldPiece) {
         const p = this.heldPiece;
-        p.attached = false; p.vx = c.vx; p.vy = c.vy; p.w = c.w;
+        p.attached = false; p.vx = c.vx - c.w * (p.y - c.y); p.vy = c.vy + c.w * (p.x - c.x); p.w = c.w;
         this.heldPiece = null;
       }
     }
-    this.hammers.forEach((h, i) => {
+    this.hammers.forEach(h => {
       const previous = h.collider.y, pose = hammerPose(h, sim.time);
+      const stroke = Math.floor(sim.time / h.period + (h.phase || 0));
+      if (h.rebound?.stroke === stroke) {
+        // A power hammer rebounds after impact instead of driving an impossible
+        // rigid overlap all the way into the anvil. The cargo stays unconstrained.
+        pose.bottom = Math.max(pose.bottom, Math.min(h.y + 6.63,
+          h.rebound.bottom + (sim.time - h.rebound.time) * 5));
+        pose.warning = false;
+      }
       Object.assign(h, pose);
       Object.assign(h.collider, {y: pose.bottom, vy: (pose.bottom - previous) / dt});
-      if (this.pin?.hammer === i && this.heldPiece) {
-        const p = this.heldPiece;
-        // Powered jaws centre the blank gradually, without teleporting a rig
-        // through a constraint and turning overlap correction into velocity.
-        this.pin.x += clamp(h.x - this.pin.x, -dt * 1.2, dt * 1.2);
-        if (previous > h.y + .86 && pose.bottom <= h.y + .86 && Math.abs(this.pin.x - h.x) < .08) {
-          p.stamps[i] = Math.min(3, (p.stamps[i] || 0) + 1);
-          p.forge = Object.values(p.stamps).reduce((sum, n) => sum + n, 0);
-          this.burst(h.x + .85, h.y + .6, '#ffb449', 18);
-          sim.events.push({type: 'machine', message: `Hammer ${p.stamps[i]} / 3. Keep the engine clear.`});
-        }
-        if (p.stamps[i] >= 3 && pose.bottom > h.y + 1.5) {
-          this.pin = null;
-          sim.events.push({type: 'machine', message: 'Anvil jaws released. Lift the workpiece out.'});
-        }
-      }
     });
   }
-  constrain(sim) {
-    if (this.pin) Object.assign(sim.cabin, {x: this.pin.x, y: this.pin.y, a: 0});
+  nextHammer(piece) {
+    return piece.forge >= 3 ? undefined : (this.config.hammerOrder || [0, 0, 0])[piece.forge];
   }
-  skipCollision(body, terrain) {
-    // The press deforms the clamped bar. Its face still collides with the engine
-    // and cable; only the blank held by this anvil is exempt from rigid overlap.
-    return body.kind === 'cabin' && this.pin && terrain.hammer === this.pin.hammer;
+  forge(sim) {
+    const p = this.heldPiece;
+    if (!p || p.assembled || p.forge >= 3) return;
+    const index = this.nextHammer(p), h = this.hammers[index];
+    if (!h || h.collider.vy >= -1) return;
+    const stroke = Math.floor(sim.time / h.period + (h.phase || 0));
+    if (p.lastStroke[index] === stroke) return;
+    const hit = sim.cabin.contacts.filter(c => c.part === 'piece' &&
+      sim.terrain[c.terrain] === h.collider && c.ny < -.35 && c.incoming > 2)
+      .sort((a, b) => b.incoming - a.incoming)[0];
+    if (!hit) return;
+    // A real downstroke contact already applies its impulse in the rig solver.
+    // There is no anvil lock or position override. One stroke counts once.
+    p.lastStroke[index] = stroke;
+    p.stamps[index] = (p.stamps[index] || 0) + 1;
+    p.forge++;
+    deformPiece(p, hit, sim.cabin.a);
+    p.rigSamples = null;
+    const q = worldPoint(sim.cabin, hit.lx, hit.ly);
+    this.burst(q.x, q.y, '#ffb449', 18);
+    sim.events.push({type: 'machine', message: `Clang. ${p.forge} / 3 good hits. ${p.forge === 3 ? 'Lift the bent workpiece clear.' : 'Catch the swing and bring it back.'}`});
+  }
+  reboundHammers(sim) {
+    for (const h of this.hammers) {
+      if (h.collider.vy >= -1) continue;
+      const hit = [sim.cabin, sim.engine].some(body => body.contacts.some(c =>
+        sim.terrain[c.terrain] === h.collider && c.ny < -.35 && c.incoming > 2));
+      if (hit) h.rebound = {stroke: Math.floor(sim.time / h.period + (h.phase || 0)),
+        time: sim.time, bottom: h.collider.y};
+    }
   }
   afterStep(sim, dt) {
     this.tick++;
     const c = sim.cabin, config = this.config;
-    if (this.pin) { c.vx = c.vy = c.w = 0; }
+    this.forge(sim);
+    this.reboundHammers(sim);
     if (this.heldPiece) {
       const q = worldPoint(c, .20, -.18);
       Object.assign(this.heldPiece, q, {a: c.a, vx: c.vx, vy: c.vy, w: c.w});
@@ -138,32 +158,26 @@ export class Workshop {
         this.dockTime += dt;
         if (this.dockTime > .65) {
           this.tool = 'hook';
-          sim.events.push({type: 'machine', message: 'Magnetic clamp fitted. Pick up the cooled casting.'});
+          sim.events.push({type: 'machine', message: 'Workpiece magnet fitted. Pick up the cooled casting.'});
         }
       } else this.dockTime = 0;
     }
-    if (this.tool === 'hook' && !this.action && !this.heldPiece) {
+    if (this.tool === 'hook' && this.action && !this.heldPiece) {
       const p = this.pieces.find(p => !p.attached && p.jigSlot === undefined && !p.delivered &&
         Math.abs(c.x + .20 - p.x) < .55 && c.y > p.y + .36 && c.y < p.y + .94 &&
         Math.hypot(c.vx - p.vx, c.vy - p.vy) < 1.6);
       if (p) {
         p.attached = true; this.heldPiece = p;
         sim.stats.pickups++; this.updateMass(sim);
-        sim.events.push({type: 'machine', message: p.assembled ? 'Assembly attached. Take it to Dispatch.' : 'Workpiece attached. Hold X to release.'});
+        sim.events.push({type: 'machine', message: p.assembled ? 'Assembly attached. Take it to Dispatch.' : 'Magnet holding. Keep X held; release X to drop.'});
       }
     }
     const p = this.heldPiece;
     if (p && !p.assembled) {
-      if (!this.pin && p.forge < this.hammers.length * 3) this.hammers.some((h, i) => {
-        if ((p.stamps[i] || 0) >= 3 || Math.abs(c.x - h.x) > .48 || Math.abs(c.y - .565 - h.y) > .22 ||
-            Math.abs(c.a) > .35 || Math.hypot(c.vx, c.vy) > 1.6) return false;
-        this.pin = {hammer: i, x: c.x, y: h.y + .565};
-        sim.events.push({type: 'machine', message: 'Anvil clamped. Cable remains attached. Keep left of the hammer!'});
-        return true;
-      });
-      const contacts = c.contacts.filter(contact => contact.ly < .25).map(contact => sim.terrain[contact.terrain]);
-      if (contacts.some(t => t?.machine === 'lathe') && (!this.hammers.length || p.forge >= this.hammers.length * 3) && p.cut < 1) {
+      const contacts = c.contacts.filter(contact => contact.part === 'piece').map(contact => sim.terrain[contact.terrain]);
+      if (contacts.some(t => t?.machine === 'lathe') && (!this.hammers.length || p.forge >= 3) && p.cut < 1) {
         p.cut = Math.min(1, p.cut + dt / 3.5);
+        p.colliders = pieceSamples(p); p.rigSamples = null;
         if (this.tick % 18 === 0) this.burst(c.x + .5, c.y - .4, '#ddbd7f', 3);
         if (p.cut === 1) sim.events.push({type: 'machine', message: 'Turning complete. The blank is now a shaped shaft.'});
       }
@@ -177,7 +191,7 @@ export class Workshop {
     if (config.goal === 'deliver') for (const part of this.pieces) {
       const out = config.output;
       if (!part.attached && part.jigSlot === undefined && meetsOrder(part, config.requires) &&
-          Math.abs(part.x - out.x) < out.w / 2 - .8 && Math.abs(part.y - .36 - out.y) < .16 &&
+          Math.abs(part.x - out.x) < out.w / 2 - .8 && Math.abs(pieceBottom(part) - out.y) < .16 &&
           Math.hypot(part.vx, part.vy) < .65) {
         part.settle += dt;
         if (part.settle > .55) { part.delivered = true; this.complete(sim); }
@@ -187,11 +201,25 @@ export class Workshop {
   movePieces(sim, dt) {
     for (const p of this.pieces) {
       if (p.attached || p.jigSlot !== undefined || p.delivered) continue;
+      if (this.action && this.tool === 'hook' && !this.heldPiece) {
+        const q = localPoint(sim.cabin, p.x, p.y);
+        const dx = sim.cabin.x + .20 - p.x, dy = sim.cabin.y - .48 - p.y;
+        const distance = Math.hypot(dx, dy);
+        // Energised magnets pull from above. A bounded spring draws the loose
+        // part in before capture; an unpowered head cannot pick anything up.
+        if (q.y < -.28 && distance < 1.25) {
+          const ax = clamp(dx * 24 - (p.vx - sim.cabin.vx) * 6, -20, 20);
+          const ay = clamp(dy * 24 - (p.vy - sim.cabin.vy) * 6 + 9.81, -20, 24);
+          p.vx += ax * dt; p.vy += ay * dt;
+          sim.cabin.vx -= ax * 3.5 / sim.cabin.m * dt;
+          sim.cabin.vy -= ay * 3.5 / sim.cabin.m * dt;
+        }
+      }
       p.vy -= 9.81 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.a += p.w * dt;
       for (const t of sim.terrain) {
         if (!t.w || t.hammer !== undefined) continue;
-        for (const [lx, ly] of [[-.56, -.28], [.56, -.28], [-.56, .28], [.56, .28]]) {
-          const q = worldPoint(p, lx, ly), hit = circleBox(q.x, q.y, .08, t);
+        for (const [lx, ly, r] of p.colliders) {
+          const q = worldPoint(p, lx, ly), hit = circleBox(q.x, q.y, r, t);
           if (!hit) continue;
           p.x += hit.nx * hit.depth; p.y += hit.ny * hit.depth;
           const vn = p.vx * hit.nx + p.vy * hit.ny;
@@ -210,8 +238,8 @@ export class Workshop {
       if (p.attached || p.jigSlot !== undefined || p.assembled || !meetsOrder(p, j.requires)) continue;
       for (let slot = 0; slot < j.count; slot++) {
         const x = this.slotX(slot);
-        if (j.slots[slot] !== undefined || Math.abs(p.x - x) > .64 || Math.abs(p.y - j.y - .36) > .20 || Math.hypot(p.vx, p.vy) > 1.2) continue;
-        Object.assign(p, {x, y: j.y + .36, a: 0, vx: 0, vy: 0, w: 0, jigSlot: slot});
+        if (j.slots[slot] !== undefined || Math.abs(p.x - x) > .64 || Math.abs(pieceBottom(p) - j.y) > .20 || Math.hypot(p.vx, p.vy) > 1.2) continue;
+        Object.assign(p, {x, y: j.y - Math.min(...p.colliders.map(([, y, r]) => y - r)), a: 0, vx: 0, vy: 0, w: 0, jigSlot: slot});
         j.slots[slot] = p.id;
         sim.events.push({type: 'machine', message: `Jig clamped part ${j.slots.filter(id => id !== undefined).length} / ${j.count}.`});
         break;
@@ -240,11 +268,11 @@ export class Workshop {
     if (c.goal === 'ore') {
       const held = this.material.held().length;
       const destination = held ? c.bin : c.pits.find(pit => this.material.rocks.some(r => r.iron && !r.held && Math.abs(r.x - pit.x) < pit.w / 2 + 1)) || c.pits[0];
-      return target(held ? 'Refinery hopper · hold X to release' : 'Rake magnetite from the sand',
-        `${this.material.deposited} / ${c.quota} refined · ${held} / 28 on magnet · hold X: magnet OFF`, destination.x, destination.y + 1, this.material.deposited / c.quota, held ? 'Refinery' : 'Ore bed');
+      return target(held ? 'Refinery hopper · release X to drop' : 'Rake magnetite from the sand',
+        `${this.material.deposited} / ${c.quota} refined · ${held} / 28 on magnet · hold X: magnet ON`, destination.x, destination.y + 1, this.material.deposited / c.quota, held ? 'Refinery' : 'Ore bed');
     }
     if (this.tool === 'ladle') {
-      if (this.molds.every(m => m.ready)) return target('Return to Tool rack', 'Land upright to exchange the ladle for a magnetic clamp.', c.rack.x, c.rack.y, this.dockTime / .65, 'Tool rack');
+      if (this.molds.every(m => m.ready)) return target('Return to Tool rack', 'Land upright to exchange the ladle for a workpiece magnet.', c.rack.x, c.rack.y, this.dockTime / .65, 'Tool rack');
       const m = this.molds.find(m => !m.ready), amount = this.material.contained(sim.cabin).length;
       const pouring = amount >= 12 || this.action || m.fill >= m.capacity;
       const dest = pouring ? m : c.taps[0];
@@ -254,27 +282,28 @@ export class Workshop {
     if (!p) {
       if (this.jig && !this.jig.complete && this.jig.weld) return target('Welding in progress', 'The jig releases the assembly when the arc stops.', this.jig.x, this.jig.y, this.jig.weld / 2.4, 'Welding jig');
       const stock = this.pieces.find(p => p.jigSlot === undefined && !p.delivered);
-      return target(stock?.assembled ? 'Collect the welded assembly' : 'Pick up a workpiece', 'Lower the magnetic clamp onto the part. Release X to grip.', stock?.x ?? c.rack.x, stock?.y ?? c.rack.y);
+      return target(stock?.assembled ? 'Collect the welded assembly' : 'Pick up a workpiece', 'Lower the magnet above the part. Hold X to attract and carry it.', stock?.x ?? c.rack.x, stock?.y ?? c.rack.y);
     }
     if (!p.assembled) {
-      const h = p.forge < this.hammers.length * 3 && this.hammers.find((_, i) => (p.stamps[i] || 0) < 3);
-      if (h) return target(this.pin ? 'Anvil locked · keep engine clear' : 'Set the ingot on the anvil mark',
-        `${p.forge} / ${this.hammers.length * 3} hammer blows · the cable stays attached`, h.x, h.y, p.forge / (this.hammers.length * 3), 'Anvil');
+      const h = this.hammers[this.nextHammer(p)];
+      if (h) return target('Dangle the ingot into the hammer stroke',
+        `${p.forge} / 3 good hits · hold X · keep the flying bit clear of press ${this.nextHammer(p) + 1}`,
+        h.x, h.y + 2, p.forge / 3, 'Hammer');
       if (this.lathes.length && p.cut < 1) return target('Hold the workpiece on the lathe', 'The rotating cutter pulls sideways. Keep the blank in contact.', this.lathes[0].x, this.lathes[0].y + 1, p.cut, 'Lathe');
       if (c.belts?.length && p.polish < 1) return target('Push the workpiece into the belt', 'Use the left face. Counter its downward pull until polished.', c.belts[0].x, c.belts[0].y + 1.5, p.polish, 'Polishing belt');
       if (this.jig) {
         const slot = Array.from({length: this.jig.count}, (_, i) => i).find(i => this.jig.slots[i] === undefined) ?? 0;
-        return target('Welding jig · release on a free mark', 'Hold X while placing this part, then bring the next one.', this.slotX(slot), this.jig.y, 0, 'Welding jig');
+        return target('Welding jig · release on a free mark', 'Release X to place this part, then bring the next one.', this.slotX(slot), this.jig.y, 0, 'Welding jig');
       }
     }
-    return target('Dispatch · set down and hold X', 'Release the finished work onto the shipping platform.', c.output.x, c.output.y, 1, 'Dispatch');
+    return target('Dispatch · set down and release X', 'Release the finished work onto the shipping platform.', c.output.x, c.output.y, 1, 'Dispatch');
   }
   snapshot() {
     return {tool: this.tool, ore: this.material.deposited, heldOre: this.material.held().length,
       liquid: this.material.liquid.length, spilled: this.material.spilled,
       molds: this.molds.map(({fill, capacity, ready}) => ({fill, capacity, ready})),
-      heldPiece: this.heldPiece?.id ?? null, pin: this.pin ? {...this.pin} : null,
-      pieces: this.pieces.map(p => ({id: p.id, x: p.x, y: p.y, attached: p.attached, forge: p.forge, cut: p.cut, polish: p.polish, assembled: p.assembled, jigSlot: p.jigSlot})),
+      heldPiece: this.heldPiece?.id ?? null, active: this.action,
+      pieces: this.pieces.map(p => ({id: p.id, x: p.x, y: p.y, attached: p.attached, forge: p.forge, sections: p.sections.map(s => ({...s})), cut: p.cut, polish: p.polish, assembled: p.assembled, jigSlot: p.jigSlot})),
       metrics: {...this.material.metrics}};
   }
 }

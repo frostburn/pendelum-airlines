@@ -1,9 +1,10 @@
 import { clamp } from '#game/math';
+import { pieceOutline, machinedSections } from '#game/industry/workpiece';
 import { CUP_WALLS } from '#game/industry/materials';
 
 const steel = '#526971', edge = '#293f46', light = '#a2b7b5', rust = '#bf744c', yellow = '#e8b459';
 
-function workpiece(ctx, p, {box, poly, circle, line}) {
+function workpiece(ctx, p, {poly, circle, line}) {
   ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
   if (p.assembled) {
     poly([[-.64, -.3], [.63, -.3], [.63, -.08], [-.38, .02], [-.38, .32], [-.64, .32]], light, edge);
@@ -15,14 +16,14 @@ function workpiece(ctx, p, {box, poly, circle, line}) {
     }
     line([[-.3, -.20], [.0, -.12]], '#eff2cb', .07);
   } else {
-    const flat = Math.min(1, p.forge / 3), cut = p.cut || 0;
-    const color = p.polish > .8 ? '#d7e4db' : p.polish > .2 ? '#9bb4b5' : flat ? '#788c91' : '#a87551';
-    const top = .32 - flat * .05, waist = top - cut * .15;
-    poly([[-.65, -.28], [-.54, -.35], [.54, -.35], [.65, -.26], [.65, top], [.40, top],
-      [.31, waist], [-.31, waist], [-.40, top], [-.65, top]], color, edge, .045);
-    box(-.49, -.26, .95, .06, p.polish ? '#f7f2ce' : '#556b70');
-    if (cut > .02) for (const x of [-.39, .37]) line([[x, -.30], [x, top]], light, .035);
-    if (p.polish > .1) line([[-.38, .01], [.32, .01]], `rgba(247,250,221,${p.polish})`, .035);
+    const cut = p.cut || 0;
+    const color = p.polish > .8 ? '#d7e4db' : p.polish > .2 ? '#9bb4b5' : p.forge ? '#788c91' : '#a87551';
+    poly(pieceOutline(p), color, edge, .045);
+    const sections = machinedSections(p), spine = sections.map(v => [v.x, (v.lo + v.hi) / 2]);
+    line(spine, p.polish ? '#f7f2ce' : '#556b70', .055);
+    if (cut > .02) for (const v of sections.slice(1, -1))
+      line([[v.x, v.lo + .04], [v.x, v.hi - .04]], light, .025 + cut * .025);
+    if (p.polish > .1) line(spine.map(([x, y]) => [x, y + .06]), `rgba(247,250,221,${p.polish})`, .035);
   }
   ctx.restore();
 }
@@ -51,7 +52,7 @@ export function drawWorkshop(ctx, sim, draw, time) {
     box(b.x - b.w / 2 + .05, b.y, b.w - .10, fill * .75, '#34484b');
     stripes(b.x - b.w / 2, b.y - .15, b.w);
     text(b.x, b.y + 1.75, `REFINERY · ${w.material.deposited} / ${config.quota}`, .32, edge);
-    text(b.x, b.y + 1.3, 'HOLD X TO RELEASE', .20, '#7d7157');
+    text(b.x, b.y + 1.3, 'RELEASE X TO DROP', .20, '#7d7157');
   }
   for (const tap of config.taps || []) {
     box(tap.x - 2.75, 0, 1.7, 4.6, '#8e6860', edge);
@@ -82,11 +83,10 @@ export function drawWorkshop(ctx, sim, draw, time) {
     stripes(h.x + .77, y + .49, 2.05, .25);
     circle(h.x + 3.63, 8.4, .14, h.warning ? '#f79257' : '#94b69a', edge);
     stripes(h.x - 1.1, h.y - .14, 1.65);
-    const clamped = w.pin?.hammer === i;
-    for (const dx of [-.64, .49]) box(h.x + dx, h.y, .16, clamped ? .38 : .12, yellow, edge);
-    text(h.x - .08, h.y + 1.45, 'SET BAR HERE ↓', .22, edge);
+    text(h.x - .2, h.y + 1.25, 'DANGLE INTO STROKE →', .22, edge);
     text(h.x + 1.8, 10.0, `PRESS ${i + 1} · ${h.warning ? 'STAND CLEAR' : 'CYCLING'}`, .30, edge);
-    if (clamped) text(h.x - .2, h.y + 2.05, `${w.heldPiece?.stamps[i] || 0} / 3`, .35, '#a45736');
+    if (w.heldPiece && w.nextHammer(w.heldPiece) === i)
+      text(h.x - 1.7, h.y + 2.05, `${w.heldPiece.forge} / 3 GOOD HITS`, .30, '#a45736');
   });
   for (const lathe of w.lathes) {
     box(lathe.x - 1.25, 0, 2.5, .4, steel, edge);
@@ -157,9 +157,9 @@ export function drawTool(ctx, sim, body, draw, ghost = false) {
     box(-.55, -.13, 1.1, .34, steel, edge);
     box(-.42, -.18, .84, .10, yellow, edge);
     for (const x of [-.30, 0, .30]) line([[x, -.11], [x + .10, .18]], rust, .065);
-    circle(0, .32, .09, w.action ? '#96745c' : '#bde7aa', edge);
+    circle(0, .32, .09, w.action ? '#bde7aa' : '#96745c', edge);
     if (w.heldPiece && !ghost) workpiece(ctx, {...w.heldPiece, x: .20, y: -.18, a: 0}, draw);
-    if (!w.action && w.tool === 'magnet') {
+    if (w.action) {
       ctx.setLineDash([.09, .14]);
       ctx.beginPath(); ctx.ellipse(0, -.20, .9, .65, 0, Math.PI, Math.PI * 2);
       ctx.strokeStyle = '#719fa778'; ctx.lineWidth = .03; ctx.stroke(); ctx.setLineDash([]);

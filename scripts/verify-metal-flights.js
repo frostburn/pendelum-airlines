@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import { Sim } from '#game/physics';
 import { DT } from '#game/constants';
-import { clamp } from '#game/math';
 import { MATERIAL_LIMITS } from '#game/industry/materials';
 import { meetsOrder } from '#game/industry/workshop';
 import { steer } from './flight-controls.js';
@@ -31,13 +30,11 @@ export function flyMetalRoute(id, observe = () => {}) {
   function* machines() {
     if (work.hammers.length) yield {x: sim.cabin.x, y: sim.cabin.y + 1, cable: 7.2,
       until: () => sim.length > 7.15, max: 8, name: 'pay out'};
-    for (const hammer of work.hammers) {
-      // Approach beside the hammer, with enough cable to keep the engine above
-      // its raised face; slide the bar into the jaws, then move the engine left.
-      yield* travel(hammer.x - 1.6, hammer.y + 1.4);
-      yield {x: hammer.x + .3, y: hammer.y + .71, until: () => work.pin, max: 25, name: 'seat on anvil'};
-      yield {x: hammer.x - 1.4, y: hammer.y + .565, engine: true,
-        until: () => !work.pin, max: hammer.period * 4, name: 'forge'};
+    while (work.hammers.length && work.heldPiece.forge < 3) {
+      const hammer = work.hammers[work.nextHammer(work.heldPiece)], count = work.heldPiece.forge;
+      yield* travel(hammer.x - 1.6, hammer.y + 2.4);
+      yield {x: hammer.x - .12, y: hammer.y + 2.1,
+        until: () => work.heldPiece.forge > count, max: hammer.period * 4, name: 'forge'};
     }
     if (work.lathes.length) {
       const lathe = work.lathes[0];
@@ -47,7 +44,7 @@ export function flyMetalRoute(id, observe = () => {}) {
     if (config.belts?.length) {
       const belt = config.belts[0];
       yield* travel(belt.x - 1.6, belt.y + 1.6);
-      yield {x: belt.x - .60, y: belt.y + 1.6, until: () => work.heldPiece.polish >= 1, max: 30, name: 'polish'};
+      yield {x: belt.x + .20, y: belt.y + 1.6, until: () => work.heldPiece.polish >= 1, max: 30, name: 'polish'};
     }
   }
   function* orders() {
@@ -66,7 +63,7 @@ export function flyMetalRoute(id, observe = () => {}) {
         }
         const bin = config.bin;
         yield* travel(bin.x, bin.y + 1.7);
-        yield {x: bin.x, y: bin.y + 1.7, action: true, until: () => work.material.deposited >= config.quota,
+        yield {x: bin.x, y: bin.y + 1.7, action: false, until: () => work.material.deposited >= config.quota,
           max: 3, allowTimeout: true, name: 'release ore'};
       }
       return;
@@ -96,14 +93,14 @@ export function flyMetalRoute(id, observe = () => {}) {
         if (!work.heldPiece.cut || !work.heldPiece.polish || !work.heldPiece.forge) yield* machines();
         const x = work.slotX(slot);
         yield* travel(x - .2, jig.y + .9);
-        yield {x: x - .2, y: jig.y + .9, action: true, until: () => jig.slots[slot] !== undefined, max: 10, name: 'place in jig'};
+        yield {x: x - .2, y: jig.y + .9, action: false, until: () => jig.slots[slot] !== undefined, max: 10, name: 'place in jig'};
       }
-      yield {x: jig.x - .2, y: jig.y + 1, action: true, until: () => jig.complete, max: 5, name: 'weld'};
+      yield {x: jig.x - .2, y: jig.y + 1, action: false, until: () => jig.complete, max: 5, name: 'weld'};
       yield {x: jig.x - .2, y: jig.y + .84, until: () => work.heldPiece?.assembled, max: 10, name: 'collect assembly'};
     } else yield* machines();
     const out = config.output;
     yield* travel(out.x - .2, out.y + .65);
-    yield {x: out.x - .2, y: out.y + .65, action: true, until: () => sim.done, max: 12, name: 'dispatch'};
+    yield {x: out.x - .2, y: out.y + .65, action: false, until: () => sim.done, max: 12, name: 'dispatch'};
   }
   const plan = orders();
   let command = plan.next().value;
@@ -111,12 +108,7 @@ export function flyMetalRoute(id, observe = () => {}) {
   for (let frame = 0; frame < 600 / DT && command && !sim.failed && !sim.done; frame++) {
     const input = steer(sim, command.x, command.y);
     input.y = Math.max(-.28, input.y);
-    if (command.engine) {
-      input.x = clamp(((command.x - sim.engine.x) * 1.4 - sim.engine.vx * .4) / 5, -1, 1);
-      const height = command.y + .92 + Math.sqrt(sim.length * sim.length - 1.4 * 1.4);
-      input.y = clamp(((height - sim.engine.y) * 1.2 - sim.engine.vy * .3) / 3.8, -.5, .5);
-    }
-    input.action = !!command.action;
+    input.action = command.action ?? work.tool !== 'ladle';
     if (command.cable) input.winch = sim.targetLength < command.cable ? 1 : 0;
     sim.step(input);
     elapsed += DT;
@@ -131,7 +123,7 @@ export function flyMetalRoute(id, observe = () => {}) {
     }
   }
   assert.ok(sim.done, `${sim.level.name}: ${sim.reason || 'work order unfinished'}`);
-  assert.equal(sim.hull, 100, `${sim.level.name}: flight must avoid damaging impacts`);
+  assert.equal(sim.hull, 100, `${sim.level.name}: industrial impacts must not subtract integrity`);
   assert.ok(maximumSpeed < 12, 'contacts or changes in payload must not launch the rig');
   assert.ok(work.material.metrics.peakLiquid <= MATERIAL_LIMITS.liquid);
   if (config.goal === 'ore') {

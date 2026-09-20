@@ -6,7 +6,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
   if (kind === 'intro' && sim.industry) return `<h1 id="dialogTitle">Welcome to<br>the works.</h1>
 <p class="lead">${sim.level.name} · ${sim.level.sub}</p><p>${sim.level.hint}</p>
 <div class="manual"><strong>WASD / arrows</strong><span>Fly the engine.</span><strong>Q / E</strong><span>Reel in / pay out cable.</span>
-<strong>HOLD X</strong><span>Magnet off / release part / tip ladle right. The on-screen tool button works too.</span>
+<strong>HOLD X</strong><span>Attract and carry metal / tip ladle right. Release X to drop metal. The on-screen tool button works too.</span>
 <strong>SPACE / R</strong><span>Precision flight / restart.</span></div>
 <div class="note">${sim.level.tip}</div><div class="actions"><button class="primary" data-action="begin">Start the work order</button><button data-action="routes">Choose a world</button></div>`;
   if (kind === 'intro')
@@ -63,9 +63,9 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
 <p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
 <h3>Metal works</h3>
-<p><b>Hold X, or hold the tool button:</b> switch the magnet off, release a workpiece, or tip a ladle to the right. Release to grip or level it again. The magnet collects black ore; yellow sand stays behind. Drop ore inside the refinery hopper.</p>
-<p>Fill a ladle under the furnace tap, then pour through a mould’s open top. Droplets spill and cool into slag; return to the tap for more. On a production-line job, land at the Tool rack after casting to fit the magnetic clamp.</p>
-<p>Set an ingot on the marked anvil. Its jaws hold it for three strokes while the cable stays attached: keep the engine out of the hammer lane. A lathe must touch the blank to cut it; the belt must touch it to polish. Both pull on the workpiece. Bring separate parts to free welding-jig marks and release them with X. Fetch the welded assembly, then release it on Dispatch.</p>
+<p><b>Hold X, or hold the tool button:</b> energise the magnet to attract and carry metal, or tip a ladle to the right. Release X to drop metal or level the ladle again. The magnet collects black ore; yellow sand stays behind. Drop ore inside the refinery hopper.</p>
+<p>Fill a ladle under the furnace tap, then pour through a mould’s open top. Droplets spill and cool into slag; return to the tap for more. On a production-line job, land at the Tool rack after casting to fit the workpiece magnet.</p>
+<p>Dangle the ingot into the hammer stroke while holding X. Three good impacts permanently bend and flatten the metal. There is no anvil clamp: catch the swing and keep the flying engine out of the hammer lane. Metal works has physical collisions without integrity damage. A lathe must touch the blank to cut it; the belt must touch it to polish. Both pull on the workpiece. Bring separate parts to free welding-jig marks and release X to drop them. Fetch the welded assembly, then release it on Dispatch.</p>
 <h3>Make the swing work for you</h3>
 <p><b>Heavy freight</b> exceeds the rotor’s lifting capacity. Amber boiler plumes provide the missing lift: climb inside them, then spend height crossing the cold gaps. Keep the cabin in the column too. Reel in to keep the rig together before crossing. Pressure bars and the ticket readout show cycling boilers; wait for the next one to warm before leaving steady lift. Brake early for a heavy landing.</p>
 <p>Unloading restores ordinary flight in cold air. Hot air can carry a light cabin upward, so leave the plume before descending. On the return job, use the unheated end of Depot.</p>
@@ -74,7 +74,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>
 <h3>What is actually simulated?</h3>
 <p>The engine and cabin are separate rotating bodies. Twenty-four tension-only cable links can go slack and contact the scenery, including at their midpoints. Rotor forces act on the engine alone. A powered winch changes cable length; modest air drag acts on everything. Contact and cable constraints use a fixed 240 Hz numerical approximation. There is no direct “cancel swing” force on the cabin.</p>
-<div class="note">Gentle bumps are fine. Hard impacts cost integrity; water or leaving the service area ends the run. Practice mode ignores impact damage. Routes are short, and restarts are unlimited.</div>
+<div class="note">Gentle bumps are fine. Hard impacts cost integrity; water or leaving the service area ends the run. Practice mode and Metal works ignore impact damage. Routes are short, and restarts are unlimited.</div>
 <div class="actions">
 <button class="primary" data-action="close">Back to the rig</button>
 <button data-action="sound">${soundOn ? 'Turn sound off' : 'Turn sound on'}</button>

@@ -405,7 +405,7 @@ function updateUI() {
   $('#cableReadout').textContent = sim.length.toFixed(2) + ' m';
   if (document.activeElement !== $('#cableSlider'))
     $('#cableSlider').value = sim.targetLength;
-  $('#integrity').textContent = sim.level.practice ? '∞' : Math.ceil(sim.hull) + '%';
+  $('#integrity').textContent = sim.level.practice || sim.industry ? '∞' : Math.ceil(sim.hull) + '%';
   $('#integrityBar').style.width = sim.hull + '%';
   $('#integrityBar').style.background = sim.hull < 35 ? '#bf5843' : sim.hull < 70 ? '#c68b43' : C.teal;
   const near = sim.pads.reduce((best, p) => Math.hypot(p.x - sim.cabin.x, p.y + .565 - sim.cabin.y) <
@@ -431,12 +431,12 @@ function updateUI() {
   toolButton.hidden = !sim.industry;
   if (sim.industry) {
     const work = sim.industry, order = work.order(sim);
-    $('#ticketLabel').textContent = `METAL WORKS · ${work.tool.toUpperCase()}`;
+    $('#ticketLabel').textContent = `METAL WORKS · ${(work.tool === 'hook' ? 'magnet' : work.tool).toUpperCase()}`;
     $('#objective').textContent = order.title;
     $('#ticketDetail').textContent = order.detail;
     $('#serviceBar').style.width = clamp(order.progress * 100, 0, 100) + '%';
     $('#flightTip').textContent = order.detail;
-    toolButton.textContent = work.tool === 'ladle' ? 'Hold X · pour right' : work.tool === 'magnet' ? 'Hold X · magnet off' : 'Hold X · release';
+    toolButton.textContent = work.tool === 'ladle' ? 'Hold X · pour right' : 'Hold X · attract / carry';
     toolButton.classList.toggle('pressed', work.action);
     toolButton.setAttribute('aria-pressed', String(work.action));
   }

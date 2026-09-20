@@ -105,8 +105,9 @@ export class Sim {
     this.guideVisits = this.guides.map(() => false);
     this.terrain = [...this.level.terrain, ...this.platforms, ...this.guides];
     const p = this.pads[this.level.start];
-    this.engine = new Body(p.x, p.y + .565 + .60 + this.level.cable + .32, 3.6, .78, 'engine');
-    this.cabin = new Body(p.x, p.y + .565, 2.5, .58, 'cabin');
+    const launchY = p.y + .565 + (this.level.industry?.startPiece ? .65 : 0);
+    this.engine = new Body(p.x, launchY + .60 + this.level.cable + .32, 3.6, .78, 'engine');
+    this.cabin = new Body(p.x, launchY, 2.5, .58, 'cabin');
     this.length = this.level.cable;
     this.targetLength = this.length;
     this.nodes = [];
@@ -178,7 +179,6 @@ export class Sim {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
       for (let k = 0; k < this.terrain.length; k++) {
         const t = this.terrain[k];
-        if (this.industry?.skipCollision(b, t)) continue;
         const c = t.guide === undefined && !t.circle ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
         if (!c)
           continue;
@@ -198,6 +198,7 @@ export class Sim {
           b.contacts.push({
             key,
             terrain: k,
+            ...(samples[s][3] ? {part: samples[s][3]} : {}),
             lx: lx - (ca * c.nx + sa * c.ny) * r,
             ly: ly - (-sa * c.nx + ca * c.ny) * r,
             nx: c.nx,
@@ -303,7 +304,6 @@ export class Sim {
         c.x += dx / d * j * c.im;
         c.y += dy / d * j * c.im;
       }
-      this.industry?.constrain(this);
     }
     for (const b of this.bodies) {
       b.vx = (b.x - b.ox) / DT;
@@ -330,9 +330,8 @@ export class Sim {
     if (hit > 2.6 && this.hitCooldown <= 0) {
       this.hitCooldown = .32;
       this.lastImpact = hit;
-      const damage = (hit - 2.6) * 9;
-      if (!this.level.practice)
-        this.hull = Math.max(0, this.hull - damage);
+      if (!this.level.practice && !this.industry)
+        this.hull = Math.max(0, this.hull - (hit - 2.6) * 9);
       this.stats.bumps++;
       this.events.push({ type: 'hit', severity: hit });
     }
