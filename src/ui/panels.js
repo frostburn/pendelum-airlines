@@ -1,4 +1,4 @@
-import { levels, serviceRoutes, routeNumber, nextRoute } from '#game/levels';
+import { levels, visibleRoutes, serviceRoutes, routeNumber, nextRoute } from '#game/levels';
 import { fmt } from '#game/math';
 const closeButton = '<button class="icon close" data-action="close" aria-label="Close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>';
 const introArt = `<svg class="intro-art" viewBox="0 0 145 175" aria-hidden="true"><path d="M10 19h103M35 15v12m55-12v12" stroke="#253f41" stroke-width="3" stroke-linecap="round"/><path d="M25 29h75l-8 15H34Z" fill="#37796c" stroke="#253f41" stroke-width="2.5"/><rect x="50" y="27" width="26" height="25" rx="7" fill="#ce7046" stroke="#253f41" stroke-width="2.5"/><path d="M64 51q13 40 45 71" fill="none" stroke="#253f41" stroke-width="2"/><path d="M103 108 86 133l40-14Z" fill="none" stroke="#253f41" stroke-width="2"/><g transform="translate(106 139) rotate(-20)"><path d="M-24-17v34h48v-34" fill="#eebc65" stroke="#253f41" stroke-width="2.5" stroke-linejoin="round"/><path d="M-28 21h56M-24 1h48" stroke="#253f41" stroke-width="2.5" stroke-linecap="round"/><circle cy="-16" r="8" fill="#edcda5"/><path d="M-9 0v-7q9-7 18 0v7" fill="#37796c"/><path d="M-11-18h22l-4-6H-7Z" fill="#253f41"/></g><path d="M21 111q-2 36 34 44" stroke="#8eaaa0" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/></svg>`;
@@ -27,8 +27,8 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>`;
   else if (kind === 'routes')
     return `${closeButton}<h2 id="dialogTitle">Local routes.<br>Questionable connections.</h2>
-<p>${serviceRoutes.length} fares and a practice yard. Discover six new routes in <b>Around the bend</b>. Every route is open from the start.</p>
-<div class="route-list">${[...serviceRoutes, ...levels.map((_, i) => i).filter(i => levels[i].practice)].map(i => { const l = levels[i]; return `<button class="route-button ${i === sim.index ? 'current' : ''}" data-route="${i}">
+<p>${serviceRoutes.length} routes and a practice yard. Four new freight jobs in <b>Heavy lifting</b>. Every route is open from the start.</p>
+<div class="route-list">${[...serviceRoutes, ...visibleRoutes.filter(i => levels[i].practice)].map(i => { const l = levels[i]; return `<button class="route-button ${i === sim.index ? 'current' : ''}" data-route="${i}">
 <span class="number">${l.practice ? '∞' : String(routeNumber(i)).padStart(2, '0')}</span>
 <strong>${l.name}</strong>
 <span class="route-collection">${l.practice ? 'PRACTICE' : l.collection || 'Local service'}</span>
@@ -52,12 +52,13 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <div>
 <h3>Collecting fares</h3>
 <p>Bring the cabin onto the highlighted landing strip, reasonably upright and below 0.7 m/s <b>relative to the landing strip</b>. A short progress bar shows boarding. After a little over half a second, people get on or off. No extra button.</p>
-<p>The cabin carries two people. Each adds mass. Different tickets can have different destinations; consult the bottom instrument panel.</p>
+<p>The cabin carries two people. Each adds mass. A freight crate takes one place and is much heavier. Different tickets can have different destinations; consult the bottom instrument panel.</p>
 <h3>On the move</h3>
 <p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
 <p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
 <h3>Make the swing work for you</h3>
-<p><b>Brass cable guides</b> let the cable bend and slide around a fixed rim. Fly the engine past a guide to redirect the hanging cabin, then reel in or climb to pull it clear. The rim is solid for the engine and cabin too. Pale supports are behind the flight path. A guide brightens while the cable is touching it.</p>
+<p><b>Heavy freight</b> exceeds the rotor’s lifting capacity. Amber boiler plumes provide the missing lift: climb inside them, then spend height crossing the cold gaps. Keep the cabin in the column too. Reel in to keep the rig together before crossing. Pressure bars and the ticket readout show cycling boilers; wait for the next one to warm before leaving steady lift. Brake early for a heavy landing.</p>
+<p>Unloading restores ordinary flight in cold air. Hot air can carry a light cabin upward, so leave the plume before descending. On the return job, use the unheated end of Depot.</p>
 <p>Start braking before the cabin reaches its destination. To catch a swing, move the engine in the direction the cabin is travelling, then ease both to a stop. A shorter cable fits through tighter routes; a longer one reaches under eaves and into shafts.</p>
 </div>
 </div>

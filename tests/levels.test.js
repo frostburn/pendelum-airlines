@@ -5,12 +5,17 @@ import { stopAt, deckAt } from '#game/moving-stops';
 import { MIN, MAX } from '#game/constants';
 
 test('all routes and the practice yard have valid geometry and tickets', () => {
-  assert.equal(levels.length, 20);
+  assert.equal(levels.length, 24);
   assert.equal(levels.filter(level => level.practice).length, 1);
   for (const level of levels) {
     assert.ok(level.name && level.width > 0 && level.height > 0);
     assert.ok(level.pads[level.start]);
     assert.ok(level.cable >= MIN && level.cable <= MAX);
+    for (const source of level.updrafts || []) {
+      assert.ok([source.x, source.w, source.bottom, source.top, source.force].every(Number.isFinite));
+      assert.ok(source.w > 0 && source.top > source.bottom && source.force > 0);
+      if (source.period) assert.ok(source.period > 0 && Number.isFinite(source.phase || 0));
+    }
     for (const guide of level.guides || []) {
       assert.ok([guide.x, guide.y, guide.r].every(Number.isFinite));
       assert.ok(guide.r >= .5 && guide.y > guide.r);
@@ -41,6 +46,7 @@ test('all routes and the practice yard have valid geometry and tickets', () => {
     for (const job of level.jobs) {
       assert.ok(level.pads[job.from] && level.pads[job.to]);
       assert.notEqual(job.from, job.to);
+      if (job.mass !== undefined) assert.ok(Number.isFinite(job.mass) && job.mass > 0);
     }
     if (!level.practice) assert.ok(level.gold > 0 && level.silver >= level.gold);
   }
