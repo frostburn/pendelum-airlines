@@ -70,4 +70,4 @@ export const guideRoutes = [
     jobs: [fare(1, 3, 'Elsa'), fare(2, 3, 'Armas', '#c88f3b'), fare(3, 0, 'Aila', '#467d79')], start: 0, cable: 4.2,
     tip: 'Two seats save a trip. On the way home, try catching a guide from its other side—or climb above both for a clear run.'
   }
-].map(route => ({...route, collection: 'Around the bend'}));
+].map(route => ({...route, collection: 'Around the bend', hidden: true}));

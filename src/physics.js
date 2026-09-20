@@ -1,8 +1,9 @@
-import { DT, G, N, MIN, MAX } from '#game/constants';
+import { DT, G, N, MIN, MAX, MAX_THRUST } from '#game/constants';
 import { clamp, wrap } from '#game/math';
 import { levels } from '#game/levels';
 import { stopAt, deckAt } from '#game/moving-stops';
 import { circleGuide } from '#game/cable-guides';
+import { liftAt, liftArea } from '#game/updrafts';
 /**
  * DOM-free, fixed-step simulation. Massive, freely hinged, tension-only cable
  * links use positional constraints. Winching does work; the rotor applies
@@ -149,7 +150,7 @@ export class Sim {
     return this.jobs.filter(j => j.state === 'aboard');
   }
   setPayload() {
-    this.cabin.setMass(2.5 + 1.05 * this.onboard().length);
+    this.cabin.setMass(2.5 + this.onboard().reduce((mass, job) => mass + (job.mass ?? 1.05), 0));
   }
   windAt(x, y) {
     if (!this.level.wind)
@@ -227,11 +228,18 @@ export class Sim {
     const ax = clamp((tx - e.vx) * 3.7, -7, 7), ay = clamp((ty - e.vy) * 4.3, -7, 8);
     // The autopilot pushes ONLY the engine, using finite rotor thrust and torque.
     // Last step's cable reaction is feed-forward, not a cabin velocity correction.
-    let fx = e.m * ax - clamp(this.tensionX, -90, 90), fy = e.m * (G + ay) - clamp(this.tensionY, -120, 30);
+    const reactionLimit = Math.max(120, this.cabin.m * G * 1.5);
+    let fx = e.m * ax - clamp(this.tensionX, -90, 90), fy = e.m * (G + ay) - clamp(this.tensionY, -reactionLimit, 30);
+    // Compensate air acting on the engine only. Freight still needs external
+    // lift on the whole rig; the rotor retains its finite force ceiling.
+    const airLift = liftAt(this.level.updrafts, e.x, e.y, this.time) * liftArea('engine');
+    // The rotor cannot thrust downward. Do not let hypot() turn a negative
+    // request into extra upward thrust when a light rig is carried by hot air.
+    if (airLift) fy = Math.max(0, fy - airLift);
     const target = clamp(Math.atan2(-fx, Math.max(8, fy)), -.65, .65);
     const aa = clamp(wrap(target - e.a) * 70 - e.w * 15, -85, 85);
     e.w += aa * DT;
-    const thrust = clamp(Math.hypot(fx, fy), 10, 190);
+    const thrust = clamp(Math.hypot(fx, fy), 10, MAX_THRUST);
     this.thrust = thrust;
     e.vx += (-Math.sin(e.a) * thrust / e.m) * DT;
     e.vy += (Math.cos(e.a) * thrust / e.m) * DT;
@@ -257,6 +265,7 @@ export class Sim {
       b.contacts = [];
       b.impact = 0;
       b.vy -= G * DT;
+      b.vy += liftAt(this.level.updrafts, b.x, b.y, this.time) * liftArea(b.kind) / b.m * DT;
       const air = this.windAt(b.x, b.y), drag = b.kind === 'node' ? .065 : b.kind === 'cabin' ? .055 : .055;
       b.vx += (air - b.vx * drag) * DT;
       b.vy -= b.vy * drag * .4 * DT;

@@ -1,25 +1,32 @@
 # Pendulum Airlines
 
 A tiny flying taxi, a long cable, and a passenger cabin with its own plans.
-Nineteen handmade routes, a practice yard, touch controls, synthesized sound,
+Seventeen handmade routes, a practice yard, touch controls, synthesized sound,
 personal bests, and interpolated best-run ghosts.
 
-## Around the bend
+## Heavy lifting
 
-Six new routes introduce **cable guides**: fixed brass fairleads that the cable
-can bend and slide around. Pass the engine above a guide, then climb or reel in
-gently to lift the cabin clear. The rim brightens while carrying the cable. It is
-solid for the engine and cabin too; its pale supports sit behind the flight path.
-There is no new button, latch, or automatic release.
+Four freight jobs require **boiler updrafts**. A loaded rig weighs about 224 N;
+the rotor can supply at most 190 N. Climb inside the warm columns, then spend that
+height crossing cold air. This is a force budget, not a requirement to visit
+checkpoints. Without the plumes, the loaded taxi cannot lift off its loading pad.
+
+The amber air and rising arrows show the lift area. Pressure bars, map labels,
+and the ticket readout expose cycling boilers. Keep the cabin inside the column,
+reel in before a long crossing, and brake early for a heavy landing. Unloading
+changes the flight again: a light cabin can rise in hot air, so descend outside it.
 
 | Route | Challenge |
 | --- | --- |
-| A little guidance | Learn to catch a guide and pull the cabin clear |
-| An indirect approach | Redirect a longer cable between low and high offices |
-| Two points of contact | Use two guides while delivering two different tickets |
-| Reel around the chimney | Winch around a guide before clearing the brickwork |
-| Guidance is not a timetable | Combine guides with a moving construction lift |
-| A roundabout way home | Collect two fares and return their teacher past the guides |
+| A piano is not hand luggage | Learn to gain height in lift and cross a cold gap |
+| The cold stretch | Shorten the cable and bank altitude for longer gaps |
+| Steam takes a break | Wait for the next boiler to warm before leaving steady lift |
+| The light way home | Deliver a heavy pump, return two mechanics, and land on a cold part of the depot |
+
+The earlier six **Around the bend** guide routes remain in the codebase as
+experiments. They are hidden from the picker, Next route, and automatic resume.
+Their saved IDs and ghosts are preserved, and `pendulum.load(14)` through
+`pendulum.load(19)` still opens them from the console.
 
 The distant skyline also keeps stable building identities as the camera moves.
 Crossing a parallax tile boundary no longer reshuffles their widths and heights.
@@ -57,7 +64,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, twelve simulated flights, and a standalone build
+npm run verify   # syntax, tests, ten simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```
@@ -91,7 +98,8 @@ mass, and the two seats can hold passengers with different destinations.
 - `src/constants.js`, `src/math.js`, `src/levels.js`: units, helpers, and route data.
 - `src/moving-stops.js`: analytic platform motion and solid deck geometry.
 - `src/cable-guides.js`: circular contact geometry for fixed cable guides.
-- `src/routes/`: shared geometry helpers and the two expansion collections.
+- `src/updrafts.js`: spatial lift fields, body area factors, and boiler schedules.
+- `src/routes/`: shared geometry helpers, public collections, and hidden experiments.
 - `src/render/`: drawing and camera; stable city slots and viewport culling.
 - `src/ui/`: dialog templates and shared drawing colors/fonts.
 - `src/main.js`: lifecycle, controls, HUD, event dispatch, and the frame loop.
@@ -140,6 +148,18 @@ at maximum extension. Current routes use forgiving 0.8 m rims. The simulation
 owns its guide data and exposes current contacts and cumulative visits in its
 debug snapshot. These observations do not gate fares or change scoring.
 
+Freight tickets add `cargo: true, mass: 15`; ordinary passengers retain their
+1.05 kg mass. Boarding changes the cabin's mass and inertia, and unloading restores
+them. A crate uses one of the two places. The rotor compensates for cable tension
+within its unchanged 190 N ceiling and never directly edits cabin velocity.
+
+Updrafts declare `{x, w, bottom, top, force}` and optional `{period, phase}`.
+`force` is the upward force on a cabin-sized area, in newtons. The engine and cable
+nodes have smaller area factors; force does not scale up with payload mass.
+Horizontal and vertical edges fade smoothly. This is a simplified pressure field,
+not a fluid simulation. Boiler schedules and animation use simulation time, so
+pause freezes them and restart reproduces them for ghost races.
+
 Rendering interpolates between physics steps and must not mutate simulation
 state. The visibility fix tests **the full building bounds**, including roof
 trim. A base below the viewport is not grounds to hide a roof that is still visible.
@@ -148,16 +168,18 @@ trim. A base below the viewport is not grounds to hide a roof that is still visi
 
 The original `pendulum-airlines-v1` storage key and 20 Hz ghost format are retained.
 Route array indices are persistent save IDs: the original seven services stay at
-0–6, Sunday service stays at 7, On the move occupies 8–13, and Around the bend
-occupies 14–19. The picker lists
-practice last, and Next route skips it. Append routes rather than inserting them.
+0–6, Sunday service stays at 7, On the move occupies 8–13, hidden Around the bend
+occupies 14–19, and Heavy lifting occupies 20–23. Display numbers are independent
+of those saved IDs. The picker lists practice last; Next route skips practice and
+hidden routes. A saved hidden route resumes at the next visible service, keeping
+the hidden route's best and ghost. Append routes rather than inserting them.
 Invalid saves are ignored; blocked or full storage falls back to session-only play.
 Browsers scope storage to the origin, so moving from a downloaded file to a hosted
 URL does not automatically transfer records.
 
 ```js
 pendulum.state()                 // read-only snapshot
-pendulum.routes                 // route IDs and names
+pendulum.routes                 // route IDs, names, and hidden flags
 pendulum.physicsTests()          // the 16 original physics diagnostics
 pendulum.load(2)                 // load The chimney run
 pendulum.debug.view()            // renderer camera and viewport dimensions
@@ -178,13 +200,18 @@ City regressions cross the old wrap boundary in both directions and check the
 real renderer. Guide tests cover contact geometry, both vehicle bodies, cable
 nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
 
-`npm run test:flights` completes all twelve expansion routes using normal analog
+`npm run test:flights` completes all ten public expansion routes using normal analog
 flight and winch inputs. It asserts every fare is delivered without damaging impacts;
 it does not teleport the rig or bypass service logic. These are playability
 witnesses, not claims about how easy the routes are for a human pilot. The check
-also runs as part of `npm run verify`. Every new guide must carry the cable for
-at least half a second and release before the finish. The flights also check
-continuous cable segments for penetration between their collision samples.
+also runs as part of `npm run verify`. Freight flights must gain height in every
+plume and sink through cold gaps; the cycling route must wait for pressure, and
+the return must carry both mechanics and land outside hot air. An ablation test
+removes only the updrafts and confirms full throttle cannot lift any loaded route
+off the ground. This checks that the new mechanic supplies necessary work.
+
+`npm run test:guides` separately exercises the six hidden experiments, including
+contact, release, winching, and continuous cable clearance around their rims.
 
 CI has **one Ubuntu job, one Node version (22.16.0), and no matrix**. It runs
 `npm run verify` and uploads `dist/index.html` as the `pendulum-airlines` artifact.

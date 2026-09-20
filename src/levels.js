@@ -4,6 +4,7 @@
 import { rect, pad, block, BASE } from '#game/routes/shapes';
 import { movingRoutes } from '#game/routes/on-the-move';
 import { guideRoutes } from '#game/routes/around-the-bend';
+import { freightRoutes } from '#game/routes/heavy-lifting';
 export const levels = [
   {
     name: 'First fare',
@@ -182,10 +183,13 @@ export const levels = [
     tip: 'A good catch: move the engine toward the incoming cabin, then ease both to a stop.'
   },
   ...movingRoutes,
-  ...guideRoutes
+  ...guideRoutes,
+  ...freightRoutes
 ];
 
 // Array indices are persistent save IDs; never insert before an existing route.
-export const serviceRoutes = levels.map((_, i) => i).filter(i => !levels[i].practice);
+export const visibleRoutes = levels.map((_, i) => i).filter(i => !levels[i].hidden);
+export const serviceRoutes = visibleRoutes.filter(i => !levels[i].practice);
 export const routeNumber = index => serviceRoutes.indexOf(index) + 1;
-export const nextRoute = index => serviceRoutes[serviceRoutes.indexOf(index) + 1] ?? null;
+export const nextRoute = index => serviceRoutes.includes(index) ? serviceRoutes[serviceRoutes.indexOf(index) + 1] ?? null : null;
+export const resumeRoute = index => visibleRoutes.includes(index) ? index : serviceRoutes.find(i => i > index) ?? serviceRoutes[0];

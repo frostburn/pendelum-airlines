@@ -3,6 +3,8 @@ import { stopAt } from '#game/moving-stops';
 import { drawMovingStop } from '#game/render/platforms';
 import { drawCableGuide } from '#game/render/guides';
 import { cityBuildings } from '#game/render/city';
+import { drawUpdraft } from '#game/render/updrafts';
+import { boilerPower } from '#game/updrafts';
 import { clamp } from '#game/math';
 import { point } from '#game/physics';
 import { C, sans } from '#game/ui/theme';
@@ -218,6 +220,12 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
     ctx.restore();
   }
+  function crate(x, y) {
+    rounded(x - .23, y, .46, .48, .025, '#bf935c', '#635d40');
+    line([[x - .19, y + .06], [x + .19, y + .42]], '#e4c693', .045);
+    line([[x - .16, y], [x - .16, y + .48]], '#6e6448', .03);
+    line([[x + .16, y], [x + .16, y + .48]], '#6e6448', .03);
+  }
   function station(p, i, t) {
     const targets = sim.targetStops(), active = targets.includes(i), waiting = sim.jobs.filter(j => j.state === 'waiting' && j.from === i), delivered = sim.jobs.filter(j => j.state === 'delivered' && j.to === i).length;
     const color = active ? C.orange : sim.level.practice ? C.teal : '#719080';
@@ -229,7 +237,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     line([[post, p.y + .04], [post, p.y + .8]], '#416754', .045);
     circle(post, p.y + .92, .19, active ? C.yellow : '#c4d4b7', '#456750', .035);
     text(post, p.y + .91, String(i + 1), .20, C.ink, 'center', 700);
-    waiting.forEach((j, k) => person(p.x + p.w / 2 - .62 - k * .48, p.y + .13, j.color, t + k));
+    waiting.forEach((j, k) => j.cargo ? crate(p.x + p.w / 2 - .62 - k * .48, p.y + .13) :
+      person(p.x + p.w / 2 - .62 - k * .48, p.y + .13, j.color, t + k));
     if (delivered)
       for (let k = 0; k < delivered; k++) {
         circle(p.x - p.w / 2 + .23 + k * .18, p.y - .8, .045, C.teal);
@@ -294,7 +303,11 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     line([[.49, -.33], [.50, -.53], [.65, -.53]], dark, .044);
     rounded(-.57, -.40, 1.14, .27, .085, ghost ? '#aac6a7' : C.orange, dark);
     rounded(-.46, -.17, .92, .14, .04, ghost ? '#c7d6bc' : '#e8bc69', dark);
-    passengers.forEach((p, i) => person(passengers.length === 1 ? 0 : (i - .5) * .44, -.19, p.color, t, true));
+    passengers.forEach((p, i) => {
+      const x = passengers.length === 1 ? 0 : (i - .5) * .44;
+      if (p.cargo) crate(x, -.17);
+      else person(x, -.19, p.color, t, true);
+    });
     line([[-.56, -.27], [-.56, .28], [.56, .28], [.56, -.27]], dark, .045);
     line([[-.56, .10], [.56, .10]], dark, .035);
     circle(-.48, -.29, .025, '#e8bd73');
@@ -333,6 +346,12 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     ctx.translate(-renderCam.x, -renderCam.y);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    const sceneTime = Math.max(0, sim.time - (1 - alpha) * DT);
+    for (const source of sim.level.updrafts || []) {
+      drawUpdraft(ctx, source, sceneTime, reduced, map);
+      const label = source.period ? `BOILER · ${Math.round(100 * boilerPower(source, sceneTime))}%` : 'STEADY LIFT';
+      text(source.x, source.top + .35, label, .28, '#836a3b');
+    }
     if (sim.level.water) {
       box(-12, -8, sim.level.width + 25, 8.1, '#719f98');
       for (let k = 0; k < 22; k++) {
@@ -347,7 +366,6 @@ export function createRenderer(canvas, { reduced = false } = {}) {
       if (map) text(guide.x, guide.y + guide.r + .48, 'GUIDE', .23, '#536b55');
     });
     // Match platform motion to the interpolated rig, even on paused frames.
-    const sceneTime = Math.max(0, sim.time - (1 - alpha) * DT);
     const pads = sim.level.pads.map(p => stopAt(p, sceneTime));
     pads.forEach((p, i) => {
       if (p.motion) drawMovingStop(ctx, p, sim.level.pads[i], map);

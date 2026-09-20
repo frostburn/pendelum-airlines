@@ -82,7 +82,7 @@ test('On the move IDs and ghosts keep their meaning when guide routes are append
     'The stop is leaving', 'Third floor, occasionally', 'Mind the moving gap',
     'Connections are approximate', 'Catch the next lift', 'Last boat, first train'
   ]);
-  assert.equal(routeNumber(14), 14);
+  assert.equal(routeNumber(14), 0);
   assert.equal(levels[14].name, 'A little guidance');
   const saved = {last: 13, sound: false, ghost: true,
     best: {13: {time: 90, hull: 100, ghost: [Array(16).fill(123)]}}};

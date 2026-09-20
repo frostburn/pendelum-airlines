@@ -1,6 +1,6 @@
 import { DT, MIN, MAX, VERSION } from '#game/constants';
 import { clamp, fmt } from '#game/math';
-import { levels, serviceRoutes, routeNumber, nextRoute } from '#game/levels';
+import { levels, serviceRoutes, routeNumber, nextRoute, resumeRoute } from '#game/levels';
 import { Sim } from '#game/physics';
 import { physicsTests } from '#game/diagnostics';
 import { createRenderer } from '#game/render/renderer';
@@ -9,9 +9,11 @@ import { panelMarkup } from '#game/ui/panels';
 import { createStore } from '#game/storage';
 import { createAudio } from '#game/audio';
 import { GHOST_INTERVAL, MAX_GHOST_FRAMES, encodePose, sampleGhost } from '#game/ghost';
+import { boilerPower } from '#game/updrafts';
 const { $, $$ } = { $: s => document.querySelector(s), $$: s => [...document.querySelectorAll(s)] };
 const canvas = $('#game'), view = $('#viewport');
 const { saved, persist } = createStore(levels.length, () => toast('Browser storage is full or unavailable. This session still works.'));
+saved.last = resumeRoute(saved.last);
 let sim = new Sim(saved.last), attempt = 1, keys = new Set(), touch = { x: 0, y: 0, winch: 0 }, mapHold = false, mapLatched = false, showGhost = saved.ghost;
 let panel = 'intro', returnPanel = null, overTime = 0, record = [], lastRecorded = -1, newRecord = false;
 let last = 0, acc = 0, uiAccumulator = 0, toastTimer = 0;
@@ -359,7 +361,7 @@ function events() {
   }
 }
 function updateUI() {
-  $('#routeNumber').textContent = sim.level.practice ? 'FREE PRACTICE · NO TIMETABLE' : `${sim.level.collection || 'LOCAL SERVICE'} · ROUTE ${String(routeNumber(sim.index)).padStart(2, '0')} / ${serviceRoutes.length}`;
+  $('#routeNumber').textContent = sim.level.hidden ? 'EXPERIMENTAL ROUTE' : sim.level.practice ? 'FREE PRACTICE · NO TIMETABLE' : `${sim.level.collection || 'LOCAL SERVICE'} · ROUTE ${String(routeNumber(sim.index)).padStart(2, '0')} / ${serviceRoutes.length}`;
   $('#routeName').textContent = sim.level.name;
   $('#routeSub').textContent = sim.level.sub;
   $('#flightTip').textContent = sim.level.tip;
@@ -381,7 +383,13 @@ function updateUI() {
     : 'CABIN ' + Math.hypot(sim.cabin.vx, sim.cabin.vy).toFixed(1) + ' m/s';
   $('#cabinSpeed').title = onApproach ? 'Cabin speed relative to ' + near.name + '. Land below 0.7 m/s.' : 'Cabin speed through the world.';
   const aboard = sim.onboard(), targets = sim.targetStops();
-  $('#ticketLabel').textContent = sim.level.practice ? 'Free practice' : sim.done ? 'Service complete' : aboard.length ? `${aboard.length} / 2 SEATS · DROP-OFF` : 'NEXT FARE · PICKUP';
+  $('#ticketLabel').textContent = sim.level.practice ? 'Free practice' : sim.done ? 'Service complete' : aboard.some(j => j.cargo) ? 'HEAVY FREIGHT · USE UPDRAFTS' : aboard.length ? `${aboard.length} / 2 SEATS · DROP-OFF` : 'NEXT FARE · PICKUP';
+  const cycling = sim.level.updrafts?.find(s => s.period);
+  if (cycling && aboard.some(j => j.cargo)) {
+    const pressure = boilerPower(cycling, sim.time);
+    const rising = boilerPower(cycling, sim.time + .5) > pressure;
+    $('#ticketLabel').textContent = `FREIGHT · BOILER ${Math.round(pressure * 100)}% ${pressure === 0 ? 'COLD' : pressure === 1 ? 'HOT' : rising ? '↑' : '↓'}`;
+  }
   $('#objective').textContent = sim.level.practice ? 'Make a little room for the swing.' : sim.done ? 'All fares delivered.' : targets.map(i => sim.level.pads[i].name).join(' / ');
   $('#ticketDetail').textContent = sim.level.practice ? 'No damage from bumps. R resets the rig.' : sim.servicing >= 0 ? 'Hold the landing… boarding / drop-off in progress.' : aboard.length ? aboard.map(j => j.name + ' → ' + sim.level.pads[j.to].name).join(' · ') : sim.jobs.filter(j => j.state === 'waiting').map(j => j.name + ' at ' + sim.level.pads[j.from].name).join(' · ');
   $('#serviceBar').style.width = clamp(sim.service / .55 * 100, 0, 100) + '%';
@@ -459,7 +467,7 @@ function frame(now) {
 // personal bests and ghosts cannot be overwritten by a teleported test run.
 window.pendulum = {
   version: VERSION,
-  routes: levels.map((l, i) => ({ id: i, name: l.name })),
+  routes: levels.map((l, i) => ({ id: i, name: l.name, hidden: !!l.hidden })),
   state: () => sim.snapshot(),
   restart: () => loadRoute(sim.index),
   load: i => loadRoute(i),
