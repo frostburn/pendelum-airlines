@@ -169,7 +169,7 @@ export class Workshop {
     if (config.goal === 'cast' && this.molds.every(m => m.ready)) this.complete(sim);
     if (this.tool === 'ladle' && config.goal !== 'cast' && this.molds.every(m => m.ready)) {
       const r = config.rack;
-      if (Math.abs(c.x - r.x) < 1 && Math.abs(c.y - r.y - .565) < .22 && Math.abs(c.a) < .3 && Math.hypot(c.vx, c.vy) < .7) {
+      if (Math.abs(c.x - r.x) < 1 && Math.abs(c.y - r.y - .565) < .22 && Math.abs(wrap(c.a)) < .3 && Math.hypot(c.vx, c.vy) < .7) {
         this.dockTime += dt;
         if (this.dockTime > .65) {
           this.tool = 'hook';

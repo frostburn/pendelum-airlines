@@ -186,6 +186,16 @@ test('moulds count only droplets outside the ladle and stop accepting metal when
   assert.equal(field.liquid.length, 1, 'an overfull mould must leave real overflow');
 });
 
+test('an upright ladle docks after complete turns, while a genuinely tilted ladle is rejected', () => {
+  for (const id of [34, 35]) for (const angle of [0, 2 * Math.PI, -4 * Math.PI, 2 * Math.PI + .5]) {
+    const s = new Sim(id), w = s.industry, r = w.config.rack;
+    for (const mold of w.molds) { mold.fill = mold.capacity; mold.ready = true; }
+    Object.assign(s.cabin, {x: r.x, y: r.y + .565, a: angle, vx: 0, vy: 0, w: 0});
+    for (let i = 0; i < 180; i++) w.afterStep(s, DT);
+    assert.equal(w.tool, angle === 2 * Math.PI + .5 ? 'ladle' : 'hook');
+  }
+});
+
 test('hammer motion repeats without mutating its anvil height or phase offset', () => {
   const s = new Sim(29), before = structuredClone(s.level.industry.hammers);
   for (const config of before) for (const t of [0, .3, 2, 7, 80]) {

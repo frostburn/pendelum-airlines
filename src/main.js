@@ -6,6 +6,7 @@ import { physicsTests } from '#game/diagnostics';
 import { createRenderer } from '#game/render/renderer';
 import { C } from '#game/ui/theme';
 import { panelMarkup } from '#game/ui/panels';
+import { bindToolButton } from '#game/ui/tool-button';
 import { createStore } from '#game/storage';
 import { createAudio } from '#game/audio';
 import { GHOST_INTERVAL, MAX_GHOST_FRAMES, encodePose, sampleGhost } from '#game/ghost';
@@ -31,8 +32,7 @@ function toast(text) {
 function clearInput() {
   keys.clear();
   touch.x = touch.y = touch.winch = 0;
-  touch.action = false;
-  $('#toolBtn').classList.remove('pressed');
+  clearToolInput();
   mapHold = false;
   $('#joystick i').style.transform = '';
   $$('.touch-winch button').forEach(b => b.classList.remove('pressed'));
@@ -333,20 +333,8 @@ $$('[data-touch]').forEach(b => {
   b.addEventListener('lostpointercapture', release);
 });
 const toolButton = $('#toolBtn');
-const releaseTool = () => { touch.action = false; toolButton.classList.remove('pressed'); };
-toolButton.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  if (panel || mapHold || mapLatched) return;
-  toolButton.setPointerCapture(e.pointerId);
-  touch.action = true;
-  toolButton.classList.add('pressed');
-});
-for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) toolButton.addEventListener(event, releaseTool);
-toolButton.addEventListener('keydown', e => {
-  if (['Space', 'Enter'].includes(e.code) && !panel) { e.preventDefault(); touch.action = true; }
-});
-toolButton.addEventListener('keyup', releaseTool);
-toolButton.addEventListener('blur', releaseTool);
+const clearToolInput = bindToolButton(toolButton, () => !panel && !mapHold && !mapLatched,
+  active => { touch.action = active; });
 function inputs() {
   return {
     x: clamp((keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + touch.x, -1, 1),
