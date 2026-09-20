@@ -2,6 +2,7 @@ import { DT, G, N, MIN, MAX } from '#game/constants';
 import { clamp, wrap } from '#game/math';
 import { levels } from '#game/levels';
 import { stopAt, deckAt } from '#game/moving-stops';
+import { circleGuide } from '#game/cable-guides';
 /**
  * DOM-free, fixed-step simulation. Massive, freely hinged, tension-only cable
  * links use positional constraints. Winching does work; the rotor applies
@@ -97,7 +98,10 @@ export class Sim {
     this.level = levels[index];
     this.pads = this.level.pads.map(p => stopAt(p, 0));
     this.platforms = this.level.pads.flatMap((p, i) => p.motion ? [{pad: i, ...deckAt(this.pads[i])}] : []);
-    this.terrain = [...this.level.terrain, ...this.platforms];
+    this.guides = (this.level.guides || []).map((guide, index) => ({...guide, guide: index}));
+    this.guideContacts = this.guides.map(() => false);
+    this.guideVisits = this.guides.map(() => false);
+    this.terrain = [...this.level.terrain, ...this.platforms, ...this.guides];
     const p = this.pads[this.level.start];
     this.engine = new Body(p.x, p.y + .565 + .60 + this.level.cable + .32, 3.6, .78, 'engine');
     this.cabin = new Body(p.x, p.y + .565, 2.5, .58, 'cabin');
@@ -170,9 +174,13 @@ export class Sim {
     for (let s = 0; s < samples.length; s++) {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
       for (let k = 0; k < this.terrain.length; k++) {
-        const t = this.terrain[k], c = circleRect(p.x, p.y, r, t);
+        const t = this.terrain[k], c = t.guide === undefined ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
         if (!c)
           continue;
+        if (b.kind === 'node' && t.guide !== undefined) {
+          this.guideContacts[t.guide] = true;
+          this.guideVisits[t.guide] = true;
+        }
         const j = c.depth / eff(p, c.nx, c.ny);
         move(p, c.nx, c.ny, j);
         // Keep one contact per sample / terrain pair, from the earliest collision.
@@ -202,9 +210,13 @@ export class Sim {
     // Mid-link collision samples stop the visible cable cutting through corners.
     const a = this.end(i), b = this.end(i + 1), x = (a.x + b.x) * .5, y = (a.y + b.y) * .5;
     for (const t of this.terrain) {
-      const c = circleRect(x, y, .03, t);
+      const c = t.guide === undefined ? circleRect(x, y, .03, t) : circleGuide(x, y, .03, t);
       if (!c)
         continue;
+      if (t.guide !== undefined) {
+        this.guideContacts[t.guide] = true;
+        this.guideVisits[t.guide] = true;
+      }
       const j = c.depth / (.25 * (eff(a, c.nx, c.ny) + eff(b, c.nx, c.ny)));
       move(a, c.nx, c.ny, j * .5);
       move(b, c.nx, c.ny, j * .5);
@@ -232,6 +244,7 @@ export class Sim {
       return;
     this.time += DT;
     this.updateStops();
+    this.guideContacts.fill(false);
     this.hitCooldown = Math.max(0, this.hitCooldown - DT);
     this.controls(u);
     this.wind = this.windAt(this.engine.x, this.engine.y);
@@ -417,6 +430,8 @@ export class Sim {
       jobs: this.jobs.map(j => ({ ...j })),
       service: this.service,
       stops: this.pads.map(({x, y, vx, vy, name}) => ({x, y, vx, vy, name})),
+      guides: this.guides.map((g, i) => ({x: g.x, y: g.y, r: g.r,
+        contact: this.guideContacts[i], visited: this.guideVisits[i]})),
       tension: [this.tensionX, this.tensionY]
     };
   }

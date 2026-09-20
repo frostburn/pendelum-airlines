@@ -1,6 +1,8 @@
 import { DT } from '#game/constants';
 import { stopAt } from '#game/moving-stops';
 import { drawMovingStop } from '#game/render/platforms';
+import { drawCableGuide } from '#game/render/guides';
+import { cityBuildings } from '#game/render/city';
 import { clamp } from '#game/math';
 import { point } from '#game/physics';
 import { C, sans } from '#game/ui/theme';
@@ -115,8 +117,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
       ctx.fill();
     }
     const base = height * .80 + (renderCam.y - 8) * 12;
-    for (let i = -3; i < Math.ceil(width / 90) + 5; i++) {
-      const x = i * 91 - ((renderCam.x * 12) % 91), h = 22 + (Math.sin(i * 8.2) + 1) * 34, w = 46 + (Math.cos(i * 7) + 1) * 12;
+    for (const {x, h, w} of cityBuildings(renderCam.x, width)) {
       ctx.fillStyle = '#99b8ae';
       ctx.fillRect(x, base - h, w, h + 70);
       ctx.beginPath();
@@ -341,6 +342,10 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
     for (const r of sim.level.terrain)
       building(r);
+    sim.guides.forEach((guide, i) => {
+      drawCableGuide(ctx, guide, sim.guideContacts[i]);
+      if (map) text(guide.x, guide.y + guide.r + .48, 'GUIDE', .23, '#536b55');
+    });
     // Match platform motion to the interpolated rig, even on paused frames.
     const sceneTime = Math.max(0, sim.time - (1 - alpha) * DT);
     const pads = sim.level.pads.map(p => stopAt(p, sceneTime));

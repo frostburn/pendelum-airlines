@@ -5,12 +5,17 @@ import { stopAt, deckAt } from '#game/moving-stops';
 import { MIN, MAX } from '#game/constants';
 
 test('all routes and the practice yard have valid geometry and tickets', () => {
-  assert.equal(levels.length, 14);
+  assert.equal(levels.length, 20);
   assert.equal(levels.filter(level => level.practice).length, 1);
   for (const level of levels) {
     assert.ok(level.name && level.width > 0 && level.height > 0);
     assert.ok(level.pads[level.start]);
     assert.ok(level.cable >= MIN && level.cable <= MAX);
+    for (const guide of level.guides || []) {
+      assert.ok([guide.x, guide.y, guide.r].every(Number.isFinite));
+      assert.ok(guide.r >= .5 && guide.y > guide.r);
+      assert.ok(guide.x > guide.r && guide.x + guide.r < level.width);
+    }
     for (const rect of level.terrain) {
       assert.ok([rect.x, rect.y, rect.w, rect.h].every(Number.isFinite));
       assert.ok(rect.w > 0 && rect.h > 0);
