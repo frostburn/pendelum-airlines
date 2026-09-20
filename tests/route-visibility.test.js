@@ -1,33 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { levels, visibleRoutes, serviceRoutes, nextRoute, routeNumber, resumeRoute } from '#game/levels';
+import { levels, worlds, worldIndex, visibleRoutes, serviceRoutes, nextRoute, resumeRoute } from '#game/levels';
 import { Sim } from '#game/physics';
 import { parseSaved } from '#game/storage';
 import { panelMarkup } from '#game/ui/panels';
 
-test('guide routes remain loadable but are absent from the picker and normal progression', () => {
-  const markup = panelMarkup('routes', {sim: new Sim(0), saved: {best: {}}});
-  for (let i = 14; i < 20; i++) {
-    assert.equal(new Sim(i).level.collection, 'Around the bend');
-    assert.equal(levels[i].hidden, true);
-    assert.equal(visibleRoutes.includes(i), false);
-    assert.doesNotMatch(markup, new RegExp(`data-route="${i}"`));
-    assert.equal(nextRoute(i), null);
-  }
-  assert.doesNotMatch(markup, /Around the bend/);
-  assert.equal(nextRoute(13), 20);
-  assert.equal(routeNumber(20), 14);
-  assert.equal(nextRoute(23), null);
-  assert.equal(serviceRoutes.length, 17);
-  assert.equal((markup.match(/data-route=/g) || []).length, 18);
-  assert.ok(markup.indexOf('data-route="23"') < markup.indexOf('data-route="7"'));
+test('three world pages cover each persistent route exactly once, twelve tiles at a time', () => {
+  assert.deepEqual(worlds.map(w => w.routes.length), [12, 12, 12]);
+  assert.equal(new Set(visibleRoutes).size, levels.length);
+  assert.equal(serviceRoutes.length, 35);
+  worlds.forEach((world, selectedWorld) => {
+    const markup = panelMarkup('routes', {sim: new Sim(0), saved: {best: {}}, selectedWorld});
+    const ids = [...markup.matchAll(/data-route="(\d+)"/g)].map(m => Number(m[1]));
+    assert.deepEqual(ids, world.routes);
+    assert.equal((markup.match(/data-world=/g) || []).length, 3);
+    assert.match(markup, new RegExp(`data-world="${selectedWorld}" aria-pressed="true"`));
+    world.routes.forEach(id => assert.equal(worldIndex(id), selectedWorld));
+  });
+  assert.equal(nextRoute(15), 10);
+  assert.equal(nextRoute(23), 24);
+  assert.equal(nextRoute(35), null);
+  assert.equal(nextRoute(7), null);
 });
 
-test('resuming a hidden route selects a visible service while preserving its best and ghost', () => {
+test('reopened guide routes retain their IDs, bests, ghosts, and resume state', () => {
   for (let last = 14; last < 20; last++) {
     const best = {time: 42, hull: 100, ghost: [Array(16).fill(123)]};
     const saved = parseSaved(JSON.stringify({last, best: {[last]: best}}), levels.length);
-    assert.equal(resumeRoute(saved.last), 20);
+    assert.equal(levels[last].collection, 'Around the bend');
+    assert.ok(!levels[last].hidden);
+    assert.equal(resumeRoute(saved.last), last);
     assert.deepEqual(saved.best[last], best);
   }
   for (const id of visibleRoutes) assert.equal(resumeRoute(id), id);

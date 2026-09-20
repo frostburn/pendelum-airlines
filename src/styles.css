@@ -1155,3 +1155,67 @@ input[type=range] {
   letter-spacing: .07em;
   text-transform: uppercase;
 }
+
+/* A world is a single fitted page: no level list scrolls. */
+#dialog.world-picker {
+  width:min(1020px,100%);
+  height:min(710px,calc(100dvh - 32px));
+  max-height:calc(100dvh - 24px);
+  padding:25px;
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr) auto;
+  gap:15px;
+  overflow:hidden;
+}
+.world-heading {padding-right:32px;}
+.world-heading h2 {font-size:27px;margin:6px 0 0;}
+.world-heading .eyeline {font-size:9px;}
+.world-tabs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.world-tabs button {text-align:left;padding:12px;min-width:0;}
+.world-tabs span {display:block;font:9px var(--mono);color:var(--muted);margin-bottom:5px;}
+.world-tabs strong {font-size:13px;}
+.world-tabs [aria-pressed=true] {background:var(--teal);border-color:var(--teal);color:var(--paper);}
+.world-tabs [aria-pressed=true] span {color:#d7e4cf;}
+.world-picker .route-list {grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:10px;margin:0;min-height:0;}
+.world-picker .route-button {padding:13px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;min-height:0;min-width:0;}
+.world-picker .route-button strong {font-size:13px;line-height:1.25;}
+.world-picker .route-button small {font-size:8px;text-transform:uppercase;}
+.world-picker .route-button .number {font-size:11px;}
+.world-footer {display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--muted);line-height:1.4;}
+.world-footer b {white-space:nowrap;font-weight:500;color:var(--teal);}
+#toolBtn {position:absolute;right:20px;bottom:18px;z-index:2;background:var(--paper);border:2px solid var(--orange);touch-action:none;min-height:44px;box-shadow:0 2px 8px #253f4120;}
+#toolBtn[hidden] {display:none;}
+#toolBtn.pressed {background:var(--orange);color:white;}
+@media(max-width:700px) {
+  #dialog.world-picker {padding:18px;gap:12px;}
+  .world-picker .route-list {grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));}
+  .world-heading h2 {font-size:23px;}
+  .world-footer span {display:none;}
+  .world-picker .route-button {padding:10px;gap:6px;}
+  .world-picker .route-button strong {font-size:12px;}
+  #toolBtn {right:12px;bottom:122px;font-size:10px;max-width:150px;}
+}
+@media(max-width:480px) {
+  #dialog.world-picker {padding:14px;gap:10px;}
+  .world-picker .route-list {grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr));gap:7px;}
+  .world-picker .route-button {position:relative;padding:7px 9px 7px 30px;gap:4px;}
+  .world-picker .number {position:absolute;left:9px;top:10px;}
+  .world-picker .route-button strong {font-size:11px;}
+  .world-picker .route-button small {font-size:7px;}
+  .world-tabs button {padding:9px 6px;}
+  .world-tabs strong {font-size:11px;}
+  .world-heading h2 {font-size:21px;}
+  .world-heading .eyeline {font-size:7px;}
+}
+@media(max-height:500px) {
+  #dialog.world-picker {height:calc(100dvh - 24px);padding:12px;gap:8px;}
+  .world-heading h2 {font-size:18px;margin:0;}
+  .world-heading .eyeline,.world-tabs span,.world-footer {display:none;}
+  .world-tabs button {padding:8px;}
+  .world-picker .route-list {grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:6px;}
+  .world-picker .route-button {padding:6px 8px 6px 28px;gap:3px;}
+  .world-picker .number {position:absolute;left:8px;top:8px;font-size:9px;}
+  .world-picker .route-button strong {font-size:10px;}
+  .world-picker .route-button small {font-size:7px;}
+  #dialog.world-picker {grid-template-rows:auto auto minmax(0,1fr);}
+}

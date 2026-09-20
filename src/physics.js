@@ -4,6 +4,7 @@ import { levels } from '#game/levels';
 import { stopAt, deckAt } from '#game/moving-stops';
 import { circleGuide } from '#game/cable-guides';
 import { liftAt, liftArea } from '#game/updrafts';
+import { Workshop } from '#game/industry/workshop';
 /**
  * DOM-free, fixed-step simulation. Massive, freely hinged, tension-only cable
  * links use positional constraints. Winching does work; the rotor applies
@@ -135,6 +136,7 @@ export class Sim {
     this._prevCab = { x: this.cabin.x, y: this.cabin.y };
     this.stats = { bumps: 0, pickups: 0 };
     this.assisted = false;
+    this.industry = this.level.industry ? new Workshop(this) : null;
   }
   updateStops() {
     for (const platform of this.platforms) {
@@ -171,11 +173,13 @@ export class Sim {
     }
   }
   collideBody(b, first) {
-    const samples = b.kind === 'engine' ? ENG_SAMPLES : b.kind === 'cabin' ? CAB_SAMPLES : [[0, 0, .043]];
+    const samples = b.kind === 'engine' ? ENG_SAMPLES : b.kind === 'cabin' ? this.industry?.samples() || CAB_SAMPLES : [[0, 0, .043]];
     for (let s = 0; s < samples.length; s++) {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
       for (let k = 0; k < this.terrain.length; k++) {
-        const t = this.terrain[k], c = t.guide === undefined ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
+        const t = this.terrain[k];
+        if (this.industry?.skipCollision(b, t)) continue;
+        const c = t.guide === undefined && !t.circle ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
         if (!c)
           continue;
         if (b.kind === 'node' && t.guide !== undefined) {
@@ -187,11 +191,13 @@ export class Sim {
         // Keep one contact per sample / terrain pair, from the earliest collision.
         const key = s * this.terrain.length + k;
         if (!b.contacts.some(z => z.key === key)) {
-          const v = vel(p), surfaceVX = t.vx || 0, surfaceVY = t.vy || 0;
+          const v = vel(p), surfaceVX = (t.vx || 0) - (t.spin || 0) * (t.r || 0) * c.ny,
+            surfaceVY = (t.vy || 0) + (t.spin || 0) * (t.r || 0) * c.nx;
           const incoming = -((v.x - surfaceVX) * c.nx + (v.y - surfaceVY) * c.ny);
           const ca = Math.cos(b.a), sa = Math.sin(b.a);
           b.contacts.push({
             key,
+            terrain: k,
             lx: lx - (ca * c.nx + sa * c.ny) * r,
             ly: ly - (-sa * c.nx + ca * c.ny) * r,
             nx: c.nx,
@@ -211,7 +217,7 @@ export class Sim {
     // Mid-link collision samples stop the visible cable cutting through corners.
     const a = this.end(i), b = this.end(i + 1), x = (a.x + b.x) * .5, y = (a.y + b.y) * .5;
     for (const t of this.terrain) {
-      const c = t.guide === undefined ? circleRect(x, y, .03, t) : circleGuide(x, y, .03, t);
+      const c = t.guide === undefined && !t.circle ? circleRect(x, y, .03, t) : circleGuide(x, y, .03, t);
       if (!c)
         continue;
       if (t.guide !== undefined) {
@@ -255,6 +261,7 @@ export class Sim {
     this.guideContacts.fill(false);
     this.hitCooldown = Math.max(0, this.hitCooldown - DT);
     this.controls(u);
+    this.industry?.beforeStep(this, u, DT);
     this.wind = this.windAt(this.engine.x, this.engine.y);
     this._tx = 0;
     this._ty = 0;
@@ -296,6 +303,7 @@ export class Sim {
         c.x += dx / d * j * c.im;
         c.y += dy / d * j * c.im;
       }
+      this.industry?.constrain(this);
     }
     for (const b of this.bodies) {
       b.vx = (b.x - b.ox) / DT;
@@ -343,8 +351,10 @@ export class Sim {
       this.fail(this.level.water ? 'This is not the ferry service.' : 'A little too close to sea level.');
     else if (c.x < -6 || c.x > this.level.width + 6 || c.y > this.level.height + 12 || this.engine.y > this.level.height + 14)
       this.fail('You have left the service area.');
-    if (!this.failed)
-      this.serviceStop();
+    if (!this.failed) {
+      if (this.industry) this.industry.afterStep(this, DT);
+      else this.serviceStop();
+    }
   }
   serviceStop() {
     if (this.level.practice)
@@ -403,6 +413,7 @@ export class Sim {
     this.events.push({ type: 'fail', reason });
   }
   targetStops() {
+    if (this.industry) return [];
     const onboard = this.onboard();
     return [...new Set((onboard.length ? onboard.map(j => j.to) : this.jobs.filter(j => j.state === 'waiting').map(j => j.from)))];
   }
@@ -441,7 +452,8 @@ export class Sim {
       stops: this.pads.map(({x, y, vx, vy, name}) => ({x, y, vx, vy, name})),
       guides: this.guides.map((g, i) => ({x: g.x, y: g.y, r: g.r,
         contact: this.guideContacts[i], visited: this.guideVisits[i]})),
-      tension: [this.tensionX, this.tensionY]
+      tension: [this.tensionX, this.tensionY],
+      ...(this.industry ? {industry: this.industry.snapshot()} : {})
     };
   }
 }
