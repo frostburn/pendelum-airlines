@@ -1,6 +1,6 @@
 import { DT, MIN, MAX, VERSION } from '#game/constants';
 import { clamp, fmt } from '#game/math';
-import { levels } from '#game/levels';
+import { levels, serviceRoutes, routeNumber, nextRoute } from '#game/levels';
 import { Sim } from '#game/physics';
 import { physicsTests } from '#game/diagnostics';
 import { createRenderer } from '#game/render/renderer';
@@ -140,7 +140,7 @@ $('#dialog').addEventListener('click', e => {
       loadRoute(sim.index);
       break;
     case 'next':
-      loadRoute(sim.index + 1);
+      loadRoute(nextRoute(sim.index) ?? sim.index);
       break;
     case 'routes':
       showPanel('routes');
@@ -359,7 +359,7 @@ function events() {
   }
 }
 function updateUI() {
-  $('#routeNumber').textContent = sim.level.practice ? 'FREE PRACTICE · NO TIMETABLE' : `ROUTE ${String(sim.index + 1).padStart(2, '0')} / 07`;
+  $('#routeNumber').textContent = sim.level.practice ? 'FREE PRACTICE · NO TIMETABLE' : `${sim.level.collection || 'LOCAL SERVICE'} · ROUTE ${String(routeNumber(sim.index)).padStart(2, '0')} / ${serviceRoutes.length}`;
   $('#routeName').textContent = sim.level.name;
   $('#routeSub').textContent = sim.level.sub;
   $('#flightTip').textContent = sim.level.tip;
@@ -372,7 +372,14 @@ function updateUI() {
   $('#integrity').textContent = sim.level.practice ? '∞' : Math.ceil(sim.hull) + '%';
   $('#integrityBar').style.width = sim.hull + '%';
   $('#integrityBar').style.background = sim.hull < 35 ? '#bf5843' : sim.hull < 70 ? '#c68b43' : C.teal;
-  $('#cabinSpeed').textContent = 'CABIN ' + Math.hypot(sim.cabin.vx, sim.cabin.vy).toFixed(1) + ' m/s';
+  const near = sim.pads.reduce((best, p) => Math.hypot(p.x - sim.cabin.x, p.y + .565 - sim.cabin.y) <
+    Math.hypot(best.x - sim.cabin.x, best.y + .565 - sim.cabin.y) ? p : best);
+  const onApproach = near.motion && Math.abs(near.x - sim.cabin.x) < near.w / 2 + 2 &&
+    Math.abs(near.y + .565 - sim.cabin.y) < 4;
+  $('#cabinSpeed').textContent = onApproach
+    ? 'DECK Δ ' + Math.hypot(sim.cabin.vx - near.vx, sim.cabin.vy - near.vy).toFixed(1) + ' m/s'
+    : 'CABIN ' + Math.hypot(sim.cabin.vx, sim.cabin.vy).toFixed(1) + ' m/s';
+  $('#cabinSpeed').title = onApproach ? 'Cabin speed relative to ' + near.name + '. Land below 0.7 m/s.' : 'Cabin speed through the world.';
   const aboard = sim.onboard(), targets = sim.targetStops();
   $('#ticketLabel').textContent = sim.level.practice ? 'Free practice' : sim.done ? 'Service complete' : aboard.length ? `${aboard.length} / 2 SEATS · DROP-OFF` : 'NEXT FARE · PICKUP';
   $('#objective').textContent = sim.level.practice ? 'Make a little room for the swing.' : sim.done ? 'All fares delivered.' : targets.map(i => sim.level.pads[i].name).join(' / ');

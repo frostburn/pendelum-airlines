@@ -19,7 +19,7 @@ export function physicsTests({ log = true } = {}) {
       s.step(u);
     return s;
   };
-  check('Eight valid, stable spawn configurations', () => levels.every((_, i) => {
+  check('All routes have valid, stable spawn configurations', () => levels.every((_, i) => {
     const s = step(new Sim(i), .5);
     return !s.failed && s.hull === 100 && Number.isFinite(s.engine.y);
   }));

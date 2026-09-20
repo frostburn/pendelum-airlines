@@ -1145,3 +1145,13 @@ input[type=range] {
   }
 
 }
+
+.route-collection {
+  display: block;
+  margin: 6px 0;
+  color: var(--teal, #37796c);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}

@@ -1,8 +1,27 @@
 # Pendulum Airlines
 
 A tiny flying taxi, a long cable, and a passenger cabin with its own plans.
-Seven handmade routes, a practice yard, touch controls, synthesized sound,
+Thirteen handmade routes, a practice yard, touch controls, synthesized sound,
 personal bests, and interpolated best-run ghosts.
+
+## On the move
+
+The six-route expansion introduces moving stops: ferries, construction lifts,
+and shuttle wagons. Match the cabin's speed to the deck to board or deliver.
+Near a moving stop, **DECK Δ** shows relative speed; aim below 0.7 m/s. The deck
+arrows show motion, and the paused route map shows the full travel.
+
+| Route | Challenge |
+| --- | --- |
+| The stop is leaving | Land on a slow ferry, then fly to the island |
+| Third floor, occasionally | Follow a construction lift vertically |
+| Mind the moving gap | Keep pace with a narrow shuttle wagon |
+| Connections are approximate | Transfer between ferries with different schedules |
+| Catch the next lift | Connect two lifts across a chimney |
+| Last boat, first train | Collect two pupils from different moving stops and bring their teacher home |
+
+Every platform repeats the same schedule on restart. Pause stops platform time
+as well as flight time, keeping ghost races reproducible. All routes are unlocked.
 
 ## Run and build
 
@@ -18,7 +37,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax checks, all tests, and a standalone build
+npm run verify   # syntax, tests, six simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```
@@ -50,6 +69,8 @@ mass, and the two seats can hold passengers with different destinations.
 
 - `src/physics.js`: DOM-free simulation, contacts, cable, rotor, and fares.
 - `src/constants.js`, `src/math.js`, `src/levels.js`: units, helpers, and route data.
+- `src/moving-stops.js`: analytic platform motion and solid deck geometry.
+- `src/routes/`: shared geometry helpers and the On the move route collection.
 - `src/render/`: drawing and camera; viewport culling is independently testable.
 - `src/ui/`: dialog templates and shared drawing colors/fonts.
 - `src/main.js`: lifecycle, controls, HUD, event dispatch, and the frame loop.
@@ -78,6 +99,18 @@ Only the engine receives rotor thrust. The powered winch does work, and air drag
 and terrain contacts exchange momentum with the environment. Constraint solving
 is a numerical game approximation, not an engineering solver.
 
+Moving stops declare `motion: {dx, dy, period, phase}` on a pad. `dx` and `dy`
+are half-travel distances; `period` is seconds; `phase` is a fraction of a cycle.
+`vehicle` selects ferry, lift, or train decoration. `hullDepth` sets the solid
+depth below the deck (default 0.42 m); ferry hulls extend below the waterline.
+Powered platforms follow smooth
+sinusoidal paths and act as kinematic scenery. Contacts use surface-relative
+velocity for normal response, friction, and impact damage. Boarding uses relative
+speed too. Pads, collision decks, and rendered stations share the same motion
+function; mutable poses belong to each simulation, not the route definitions.
+Guide rails are background artwork; the moving deck is solid to both the rig and
+its cable. Add static scenery below railways when a solid embankment is wanted.
+
 Rendering interpolates between physics steps and must not mutate simulation
 state. The visibility fix tests **the full building bounds**, including roof
 trim. A base below the viewport is not grounds to hide a roof that is still visible.
@@ -85,6 +118,9 @@ trim. A base below the viewport is not grounds to hide a roof that is still visi
 ### Saves and debugging
 
 The original `pendulum-airlines-v1` storage key and 20 Hz ghost format are retained.
+Route array indices are persistent save IDs: the original seven services stay at
+0–6, Sunday service stays at 7, and the expansion occupies 8–13. The picker lists
+practice last, and Next route skips it. Append routes rather than inserting them.
 Invalid saves are ignored; blocked or full storage falls back to session-only play.
 Browsers scope storage to the origin, so moving from a downloaded file to a hosted
 URL does not automatically transfer records.
@@ -107,6 +143,12 @@ assisted, preventing it from replacing a legitimate personal best or ghost.
 a chimney's base far below the screen while its facade still intersects the
 viewport, plus a test that calls the actual renderer and checks it draws that
 facade without changing simulation state.
+
+`npm run test:flights` completes all six expansion routes using normal analog
+flight inputs. It asserts every fare is delivered without damaging impacts;
+it does not teleport the rig or bypass service logic. These are playability
+witnesses, not claims about how easy the routes are for a human pilot. The check
+also runs as part of `npm run verify`.
 
 CI has **one Ubuntu job, one Node version (22.16.0), and no matrix**. It runs
 `npm run verify` and uploads `dist/index.html` as the `pendulum-airlines` artifact.

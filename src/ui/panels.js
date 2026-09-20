@@ -1,4 +1,4 @@
-import { levels } from '#game/levels';
+import { levels, serviceRoutes, routeNumber, nextRoute } from '#game/levels';
 import { fmt } from '#game/math';
 const closeButton = '<button class="icon close" data-action="close" aria-label="Close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>';
 const introArt = `<svg class="intro-art" viewBox="0 0 145 175" aria-hidden="true"><path d="M10 19h103M35 15v12m55-12v12" stroke="#253f41" stroke-width="3" stroke-linecap="round"/><path d="M25 29h75l-8 15H34Z" fill="#37796c" stroke="#253f41" stroke-width="2.5"/><rect x="50" y="27" width="26" height="25" rx="7" fill="#ce7046" stroke="#253f41" stroke-width="2.5"/><path d="M64 51q13 40 45 71" fill="none" stroke="#253f41" stroke-width="2"/><path d="M103 108 86 133l40-14Z" fill="none" stroke="#253f41" stroke-width="2"/><g transform="translate(106 139) rotate(-20)"><path d="M-24-17v34h48v-34" fill="#eebc65" stroke="#253f41" stroke-width="2.5" stroke-linejoin="round"/><path d="M-28 21h56M-24 1h48" stroke="#253f41" stroke-width="2.5" stroke-linecap="round"/><circle cy="-16" r="8" fill="#edcda5"/><path d="M-9 0v-7q9-7 18 0v7" fill="#37796c"/><path d="M-11-18h22l-4-6H-7Z" fill="#253f41"/></g><path d="M21 111q-2 36 34 44" stroke="#8eaaa0" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/></svg>`;
@@ -27,13 +27,14 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>`;
   else if (kind === 'routes')
     return `${closeButton}<h2 id="dialogTitle">Local routes.<br>Questionable connections.</h2>
-<p>Seven fares and a practice yard. Every route is open from the start.</p>
-<div class="route-list">${levels.map((l, i) => `<button class="route-button ${i === sim.index ? 'current' : ''}" data-route="${i}">
-<span class="number">${l.practice ? '∞' : String(i + 1).padStart(2, '0')}</span>
+<p>${serviceRoutes.length} fares and a practice yard. Six new routes in <b>On the move</b>. Every route is open from the start.</p>
+<div class="route-list">${[...serviceRoutes, ...levels.map((_, i) => i).filter(i => levels[i].practice)].map(i => { const l = levels[i]; return `<button class="route-button ${i === sim.index ? 'current' : ''}" data-route="${i}">
+<span class="number">${l.practice ? '∞' : String(routeNumber(i)).padStart(2, '0')}</span>
 <strong>${l.name}</strong>
+<span class="route-collection">${l.practice ? 'PRACTICE' : l.collection || 'Local service'}</span>
 <p>${l.sub}</p>
 <small>${l.practice ? 'FREE PRACTICE' : saved.best[i] ? 'BEST ' + fmt(saved.best[i].time) : 'NO COMPLETED SERVICE'}</small>
-</button>`).join('')}</div>
+</button>`; }).join('')}</div>
 <div class="note">Personal bests and ghosts stay in this browser when storage is available. No accounts. No network.</div>`;
   else if (kind === 'help')
     return `${closeButton}<h2 id="dialogTitle">A brief flight manual.</h2>
@@ -50,8 +51,11 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>
 <div>
 <h3>Collecting fares</h3>
-<p>Bring the cabin onto the highlighted landing strip, reasonably upright and below 0.7 m/s. A short progress bar shows boarding. After a little over half a second, people get on or off. No extra button.</p>
+<p>Bring the cabin onto the highlighted landing strip, reasonably upright and below 0.7 m/s <b>relative to the landing strip</b>. A short progress bar shows boarding. After a little over half a second, people get on or off. No extra button.</p>
 <p>The cabin carries two people. Each adds mass. Different tickets can have different destinations; consult the bottom instrument panel.</p>
+<h3>On the move</h3>
+<p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
+<p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
 <h3>Make the swing work for you</h3>
 <p>Start braking before the cabin reaches its destination. To catch a swing, move the engine in the direction the cabin is travelling, then ease both to a stop. A shorter cable fits through tighter routes; a longer one reaches under eaves and into shafts.</p>
 </div>
@@ -117,7 +121,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>
 <p>Express target: ${fmt(sim.level.gold)}. Your best run is available as a ghost on the next attempt.</p>
 <div class="actions">
-<button class="primary" data-action="${sim.index < 6 ? 'next' : 'routes'}">${sim.index < 6 ? 'Next route' : 'Choose a route'}</button>
+<button class="primary" data-action="${nextRoute(sim.index) !== null ? 'next' : 'routes'}">${nextRoute(sim.index) !== null ? 'Next route' : 'Choose a route'}</button>
 <button data-action="restart">Chase the ghost · R</button>
 </div>`;
   }
