@@ -20,6 +20,7 @@ export function bindToolButton(button, canUse, onChange) {
   button.addEventListener('keydown', e => {
     if (!activationKey(e.code) || !canUse()) return;
     e.preventDefault();
+    e.stopPropagation(); // Space belongs to this button, not the flight precision control.
     keys.add(e.code); update();
   });
   button.addEventListener('keyup', e => {

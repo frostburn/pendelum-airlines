@@ -3,10 +3,14 @@ import assert from 'node:assert/strict';
 import { bindToolButton } from '#game/ui/tool-button';
 
 function fixture() {
-  const button = new EventTarget(), state = {active: false, pressed: false, allowed: true};
+  const button = new EventTarget(), state = {active: false, pressed: false, allowed: true, flightKeys: new Set()};
   button.classList = {toggle: (_, value) => { state.pressed = value; }};
   button.setPointerCapture = () => {};
   const clear = bindToolButton(button, () => state.allowed, active => { state.active = active; });
+  // Model the window listener receiving only events which can bubble past the button.
+  for (const type of ['keydown', 'keyup']) button.addEventListener(type, e => {
+    if (!e.cancelBubble) type === 'keydown' ? state.flightKeys.add(e.code) : state.flightKeys.delete(e.code);
+  });
   const send = (type, properties = {}) => button.dispatchEvent(Object.assign(new Event(type, {cancelable: true}), properties));
   return {state, clear, send};
 }
@@ -43,5 +47,22 @@ test('blur and reset clear every input, and paused controls cannot acquire a hol
   assert.equal(state.active, false, 'reset must not resurrect a stale keyboard hold');
   state.allowed = false;
   send('keydown', {code: 'Space'}); send('pointerdown', {pointerId: 3});
+  assert.equal(state.active, false);
+});
+
+test('button activation does not enable flight precision, while steering and key releases still reach the window', () => {
+  const {state, send} = fixture();
+  send('keydown', {code: 'Space'});
+  assert.equal(state.active, true);
+  assert.equal(state.flightKeys.has('Space'), false);
+  send('keydown', {code: 'KeyW'});
+  assert.equal(state.flightKeys.has('KeyW'), true);
+  send('keyup', {code: 'KeyW'});
+  assert.equal(state.flightKeys.has('KeyW'), false);
+  assert.equal(state.active, true);
+  // A key pressed before focus moved to the button must still be cleared.
+  state.flightKeys.add('Space');
+  send('keyup', {code: 'Space'});
+  assert.equal(state.flightKeys.has('Space'), false);
   assert.equal(state.active, false);
 });

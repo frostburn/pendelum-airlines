@@ -393,7 +393,7 @@ function updateUI() {
   $('#cableReadout').textContent = sim.length.toFixed(2) + ' m';
   if (document.activeElement !== $('#cableSlider'))
     $('#cableSlider').value = sim.targetLength;
-  $('#integrity').textContent = sim.level.practice || sim.industry ? '∞' : Math.ceil(sim.hull) + '%';
+  $('#integrity').textContent = sim.level.practice ? '∞' : Math.ceil(sim.hull) + '%';
   $('#integrityBar').style.width = sim.hull + '%';
   $('#integrityBar').style.background = sim.hull < 35 ? '#bf5843' : sim.hull < 70 ? '#c68b43' : C.teal;
   const near = sim.pads.reduce((best, p) => Math.hypot(p.x - sim.cabin.x, p.y + .565 - sim.cabin.y) <
