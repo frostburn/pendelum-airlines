@@ -61,7 +61,7 @@ test('guide artwork uses the collision centres and radii without changing the si
   const circles = [];
   const context = new Proxy({
     arc(x, y, r) { circles.push({x, y, r}); },
-    measureText: text => ({width: text.length * 6}),
+    createLinearGradient: () => ({addColorStop() {}}), measureText: text => ({width: text.length * 6}),
   }, {get: (target, key) => key in target ? target[key] : () => {}});
   for (let i = 14; i < levels.length; i++) {
     const s = new Sim(i), before = JSON.stringify(s);

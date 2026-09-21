@@ -1,3 +1,5 @@
+import { Body, point, eff, move, vel, impulse } from '#game/rigid-body';
+export { Body, point } from '#game/rigid-body';
 import { DT, G, N, MIN, MAX, MAX_THRUST } from '#game/constants';
 import { clamp, wrap } from '#game/math';
 import { levels } from '#game/levels';
@@ -11,61 +13,6 @@ import { Workshop } from '#game/industry/workshop';
  * external thrust to the engine only. Air and terrain exchange momentum.
  * This is a numerical game approximation, not an engineering solver.
  */
-export class Body {
-  constructor(x, y, m, I = 0, kind = 'node') {
-    Object.assign(this, {
-      x,
-      y,
-      m,
-      I,
-      im: 1 / m,
-      ii: I ? 1 / I : 0,
-      a: 0,
-      vx: 0,
-      vy: 0,
-      w: 0,
-      kind,
-      ox: x,
-      oy: y,
-      oa: 0,
-      contacts: [],
-      impact: 0
-    });
-  }
-  setMass(m) {
-    this.I *= m / this.m;
-    this.m = m;
-    this.im = 1 / m;
-    this.ii = this.I ? 1 / this.I : 0;
-  }
-}
-export function point(b, lx = 0, ly = 0) {
-  const c = Math.cos(b.a), s = Math.sin(b.a), rx = lx * c - ly * s, ry = lx * s + ly * c;
-  return {
-    x: b.x + rx,
-    y: b.y + ry,
-    rx,
-    ry,
-    b
-  };
-}
-function eff(p, nx, ny) {
-  const r = p.rx * ny - p.ry * nx;
-  return p.b.im + r * r * p.b.ii;
-}
-function move(p, nx, ny, j) {
-  p.b.x += nx * j * p.b.im;
-  p.b.y += ny * j * p.b.im;
-  p.b.a += (p.rx * ny - p.ry * nx) * j * p.b.ii;
-}
-function vel(p) {
-  return { x: p.b.vx - p.b.w * p.ry, y: p.b.vy + p.b.w * p.rx };
-}
-function impulse(p, nx, ny, j) {
-  p.b.vx += nx * j * p.b.im;
-  p.b.vy += ny * j * p.b.im;
-  p.b.w += (p.rx * ny - p.ry * nx) * j * p.b.ii;
-}
 export function circleRect(x, y, r, t) {
   if (x + r < t.x || x - r > t.x + t.w || y + r < t.y || y - r > t.y + t.h)
     return null;
@@ -174,7 +121,8 @@ export class Sim {
     }
   }
   collideBody(b, first) {
-    const samples = b.kind === 'engine' ? ENG_SAMPLES : b.kind === 'cabin' ? this.industry?.samples() || CAB_SAMPLES : [[0, 0, .043]];
+    if (b.jigSlot !== undefined || b.delivered) return;
+    const samples = b.kind === 'engine' ? ENG_SAMPLES : b.kind === 'cabin' ? this.industry?.samples() || CAB_SAMPLES : b.kind === 'piece' ? b.colliders : [[0, 0, .043]];
     for (let s = 0; s < samples.length; s++) {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
       for (let k = 0; k < this.terrain.length; k++) {
@@ -187,7 +135,13 @@ export class Sim {
           this.guideVisits[t.guide] = true;
         }
         const j = c.depth / eff(p, c.nx, c.ny);
+        const oldX = b.x, oldY = b.y, oldA = b.a;
         move(p, c.nx, c.ny, j);
+        // Industrial contacts use split position correction. Depenetration is
+        // geometric repair, not an impulse proportional to depth / timestep.
+        if (this.industry) {
+          b.ox += b.x - oldX; b.oy += b.y - oldY; b.oa += b.a - oldA;
+        }
         // Keep one contact per sample / terrain pair, from the earliest collision.
         const key = s * this.terrain.length + k;
         if (!b.contacts.some(z => z.key === key)) {
@@ -204,8 +158,8 @@ export class Sim {
             nx: c.nx,
             ny: c.ny,
             incoming,
-            surfaceVX,
-            surfaceVY,
+            surfaceVX: b.kind === 'piece' && t.hammer !== undefined ? 0 : surfaceVX,
+            surfaceVY: b.kind === 'piece' && t.hammer !== undefined ? clamp(surfaceVY, -.7, 1.5) : surfaceVY,
             depth: c.depth
           });
           if (b.kind !== 'node')
@@ -261,6 +215,8 @@ export class Sim {
     this.updateStops();
     this.guideContacts.fill(false);
     this.hitCooldown = Math.max(0, this.hitCooldown - DT);
+    if (this.industry) this.bodies = [this.engine, ...this.nodes, this.cabin,
+      ...this.industry.pieces.filter(p => p.jigSlot === undefined && !p.delivered)];
     this.controls(u);
     this.industry?.beforeStep(this, u, DT);
     this.wind = this.windAt(this.engine.x, this.engine.y);
@@ -289,12 +245,14 @@ export class Sim {
       else
         for (let i = N - 1; i >= 0; i--)
           this.constrain(i);
+      this.industry?.constrainGrip(this);
       // Rope circles and midpoint samples collide as well as both vehicle bodies.
       if (it % 3 === 0 || it === 25) {
         for (const b of this.bodies)
           this.collideBody(b, it === 0);
         for (let i = 0; i < N; i++)
           this.collideCable(i);
+        this.industry?.collidePieces(this);
       }
       const e = this.engine, c = this.cabin, dx = c.x - e.x, dy = c.y - e.y, d = Math.hypot(dx, dy);
       if (d < .89 && d > 1e-6) {
@@ -323,6 +281,7 @@ export class Sim {
         impulse(p, -c.ny, c.nx, j);
       }
     }
+    this.industry?.finishContacts(this);
     const blend = 1 - Math.exp(-DT * 16);
     this.tensionX += (this._tx - this.tensionX) * blend;
     this.tensionY += (this._ty - this.tensionY) * blend;
@@ -335,6 +294,7 @@ export class Sim {
       this.stats.bumps++;
       this.events.push({ type: 'hit', severity: hit });
     }
+    this.industry?.damageDrone(this, DT);
     const c = this.cabin;
     this.distance += Math.hypot(c.x - this._prevCab.x, c.y - this._prevCab.y);
     this._prevCab = { x: c.x, y: c.y };

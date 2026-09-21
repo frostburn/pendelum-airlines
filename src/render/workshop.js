@@ -136,7 +136,7 @@ export function drawWorkshop(ctx, sim, draw, time) {
   for (const [a, b] of w.material.links) line([[a.x, a.y], [b.x, b.y]], '#e88737', .18);
   for (const p of w.material.liquid) circle(p.x, p.y, p.r * 1.12, '#ffb650');
   for (const p of w.material.liquid) circle(p.x - .022, p.y + .025, p.r * .46, '#ffe3a0');
-  for (const p of w.pieces) if (!p.attached) workpiece(ctx, p, draw);
+  for (const p of w.pieces) workpiece(ctx, p, draw);
   for (const s of w.sparks) {
     ctx.globalAlpha = clamp(s.life / .25, 0, 1);
     line([[s.x, s.y], [s.x - s.vx * .035, s.y - s.vy * .035]], s.color, .045);
@@ -159,7 +159,6 @@ export function drawTool(ctx, sim, body, draw, ghost = false) {
     box(-.42, -.18, .84, .10, yellow, edge);
     for (const x of [-.30, 0, .30]) line([[x, -.11], [x + .10, .18]], rust, .065);
     circle(0, .32, .09, w.action ? '#96745c' : '#bde7aa', edge);
-    if (w.heldPiece && !ghost) workpiece(ctx, {...w.heldPiece, x: .20, y: -.18, a: 0}, draw);
     if (!w.action) {
       ctx.setLineDash([.09, .14]);
       ctx.beginPath(); ctx.ellipse(0, -.20, .9, .65, 0, Math.PI, Math.PI * 2);

@@ -4,8 +4,8 @@ function workshop(spec) {
   const width = spec.width || 36;
   const config = {tool: 'hook', rack: {x: 3, y: 1.2, w: 3.8}, output: {x: width - 4, y: 1.2, w: 4.4},
     goal: 'deliver', requires: {}, ...spec.work};
-  const terrain = [rect(-12, -40, width + 24, 40, 'earth'), block(3, 1.2, 4.2, 'teal'),
-    block(config.output.x, 1.2, 4.8, 'teal')];
+  const terrain = [rect(-12, -40, width + 24, 40, 'earth'), block(3, 1.2, 4.2, 'metal'),
+    block(config.output.x, 1.2, 4.8, 'metal')];
   if (config.bin) {
     const b = config.bin;
     terrain.push(rect(b.x - b.w / 2, 0, b.w, b.y, 'metal'),
@@ -16,7 +16,7 @@ function workshop(spec) {
   for (const t of config.taps || []) terrain.push(rect(t.x - 2.75, 0, 1.7, 4.6, 'metal'), rect(t.x - 1.4, 4.2, 1.4, .2, 'metal'));
   for (const h of config.hammers || []) terrain.push(
     {...rect(h.x - 1.15, 0, 4.4, h.y, 'metal'), machine: 'anvil'},
-    rect(h.x + 3.3, 0, .7, 9.3, 'metal'), rect(h.x + .65, 9.05, 3.35, .32, 'metal'));
+    {...rect(h.x + 3.3, 0, .7, 9.3, 'metal'), hammerFrame: true}, {...rect(h.x + .65, 9.05, 3.35, .32, 'metal'), hammerFrame: true});
   for (const b of config.belts || []) terrain.push({...rect(b.x, b.y, .55, b.h, 'metal'), machine: 'belt', vy: -2.5});
   for (const p of config.stocks || []) terrain.push(block(p.x, p.y - .36, 2.3, 'metal'));
   if (config.jig) terrain.push(rect(config.jig.x - 2.4, 0, 4.8, config.jig.y, 'metal'));

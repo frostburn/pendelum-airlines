@@ -1,3 +1,5 @@
+import { point } from '#game/rigid-body';
+import { attract } from '#game/industry/magnet';
 import { clamp } from '#game/math';
 import { circleBox, localPoint, worldPoint, nearbyPairs } from '#game/industry/geometry';
 
@@ -39,11 +41,12 @@ function vesselCollision(p, body, walls, react = true) {
     const bvx = body.vx - body.w * ry, bvy = body.vy + body.w * rx;
     const vn = (p.vx - bvx) * nx + (p.vy - bvy) * ny;
     if (vn < 0) {
-      const j = -vn * .96;
-      p.vx += j * nx; p.vy += j * ny;
+      const mass = p.age === undefined ? .14 : .065, arm = rx * ny - ry * nx;
+      const j = -vn / (1 / mass + (react ? 1 / body.m + arm * arm / body.I : 0));
+      p.vx += j * nx / mass; p.vy += j * ny / mass;
       if (react) {
-        body.vx -= j * nx * .025 / body.m; body.vy -= j * ny * .025 / body.m;
-        body.w -= (rx * ny - ry * nx) * j * .012 / body.I;
+        body.vx -= j * nx / body.m; body.vy -= j * ny / body.m;
+        body.w -= arm * j / body.I;
       }
     }
   }
@@ -93,8 +96,17 @@ export class MaterialField {
       if (!p.held && p.iron && work.tool === 'magnet' && !work.action && held < MATERIAL_LIMITS.held) {
         const face = worldPoint(c, 0, -.27), dx = face.x - p.x, dy = face.y - p.y, d = Math.hypot(dx, dy);
         const local = localPoint(c, p.x, p.y);
-        if (d < .62 || circleBox(local.x, local.y, p.r + .08, MAGNET)) { p.held = true; held++; }
-        else if (d < 1.45) { p.vx += dx / d * 20 * dt; p.vy += dy / d * 24 * dt; }
+        if (d < .35 || circleBox(local.x, local.y, p.r + .025, MAGNET)) {
+          // Inelastic collection shares incoming momentum before adding weight.
+          const mass = .14, total = c.m + mass;
+          c.vx = (c.vx * c.m + p.vx * mass) / total;
+          c.vy = (c.vy * c.m + p.vy * mass) / total;
+          c.setMass(total);
+          p.held = true; held++;
+        } else if (d < 1.45) {
+          Object.assign(p, {a: 0, w: 0, im: 1 / .14, ii: 0});
+          attract(point(c, 0, -.27), point(p), 7, 1.45, dt);
+        }
       }
     }
     let slot = 0;

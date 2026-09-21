@@ -2,6 +2,7 @@ import { DT } from '#game/constants';
 import { stopAt } from '#game/moving-stops';
 import { drawMovingStop } from '#game/render/platforms';
 import { drawCableGuide } from '#game/render/guides';
+import { drawFoundry } from '#game/render/foundry';
 import { cityBuildings } from '#game/render/city';
 import { drawUpdraft } from '#game/render/updrafts';
 import { drawWorkshop, drawTool } from '#game/render/workshop';
@@ -97,6 +98,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
   }
   function background(t) {
+    if (sim.industry) { drawFoundry(ctx, renderCam, width, height, sim.time, reduced); return; }
     ctx.fillStyle = sim.level.theme === 1 ? '#e9e6d9' : sim.level.theme === 2 ? '#e0e9e5' : '#e2ebdf';
     ctx.fillRect(0, 0, width, height);
     const sunX = width * .79 - (renderCam.x - 15) * 2, sunY = height * .2 + (renderCam.y - 8) * 1.5;
@@ -151,8 +153,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
       return;
     const { x, y, w, h, style } = r;
     if (style === 'earth') {
-      box(x, y, w, h, '#879e8e');
-      box(x, y + h - .10, w, .10, '#4b7060');
+      box(x, y, w, h, sim.industry ? '#8c9487' : '#879e8e');
+      box(x, y + h - .10, w, .10, sim.industry ? '#626f69' : '#4b7060');
       ctx.strokeStyle = '#a7b8a0';
       ctx.lineWidth = .025;
       for (let xx = x; xx < x + w; xx += 1.3)

@@ -22,7 +22,14 @@ uses J to pour right; release it to level the vessel.
 | Some assembly required / Three-part harmony | Bring separate parts to free jig marks and release them. The three-part order requires every part to be polished before welding. Pick up the assembly and deliver it. |
 | From orange to shiny / The complete works | Cast, exchange the ladle at the Tool rack, collect the casting, forge, turn, polish, and deliver. The final order also needs a ready-made bracket and welding. |
 
-A held part remains a massive load on the same cable. Released parts fall and
+Workpieces remain independent rigid bodies on the same 240 Hz solver as the rig,
+including while held. Capture makes a contact joint at the existing pose, shares
+momentum, and never snaps the piece into the magnet. Release removes only that
+joint. Metal collides with scenery, the tool, drone, and other loose pieces.
+Magnetic forces are attractive and central, with equal opposite impulses and
+torque on the head. Contact position repair is separated from velocity so an
+overlap does not become a launch. Forging absorbs most of the kick at impact
+and rebounds the hammer while permanently deforming the metal. Released parts fall and
 settle on the scenery. Dispatch accepts a released, settled product only when
 its processing requirements are met. Proximity to a machine does not do work:
 forging needs actual downward hammer contacts with the metal; turning and
@@ -33,9 +40,9 @@ and qualify for the same three-hit order as suspended pieces. Five deforming
 cross-sections drive both the ingot silhouette and its held/free collision shapes. A stroke counts once,
 requires an incoming contact speed above 2 m/s, and must hit the workpiece rather
 than just the magnet or engine. Industrial collisions still shove and spin the
-rig, but never calculate integrity damage.
+rig. A fast hammer strike or being caught in the press head/frame destroys the drone; lighter engine impacts there cost integrity. Working the metal itself does not cost integrity.
 
-Material physics runs at 120 Hz alongside the existing 240 Hz rig. Limits are
+Grains and liquid run at 120 Hz alongside the 240 Hz rig and workpieces. Particle contacts react on the tool; liquid weight comes from its contact forces instead of being counted again in the ladle mass. Limits are
 168 grains, 96 molten droplets, 28 magnet-held grains, 8 workpieces, 24 slag marks,
 48 sparks, and 256 rendered fluid links. Neighbour-cell contact pairs avoid an
 all-pairs grain solver. Liquid uses local repulsion, viscosity and weak cohesion,
@@ -237,14 +244,15 @@ a chimney's base far below the screen while its facade still intersects the
 viewport, plus a test that calls the actual renderer and checks it draws that
 facade without changing simulation state.
 
+The foundry backdrop uses world-anchored sheds, silos, chimney stacks and gantry cranes. Its silhouettes remain stable across camera travel and viewport changes.
+
 City regressions cross the old wrap boundary in both directions and check the
 real renderer. Guide tests cover contact geometry, both vehicle bodies, cable
 nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
 
 `npm run test:flights` completes 23 moving-stop, freight, and foundry jobs using normal analog
 flight, winch and tool-button inputs. Every job must complete at full integrity.
-Passenger jobs must avoid damaging impacts; industrial jobs allow physical hits
-without integrity loss. The witnesses never teleport the rig or bypass service logic. These are playability
+Passenger jobs must avoid damaging impacts; industrial jobs must keep the drone clear of the hammer and its frame. The witnesses never teleport the rig or bypass service logic. These are playability
 witnesses, not claims about how easy the routes are for a human pilot. The check
 also runs as part of `npm run verify`. Freight flights must gain height in every
 plume and sink through cold gaps; the cycling route must wait for pressure, and
@@ -256,7 +264,7 @@ Foundry witnesses fill real moulds, count real hammer strokes and machine contac
 release separate pieces into welding jigs, and set the qualified product down at
 Dispatch. An additional anvil flight leaves the ingot loose, forges it, picks it
 up again, and delivers it. They also check material caps and guard against
-contact-driven launches. Focused tests cover normally-on magnets, release momentum,
+contact-driven launches. Focused tests cover capture energy, repeated pickup/release, equal opposite magnetic reactions and torque, solid-body contact, press damage and normally-on magnets, release momentum,
 loose-piece forging, permanent collision-mesh deformation, exactly three distinct downstroke contacts, rejected near-misses,
 fluid retention/spills, magnet selectivity, bounded neighbour search, machine
 timing, processing requirements, and renderer immutability.

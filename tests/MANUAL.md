@@ -88,13 +88,16 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
    confirm the ingot falls; release J to pick it up again. X must do nothing.
    Use WASD with the left hand and J with the right, then try the on-screen button.
    Forge the ingot both while suspended and after leaving it loose on the anvil.
-   There must be no anvil jaws or fixed cargo position. Each downstroke shoves/spins
-   the metal and makes a permanent bend/dent, including in its collision outline.
+   There must be no anvil jaws or fixed cargo position. Each downstroke makes a
+   permanent bend/dent, including in its collision outline, with a small recoil
+   instead of flinging the metal. Pick up tilted pieces and toggle J repeatedly:
+   neither object should snap or launch. With J held, the head should still push
+   the metal; with J released, attraction should pull back on the head.
    Three good hits finish forging in either state; releasing or reattaching during
    one stroke must not count it twice. Misses, slow touches and blows to the bare
    magnet/engine alone must not count. The loose-piece counter must remain visible.
-   Deliberately put the engine in the lane: it must get shoved without losing
-   integrity. The double shift requires press order 1 → 2 → 1. Collect the bent
+   Deliberately put the engine in the lane: a full hammer strike must end the run.
+   Getting the rotors caught in the upper press frame must also end the run. The double shift requires press order 1 → 2 → 1. Collect the bent
    ingot, finish any processing, and hold J to deliver it at Dispatch.
 5. Maintain contact with the lathe and the left face of the belt. Confirm the
    moving surfaces pull the payload; shaping/polishing stops when contact ends.
@@ -111,3 +114,7 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
    away. No industrial tool button should remain visible on passenger routes.
 
 Guide contact, winch and release witnesses remain available via `npm run test:guides`.
+
+9. Metal works has factory sheds, silos, pipe bridges, chimney stacks and gantry
+   cranes instead of the town and hills. Fly both directions and change viewport
+   size: silhouettes must not jump or change shape. Passenger worlds keep their town.

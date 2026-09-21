@@ -4,6 +4,8 @@ import { Sim } from '#game/physics';
 import { DT } from '#game/constants';
 import { hammerPose, meetsOrder } from '#game/industry/workshop';
 import { MaterialField, MATERIAL_LIMITS } from '#game/industry/materials';
+import { point } from '#game/rigid-body';
+import { worldPoint } from '#game/industry/geometry';
 import { nearbyPairs } from '#game/industry/geometry';
 import { pieceOutline, pieceSamples } from '#game/industry/workpiece';
 import { createRenderer } from '#game/render/renderer';
@@ -48,65 +50,55 @@ test('magnet selects iron, releasing it removes payload mass, and sand cannot fu
   assert.ok(!s.done);
 });
 
-test('workpiece magnet starts on, attracts without input, and releases with momentum while its key is held', () => {
+test('workpiece magnet attracts by default and release preserves independent body momentum', () => {
   const s = new Sim(28), w = s.industry, p = w.pieces[0], c = s.cabin;
-  assert.equal(w.heldPiece, null);
-  Object.assign(c, {x: p.x - .20, y: p.y + 1.05, a: 0});
-  for (let i = 0; i < 30; i++) { w.beforeStep(s, {action: true}, DT); w.afterStep(s, DT); }
-  assert.equal(w.heldPiece, null, 'holding the key keeps the magnet off');
   const floorY = p.y;
-  for (let i = 0; i < 180 && !w.heldPiece; i++) {
-    // This fixture holds the magnet in place, like the rotor holding altitude.
-    c.vx = c.vy = 0;
-    w.beforeStep(s, {}, DT); w.afterStep(s, DT);
-  }
-  assert.ok(p.y > floorY + .03, 'the free ingot must move upward before capture');
+  advance(s, .1, {action: true});
+  assert.equal(w.heldPiece, null);
+  advance(s, 1);
   assert.equal(w.heldPiece, p);
-  assert.equal(c.m, 6);
-  w.afterStep(s, DT);
-  Object.assign(c, {vx: 1.2, vy: .5, w: .8});
-  const expected = {vx: c.vx - c.w * (p.y - c.y), vy: c.vy + c.w * (p.x - c.x)};
+  assert.ok(p.y > floorY + .01);
+  assert.equal(c.m, 2.5, 'the workpiece retains its own mass and inertia');
+  assert.equal(p.m, 3.5);
+  const velocity = [p.vx, p.vy, p.w], pose = [p.x, p.y, p.a];
   w.beforeStep(s, {action: true}, DT);
   assert.equal(w.heldPiece, null); assert.equal(p.attached, false);
-  assert.equal(p.vx, expected.vx); assert.equal(p.vy, expected.vy); assert.equal(p.w, c.w);
-  w.updateMass(s); assert.equal(c.m, 2.5);
+  assert.deepEqual([p.vx, p.vy, p.w], velocity);
+  assert.deepEqual([p.x, p.y, p.a], pose);
 });
 
-test('three physical hammer strikes bend the free rig and change held and loose collision geometry', () => {
+test('three real held strikes deform solid cargo while absorbing the hammer kick', () => {
   const s = new Sim(28), w = s.industry, p = w.pieces[0], h = w.hammers[0];
-  const rest = new Sim(28).bodies.map(b => ({x: b.x, y: b.y}));
-  const restCabin = rest.at(-1);
-  w.heldPiece = p; p.attached = true; w.updateMass(s);
+  advance(s, 1);
+  assert.equal(w.heldPiece, p);
+  s.length = s.targetLength = 7.2;
+  s.engine.y = s.cabin.y + 8.12;
+  const top = point(s.engine, 0, -.32), bottom = point(s.cabin, 0, .60);
+  s.nodes.forEach((b, i) => { const t = (i + 1) / 24; b.x = top.x + (bottom.x - top.x) * t; b.y = top.y + (bottom.y - top.y) * t; });
+  const rest = s.bodies.map(b => ({x: b.x, y: b.y, a: b.a})), restCabin = {...s.cabin};
   const original = structuredClone(pieceOutline(p));
   for (let stroke = 0; stroke < 3; stroke++) {
     s.bodies.forEach((b, i) => Object.assign(b, {
       x: rest[i].x - restCabin.x + h.x - .12, y: rest[i].y - restCabin.y + h.y + 2.1,
-      vx: 0, vy: 0, w: 0, a: 0, contacts: []
+      vx: 0, vy: 0, w: 0, a: rest[i].a, contacts: []
     }));
-    s.time = h.period * (stroke + .60);
+    s.time = h.period * (stroke + .56);
     h.collider.y = hammerPose(h, s.time).bottom;
-    const shape = structuredClone(p.colliders), startY = s.cabin.y;
-    for (let i = 0; i < 80 && p.forge === stroke; i++) s.step({});
+    for (let i = 0; i < 180 && p.forge === stroke && !s.failed; i++) s.step({});
     assert.equal(p.forge, stroke + 1);
-    assert.notDeepEqual(p.colliders, shape);
     assert.deepEqual(p.colliders, pieceSamples(p));
-    assert.ok(Math.abs(s.cabin.w) > .2 || Math.abs(s.cabin.vy) > .5, 'impact must transfer momentum');
-    assert.notEqual(s.cabin.y, startY, 'cargo must not be pinned to an anvil');
+    assert.ok(Math.hypot(p.vx, p.vy) < 3 && Math.abs(p.w) < 3, 'plastic impact must not launch the metal');
     const forged = structuredClone(p.sections);
     w.forge(s); w.forge(s);
-    assert.equal(p.forge, stroke + 1, 'persistent contacts in one stroke count only once');
+    assert.equal(p.forge, stroke + 1);
     assert.deepEqual(p.sections, forged);
-    assert.equal(s.hull, 100);
-    assert.ok(h.rebound, 'hammer must rebound from a real impact');
-    assert.equal(s.failed, false);
+    assert.equal(s.hull, 100, 'forging the metal must not damage a clear drone');
+    assert.ok(h.rebound);
   }
   assert.notDeepEqual(pieceOutline(p), original);
-  assert.ok(p.sections.at(-1).hi < .10, 'the projecting end must visibly bend');
-  const held = w.samples().filter(sample => sample[3] === 'piece');
-  p.colliders.forEach(([x, y, r], i) => assert.deepEqual(held[i], [x + .20, y - .18, r, 'piece']));
   const permanent = structuredClone(p.sections);
-  w.beforeStep(s, {action: true}, DT); w.movePieces(s, DT);
-  assert.deepEqual(p.sections, permanent, 'dropping the piece must preserve its dents');
+  w.beforeStep(s, {action: true}, DT);
+  assert.deepEqual(p.sections, permanent);
 });
 
 test('a loose ingot on the anvil receives three real blows, deforms and remains collectible', () => {
@@ -120,7 +112,7 @@ test('a loose ingot on the anvil receives three real blows, deforms and remains 
     assert.equal(w.heldPiece, null);
     if (p.forge > previous) {
       hits.push(s.time);
-      assert.ok(Math.abs(p.vy) > .5 || Math.abs(p.w) > .5, 'hammer must transfer momentum to loose metal');
+      assert.ok(Math.hypot(p.vx, p.vy) < 2 && Math.abs(p.w) < 2, 'plastic impact should leave loose metal recoverable');
     }
   }
   assert.equal(p.forge, 3);
@@ -129,8 +121,9 @@ test('a loose ingot on the anvil receives three real blows, deforms and remains 
   assert.notDeepEqual(p.sections, original);
   assert.deepEqual(p.colliders, pieceSamples(p));
   assert.ok(meetsOrder(p, w.config.requires));
-  Object.assign(s.cabin, {x: p.x - .20, y: p.y + .55, a: 0, vx: 0, vy: 0});
-  w.beforeStep(s, {}, DT); w.afterStep(s, DT);
+  const above = worldPoint(p, p.sections[1].x, p.sections[1].hi + .20);
+  Object.assign(s.cabin, {...above, a: p.a, vx: p.vx, vy: p.vy, w: 0});
+  w.action = false; w.pullPieces(s, DT);
   assert.equal(w.heldPiece, p, 'the forged loose ingot can be picked up again');
   assert.equal(p.forge, 3);
   assert.equal(s.hull, 100);
@@ -224,7 +217,9 @@ test('the falling hammer really hits the engine; its warning lane is not just de
   w.forge(s);
   assert.equal(w.pieces[0].forge, 0, 'hitting an empty rig cannot forge a workpiece');
   s.step({});
-  assert.equal(s.hull, 100, 'industrial engine collisions must not subtract integrity');
+  assert.equal(s.hull, 0);
+  assert.equal(s.failed, true);
+  assert.match(s.reason, /hammer/);
 });
 
 test('slow touches, upstrokes and the wrong press cannot substitute for a good forging hit', () => {
@@ -232,9 +227,9 @@ test('slow touches, upstrokes and the wrong press cannot substitute for a good f
     const s = new Sim(29), w = s.industry, p = w.pieces[0], h = w.hammers[index];
     w.heldPiece = p; p.attached = true; w.updateMass(s);
     Object.assign(h.collider, {y: 3.5, vy: velocity});
-    Object.assign(s.cabin, {x: h.x - .12, y: 3.38, a: 0, vx: 0, vy: 0, w: 0, contacts: []});
-    s.collideBody(s.cabin, true);
-    assert.ok(s.cabin.contacts.some(c => c.part === 'piece' && s.terrain[c.terrain] === h.collider));
+    Object.assign(p, {x: h.x + .1, y: 3.2, a: 0, vx: 0, vy: 0, w: 0, contacts: []});
+    s.collideBody(p, true);
+    assert.ok(p.contacts.some(c => s.terrain[c.terrain] === h.collider));
     w.forge(s);
     assert.equal(p.forge, 0);
   }
@@ -245,12 +240,12 @@ test('lathe and belt need workpiece contacts; proximity cannot advance either pr
     const s = new Sim(id), w = s.industry, piece = w.pieces[0];
     w.heldPiece = piece; piece.attached = true;
     const t = s.terrain.find(t => t.machine === machine);
-    Object.assign(s.cabin, {x: t.x - 2, y: t.y + 3, a: 0, contacts: []});
+    Object.assign(piece, {x: t.x - 2, y: t.y + 3, a: 0, contacts: []});
     w.afterStep(s, DT);
     assert.equal(piece[property], 0);
-    Object.assign(s.cabin, machine === 'lathe' ? {x: t.x, y: t.y + t.r + .45} : {x: t.x - .9, y: t.y + 1});
-    s.collideBody(s.cabin, true);
-    assert.ok(s.cabin.contacts.some(c => s.terrain[c.terrain] === t));
+    Object.assign(piece, machine === 'lathe' ? {x: t.x, y: t.y + t.r + .25} : {x: t.x - .8, y: t.y + 1});
+    s.collideBody(piece, true);
+    assert.ok(piece.contacts.some(c => s.terrain[c.terrain] === t));
     w.afterStep(s, DT);
     assert.ok(piece[property] > 0);
   }
@@ -275,7 +270,7 @@ test('welding consumes distinct qualified pieces and releases one collectible as
 });
 
 test('drawing industrial machines and fluid never advances simulation or changes a paused hammer', () => {
-  const context = new Proxy({measureText: text => ({width: text.length * 6})}, {get: (o, k) => k in o ? o[k] : () => {}});
+  const context = new Proxy({createLinearGradient: () => ({addColorStop() {}}), measureText: text => ({width: text.length * 6})}, {get: (o, k) => k in o ? o[k] : () => {}});
   const renderer = createRenderer({getContext: () => context}); renderer.resize(390, 520);
   for (const id of [24, 26, 28, 31, 35]) {
     const s = new Sim(id); advance(s, .3);

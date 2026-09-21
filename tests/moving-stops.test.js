@@ -109,7 +109,7 @@ test('moving decks draw at interpolation time and stay frozen while paused', () 
   const draws = [];
   const context = new Proxy({
     fillRect(x, y, w, h) { draws.push({x, y, w, h}); },
-    measureText: text => ({width: text.length * 6}),
+    createLinearGradient: () => ({addColorStop() {}}), measureText: text => ({width: text.length * 6}),
   }, {get: (target, key) => key in target ? target[key] : () => {}});
   for (let index = 8; index < levels.length; index++) {
     const s = new Sim(index), renderer = createRenderer({getContext: () => context});
