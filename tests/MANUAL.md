@@ -96,8 +96,9 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
    Three good hits finish forging in either state; releasing or reattaching during
    one stroke must not count it twice. Misses, slow touches and blows to the bare
    magnet/engine alone must not count. The loose-piece counter must remain visible.
-   Deliberately put the engine in the lane: a full hammer strike must end the run.
-   Getting the rotors caught in the upper press frame must also end the run. The double shift requires press order 1 → 2 → 1. Collect the bent
+   Deliberately put the engine in the lane: damage must follow relative impact speed
+   with the normal cooldown. Gentle frame bumps and overlap alone must not hurt;
+   sufficiently fast impacts must still end the run. The double shift requires press order 1 → 2 → 1. Collect the bent
    ingot, finish any processing, and hold J to deliver it at Dispatch.
 5. Maintain contact with the lathe and the left face of the belt. Confirm the
    moving surfaces pull the payload; shaping/polishing stops when contact ends.

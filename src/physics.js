@@ -285,16 +285,17 @@ export class Sim {
     const blend = 1 - Math.exp(-DT * 16);
     this.tensionX += (this._tx - this.tensionX) * blend;
     this.tensionY += (this._ty - this.tensionY) * blend;
-    const hit = Math.max(this.engine.impact, this.cabin.impact);
+    // Industrial tools and workpieces absorb their working impacts; the drone
+    // uses the same relative-speed damage and cooldown as every other route.
+    const hit = this.industry ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
     if (hit > 2.6 && this.hitCooldown <= 0) {
       this.hitCooldown = .32;
       this.lastImpact = hit;
-      if (!this.level.practice && !this.industry)
+      if (!this.level.practice)
         this.hull = Math.max(0, this.hull - (hit - 2.6) * 9);
       this.stats.bumps++;
       this.events.push({ type: 'hit', severity: hit });
     }
-    this.industry?.damageDrone(this, DT);
     const c = this.cabin;
     this.distance += Math.hypot(c.x - this._prevCab.x, c.y - this._prevCab.y);
     this._prevCab = { x: c.x, y: c.y };

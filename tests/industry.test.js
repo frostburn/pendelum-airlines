@@ -205,21 +205,21 @@ test('hammer motion repeats without mutating its anvil height or phase offset', 
   assert.equal(s.industry.pieces[0].forge, 0, 'cycling a press does not forge a distant blank');
 });
 
-test('the falling hammer really hits the engine; its warning lane is not just decoration', () => {
-  const s = new Sim(28), w = s.industry, h = w.hammers[0];
+test('hammer damage uses ordinary relative impact speed and cooldown', () => {
+  const s = new Sim(28), h = s.industry.hammers[0];
   s.time = h.period * .53;
-  const previous = hammerPose(h, s.time - DT);
-  h.collider.y = previous.bottom;
-  w.beforeStep(s, {}, DT);
-  Object.assign(s.engine, {x: h.collider.x + 1, y: h.collider.y - .15, vx: 0, vy: 0, a: 0, w: 0, contacts: [], impact: 0});
-  s.collideBody(s.engine, true);
-  assert.ok(s.engine.impact > 7);
-  w.forge(s);
-  assert.equal(w.pieces[0].forge, 0, 'hitting an empty rig cannot forge a workpiece');
-  s.step({});
-  assert.equal(s.hull, 0);
-  assert.equal(s.failed, true);
-  assert.match(s.reason, /hammer/);
+  h.collider.y = hammerPose(h, s.time).bottom;
+  const dx = h.collider.x + 1 - s.engine.x, dy = h.collider.y - .15 - s.engine.y;
+  for (const body of s.bodies) { body.x += dx; body.y += dy; }
+  s.step({action: true});
+  assert.ok(s.engine.impact > 7, 'moving surface contributes its closing speed');
+  assert.equal(s.hull, Math.max(0, 100 - (s.engine.impact - 2.6) * 9));
+  assert.ok(s.hull > 0 && s.hull < 100, 'one moderate strike is survivable');
+  assert.equal(s.failed, false);
+  assert.equal(s.industry.pieces[0].forge, 0, 'hitting an empty rig cannot forge a workpiece');
+  const hull = s.hull;
+  s.step({action: true});
+  assert.equal(s.hull, hull, 'continued contact respects the ordinary hit cooldown');
 });
 
 test('slow touches, upstrokes and the wrong press cannot substitute for a good forging hit', () => {

@@ -40,7 +40,7 @@ and qualify for the same three-hit order as suspended pieces. Five deforming
 cross-sections drive both the ingot silhouette and its held/free collision shapes. A stroke counts once,
 requires an incoming contact speed above 2 m/s, and must hit the workpiece rather
 than just the magnet or engine. Industrial collisions still shove and spin the
-rig. A fast hammer strike or being caught in the press head/frame destroys the drone; lighter engine impacts there cost integrity. Working the metal itself does not cost integrity.
+rig. Drone collisions use the ordinary impact-speed damage threshold, scaling and cooldown, including against the moving hammer and stationary press frame. Slow touches and overlap alone do not cause damage. Working the metal itself does not cost integrity.
 
 Grains and liquid run at 120 Hz alongside the 240 Hz rig and workpieces. Particle contacts react on the tool; liquid weight comes from its contact forces instead of being counted again in the ladle mass. Limits are
 168 grains, 96 molten droplets, 28 magnet-held grains, 8 workpieces, 24 slag marks,

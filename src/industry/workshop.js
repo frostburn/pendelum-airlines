@@ -24,7 +24,7 @@ export class Workshop {
     this.config = sim.level.industry;
     this.tool = this.config.tool;
     this.action = false; this.tick = 0; this.pieces = []; this.serial = 0;
-    this.heldPiece = null; this.pairContacts = []; this.crushTime = 0; this.sparks = []; this.dockTime = 0;
+    this.heldPiece = null; this.pairContacts = []; this.sparks = []; this.dockTime = 0;
     this.material = new MaterialField(this.config, sim.index);
     this.molds = (this.config.molds || []).map(m => ({...m, fill: 0, cool: 0, ready: false}));
     this.hammers = (this.config.hammers || []).map((h, i) => {
@@ -263,18 +263,7 @@ export class Workshop {
       }
     }
   }
-  damageDrone(sim, dt) {
-    const contacts = sim.engine.contacts.filter(c => {
-      const t = sim.terrain[c.terrain];
-      return t.hammer !== undefined || t.hammerFrame;
-    });
-    const impact = Math.max(0, ...contacts.map(c => c.incoming));
-    const embedded = contacts.some(c => c.depth > .12);
-    this.crushTime = contacts.length ? this.crushTime + dt : 0;
-    if (impact > 6 || embedded || this.crushTime > .18) {
-      sim.hull = 0; sim.fail('The power hammer has retired your rotors.');
-    } else if (impact > 2.6) sim.hull = Math.max(0, sim.hull - (impact - 2.6) * 12);
-  }
+
   weld(sim, dt) {
     const j = this.jig;
     if (!j || j.complete) return;

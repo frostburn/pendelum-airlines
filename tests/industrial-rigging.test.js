@@ -81,13 +81,24 @@ test('interpenetration repair does not launch a loose workpiece from a rack', ()
   }
 });
 
-test('the upper press frame cannot hold a live drone trapped inside it', () => {
+test('stationary overlap with the upper press frame is not a kill zone', () => {
   const s = new Sim(28), h = s.industry.hammers[0];
   const dx = h.x + 1.8 - s.engine.x, dy = 9.16 - s.engine.y;
   for (const b of s.bodies) { b.x += dx; b.y += dy; }
   s.step({action: true});
-  assert.equal(s.failed, true); assert.equal(s.hull, 0);
-  assert.match(s.reason, /hammer/);
+  assert.equal(s.failed, false); assert.equal(s.hull, 100);
+});
+
+test('press frame bumps share the usual harmless, damaging and lethal speed ranges', () => {
+  for (const speed of [0, 2, 5, 20]) {
+    const s = new Sim(28), h = s.industry.hammers[0];
+    const dx = h.x + 1.8 - s.engine.x, dy = 8.85 - s.engine.y;
+    for (const b of s.bodies) { b.x += dx; b.y += dy; b.vy = speed; }
+    s.step({action: true});
+    if (speed <= 2) assert.equal(s.hull, 100);
+    if (speed === 5) assert.ok(s.hull > 75 && s.hull < 85);
+    assert.equal(s.failed, speed === 20);
+  }
 });
 
 test('factory silhouettes keep their identities across camera and viewport changes', () => {
