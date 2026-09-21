@@ -11,7 +11,7 @@ of `dist/index.html`. Check the console for errors throughout.
    Continue up until its base is below the viewport. The roof and upper facade
    should remain visible until their complete visual bounds leave the screen.
    Descend and repeat at another window size; there should be no pop-out/pop-in.
-4. Check all eighteen entries in the route picker. Board and deliver on First fare;
+4. Check all three worlds and their twelve entries per page. Board and deliver on First fare;
    restart and check the best-run ghost. Debug-assisted runs must not save records.
 5. At a phone-sized viewport with touch enabled, use the thumb stick and both
    winch buttons. Releasing or cancelling a touch should release its control.
@@ -24,7 +24,7 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
 
 ## On the move
 
-1. In the route picker, confirm 17 numbered services and Sunday service last.
+1. In the route picker, confirm the first two worlds contain the original services, guides and practice yard.
    Finish The last collection: Next route should open The stop is leaving.
    Existing best times and ghosts should still belong to the same original routes.
 2. On The stop is leaving, follow Little Ferry sideways and descend. DECK Δ should
@@ -43,18 +43,17 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
    the deck starts at exactly the same point relative to a saved ghost.
 7. At 390px width, reload into an expansion route, start immediately, and restart.
    Both the cabin and the rotor must be fully visible on the first frame. Check
-   route names, the DECK Δ readout, and both columns of the route picker at desktop
-   width and the single-column layout on a phone.
+   route names, the DECK Δ readout, and all twelve route tiles on each world screen, without scrolling.
 
 ## Heavy lifting, route visibility, and stable skyline
 
 1. Fly left and right across a route. Distant buildings should translate smoothly
    and keep their shape. Reverse direction and open/close the map; buildings should
    retain their identities. Repeat after resizing the window.
-2. Confirm all six Around the bend entries are absent. Finish Last boat, first
-   train: Next route must open A piano is not hand luggage. Next route ends after
-   The light way home. Use `pendulum.load(14)` to load a hidden experiment, then
-   reload the page: it should resume a visible route without losing any old records.
+2. Confirm Around the bend entries appear in the first two worlds. Next route
+   crosses world boundaries and skips Sunday service. Finishing The light way home
+   should lead into Metal works. Load an old guide best and ghost, then reload:
+   the same saved route should resume without losing its record.
 3. On A piano is not hand luggage, wait for the crate to load. It should render as
    a crate both on the platform and in the cabin, and the ticket label should show
    heavy freight. Climb in the amber air, cross into the next column, and brake
@@ -72,6 +71,51 @@ by the browser. Test Firefox and Safari explicitly before claiming compatibility
 7. At phone and desktop sizes, inspect all four maps, the freight/pressure ticket
    label, route picker, and help. Repeat a completed freight job with its ghost.
 
-The hidden guide experiments remain available through `pendulum.load(14)` to
-`pendulum.load(19)`. Their old collision, winch, and release checks can still be
-run with `npm run test:guides`; they are not part of the public route sequence.
+## Metal works and world pages
+
+1. Check world selection at 390×844, 320×568, 844×390 and a desktop viewport.
+   Every world has twelve selectable tiles on one screen, with no scrolling.
+   Switch worlds by pointer and keyboard, and verify focus remains on the chosen
+   world button. Best times and the current-route highlight stay with their IDs.
+2. Without holding J, drag the magnet through each ore bed. Black grains collect; sand moves aside.
+   Observe the mass and swing change. Hold J or the tool button over the hopper:
+   grains should detach and fall, and only grains entering it should count.
+3. Fill the ladle below the tap, then back out before climbing. Fly abruptly to
+   slosh or spill. Hold J to tip over a mould; release to level the vessel. Inspect
+   the connected liquid lobes, overflow, cooling, and the resulting physical ingot.
+   Refill after a spill. Both moulds must be complete on the two-mould job.
+4. Start a forging job: the magnet picks up without a tool key. Hold J and
+   confirm the ingot falls; release J to pick it up again. X must do nothing.
+   Use WASD with the left hand and J with the right, then try the on-screen button.
+   Forge the ingot both while suspended and after leaving it loose on the anvil.
+   There must be no anvil jaws or fixed cargo position. Each downstroke makes a
+   permanent bend/dent, including in its collision outline, with a small recoil
+   instead of flinging the metal. Pick up tilted pieces and toggle J repeatedly:
+   neither object should snap or launch. With J held, the head should still push
+   the metal; with J released, attraction should pull back on the head.
+   Three good hits finish forging in either state; releasing or reattaching during
+   one stroke must not count it twice. Misses, slow touches and blows to the bare
+   magnet/engine alone must not count. The loose-piece counter must remain visible.
+   Deliberately put the engine in the lane: damage must follow relative impact speed
+   with the normal cooldown. Gentle frame bumps and overlap alone must not hurt;
+   sufficiently fast impacts must still end the run. The double shift requires press order 1 → 2 → 1. Collect the bent
+   ingot, finish any processing, and hold J to deliver it at Dispatch.
+5. Maintain contact with the lathe and the left face of the belt. Confirm the
+   moving surfaces pull the payload; shaping/polishing stops when contact ends.
+   The workpiece changes profile and shine. An unfinished part cannot be dispatched.
+6. Release each part onto a free welding-jig mark. A single part cannot fill two
+   slots. On Three-part harmony, a dull part must be rejected and remain recoverable.
+   After welding, pick up the assembly and release it on Dispatch to finish.
+7. Finish each production-line job. After casting, land upright at the Tool rack
+   to exchange the ladle. Pick up the casting from its mould. On The complete works,
+   the waiting finished bracket should go straight to the jig after the casting.
+8. Pause, map, restart, ghost, and save/reload should work on industrial jobs too.
+   Machine cycles, liquids, cooling and welding freeze while paused. Hold and then
+   cancel a tool-button touch; it must release, including after pausing or tabbing
+   away. No industrial tool button should remain visible on passenger routes.
+
+Guide contact, winch and release witnesses remain available via `npm run test:guides`.
+
+9. Metal works has factory sheds, silos, pipe bridges, chimney stacks and gantry
+   cranes instead of the town and hills. Fly both directions and change viewport
+   size: silhouettes must not jump or change shape. Passenger worlds keep their town.

@@ -17,7 +17,7 @@ jobs:
   verify:
     name: Node 22.16.0
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6

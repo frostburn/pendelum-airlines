@@ -109,7 +109,7 @@ test('moving decks draw at interpolation time and stay frozen while paused', () 
   const draws = [];
   const context = new Proxy({
     fillRect(x, y, w, h) { draws.push({x, y, w, h}); },
-    measureText: text => ({width: text.length * 6}),
+    createLinearGradient: () => ({addColorStop() {}}), measureText: text => ({width: text.length * 6}),
   }, {get: (target, key) => key in target ? target[key] : () => {}});
   for (let index = 8; index < levels.length; index++) {
     const s = new Sim(index), renderer = createRenderer({getContext: () => context});
@@ -141,12 +141,12 @@ test('legacy route IDs and saved ghosts survive the expansion', () => {
   assert.deepEqual(parseSaved(JSON.stringify(saved), levels.length), saved);
   assert.equal(nextRoute(6), 8);
   assert.equal(routeNumber(8), 8);
-  assert.equal(nextRoute(13), 20);
-  assert.equal(nextRoute(23), null);
-  assert.equal(serviceRoutes.length, 17);
+  assert.equal(nextRoute(13), 16);
+  assert.equal(nextRoute(23), 24);
+  assert.equal(serviceRoutes.length, 35);
   const markup = panelMarkup('routes', {sim: new Sim(8), saved});
-  assert.equal((markup.match(/data-route=/g) || []).length, 18);
-  assert.ok(markup.indexOf('data-route="23"') < markup.indexOf('data-route="7"'));
+  assert.equal((markup.match(/data-route=/g) || []).length, 12);
+  assert.match(markup, /data-route="7"/);
   assert.match(panelMarkup('result', {sim: new Sim(6), saved}), /data-action="next"/);
-  assert.doesNotMatch(panelMarkup('result', {sim: new Sim(23), saved}), /data-action="next"/);
+  assert.doesNotMatch(panelMarkup('result', {sim: new Sim(35), saved}), /data-action="next"/);
 });

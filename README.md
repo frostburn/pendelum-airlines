@@ -1,8 +1,55 @@
 # Pendulum Airlines
 
 A tiny flying taxi, a long cable, and a passenger cabin with its own plans.
-Seventeen handmade routes, a practice yard, touch controls, synthesized sound,
-personal bests, and interpolated best-run ghosts.
+Three worlds, 35 handmade jobs, a practice yard, touch controls, synthesized sound,
+personal bests, and interpolated best-run ghosts. Each world fits twelve level
+tiles onto one screen; switch worlds instead of scrolling. All jobs are open.
+
+## Metal works
+
+The third world replaces the passenger cabin with industrial tools. Both magnets
+are **on by default**: fly the head above a workpiece or rake it through ore to
+collect metal. **Hold J** with your right hand, or hold the on-screen tool button,
+to turn the magnet off and drop the load. Release J to turn it back on. The ladle
+uses J to pour right; release it to level the vessel.
+
+| Jobs | Work |
+| --- | --- |
+| A magnetic personality / Buried treasure, mostly sand | Rake black magnetite out of loose sand, carry it to the refinery hopper, and release it inside. The second order exceeds one magnet load. |
+| Do not drink the orange / Two moulds, one bad idea | Fill below a furnace tap, back out from under it, and pour into one or two moulds. Missed droplets cool into slag; the tap provides refills. |
+| The hammer has right of way / The double shift | Put a bar under three real downstroke impacts, either held by the magnet or loose on the anvil. The hammer knocks, bends and flattens the free load. On The double shift, visit presses 1 → 2 → 1 for those three blows. Keep the engine clear. |
+| A turn for the better / Against the grain | Maintain contact with the spinning lathe or moving belt. The surfaces pull on the workpiece as it is shaped and polished. |
+| Some assembly required / Three-part harmony | Bring separate parts to free jig marks and release them. The three-part order requires every part to be polished before welding. Pick up the assembly and deliver it. |
+| From orange to shiny / The complete works | Cast, exchange the ladle at the Tool rack, collect the casting, forge, turn, polish, and deliver. The final order also needs a ready-made bracket and welding. |
+
+Workpieces remain independent rigid bodies on the same 240 Hz solver as the rig,
+including while held. Capture makes a contact joint at the existing pose, shares
+momentum, and never snaps the piece into the magnet. Release removes only that
+joint. Metal collides with scenery, the tool, drone, and other loose pieces.
+Magnetic forces are attractive and central, with equal opposite impulses and
+torque on the head. Contact position repair is separated from velocity so an
+overlap does not become a launch. Forging absorbs most of the kick at impact
+and rebounds the hammer while permanently deforming the metal. Released parts fall and
+settle on the scenery. Dispatch accepts a released, settled product only when
+its processing requirements are met. Proximity to a machine does not do work:
+forging needs actual downward hammer contacts with the metal; turning and
+polishing need workpiece contact with moving surfaces. The welding jig consumes
+distinct qualified pieces and releases one collectible assembly. There is no
+anvil clamp or forge position override; released pieces collide with the hammer
+and qualify for the same three-hit order as suspended pieces. Five deforming
+cross-sections drive both the ingot silhouette and its held/free collision shapes. A stroke counts once,
+requires an incoming contact speed above 2 m/s, and must hit the workpiece rather
+than just the magnet or engine. Industrial collisions still shove and spin the
+rig. Drone collisions use the ordinary impact-speed damage threshold, scaling and cooldown, including against the moving hammer and stationary press frame. Slow touches and overlap alone do not cause damage. Working the metal itself does not cost integrity.
+
+Grains and liquid run at 120 Hz alongside the 240 Hz rig and workpieces. Particle contacts react on the tool; liquid weight comes from its contact forces instead of being counted again in the ladle mass. Limits are
+168 grains, 96 molten droplets, 28 magnet-held grains, 8 workpieces, 24 slag marks,
+48 sparks, and 256 rendered fluid links. Neighbour-cell contact pairs avoid an
+all-pairs grain solver. Liquid uses local repulsion, viscosity and weak cohesion,
+with collisions against the rotating ladle walls; it must cross the rim to pour.
+Mould volume is counted in droplets and cools into an ingot. This is a bounded
+toy approximation, not a metallurgy or fluid-engineering model. Everything uses
+simulation time, including machine cycles, cooling and welding.
 
 ## Heavy lifting
 
@@ -23,10 +70,8 @@ changes the flight again: a light cabin can rise in hot air, so descend outside 
 | Steam takes a break | Wait for the next boiler to warm before leaving steady lift |
 | The light way home | Deliver a heavy pump, return two mechanics, and land on a cold part of the depot |
 
-The earlier six **Around the bend** guide routes remain in the codebase as
-experiments. They are hidden from the picker, Next route, and automatic resume.
-Their saved IDs and ghosts are preserved, and `pendulum.load(14)` through
-`pendulum.load(19)` still opens them from the console.
+The six **Around the bend** guide routes now fill out the first two worlds.
+Their original save IDs, bests and ghosts are retained.
 
 The distant skyline also keeps stable building identities as the camera moves.
 Crossing a parallax tile boundary no longer reshuffles their widths and heights.
@@ -64,7 +109,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, ten simulated flights, and a standalone build
+npm run verify   # syntax, tests, 23 simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```
@@ -83,12 +128,13 @@ use the dev server or build it rather than opening that template directly.
 | Q / E | Reel in / lower the cabin |
 | Mouse wheel / cable slider | Set the winch target |
 | Space | Precision flight |
+| Hold J / tool button | Switch the normally-on magnet off to drop metal, or tip the ladle right |
 | R | Restart the current route |
 | Hold V | Paused route overview |
 | P / Escape | Pause / resume |
 | H / G / M / F | Help / ghost / sound / full screen |
 
-Touch screens have a thumb stick and two winch buttons. Land the cabin gently
+Touch screens have a thumb stick, two winch buttons, and an industrial tool button. Land the cabin gently
 on a highlighted stop; boarding and drop-off are automatic. Each passenger adds
 mass, and the two seats can hold passengers with different destinations.
 
@@ -99,7 +145,8 @@ mass, and the two seats can hold passengers with different destinations.
 - `src/moving-stops.js`: analytic platform motion and solid deck geometry.
 - `src/cable-guides.js`: circular contact geometry for fixed cable guides.
 - `src/updrafts.js`: spatial lift fields, body area factors, and boiler schedules.
-- `src/routes/`: shared geometry helpers, public collections, and hidden experiments.
+- `src/industry/`: bounded materials, tool state, free parts, and machine processing.
+- `src/routes/`: shared geometry helpers and all route collections.
 - `src/render/`: drawing and camera; stable city slots and viewport culling.
 - `src/ui/`: dialog templates and shared drawing colors/fonts.
 - `src/main.js`: lifecycle, controls, HUD, event dispatch, and the frame loop.
@@ -168,11 +215,12 @@ trim. A base below the viewport is not grounds to hide a roof that is still visi
 
 The original `pendulum-airlines-v1` storage key and 20 Hz ghost format are retained.
 Route array indices are persistent save IDs: the original seven services stay at
-0–6, Sunday service stays at 7, On the move occupies 8–13, hidden Around the bend
-occupies 14–19, and Heavy lifting occupies 20–23. Display numbers are independent
-of those saved IDs. The picker lists practice last; Next route skips practice and
-hidden routes. A saved hidden route resumes at the next visible service, keeping
-the hidden route's best and ghost. Append routes rather than inserting them.
+0–6, Sunday service stays at 7, On the move occupies 8–13, Around the bend occupies
+14–19, Heavy lifting occupies 20–23, and Metal works is appended at 24–35.
+`worlds` declares picker order separately from those IDs. Next route follows world
+order and skips free practice. Every earlier route remains directly resumable;
+reopening the guide routes does not remap their records. Append definitions rather
+than inserting them.
 Invalid saves are ignored; blocked or full storage falls back to session-only play.
 Browsers scope storage to the origin, so moving from a downloaded file to a hosted
 URL does not automatically transfer records.
@@ -196,13 +244,15 @@ a chimney's base far below the screen while its facade still intersects the
 viewport, plus a test that calls the actual renderer and checks it draws that
 facade without changing simulation state.
 
+The foundry backdrop uses world-anchored sheds, silos, chimney stacks and gantry cranes. Its silhouettes remain stable across camera travel and viewport changes.
+
 City regressions cross the old wrap boundary in both directions and check the
 real renderer. Guide tests cover contact geometry, both vehicle bodies, cable
 nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
 
-`npm run test:flights` completes all ten public expansion routes using normal analog
-flight and winch inputs. It asserts every fare is delivered without damaging impacts;
-it does not teleport the rig or bypass service logic. These are playability
+`npm run test:flights` completes 23 moving-stop, freight, and foundry jobs using normal analog
+flight, winch and tool-button inputs. Every job must complete at full integrity.
+Passenger jobs must avoid damaging impacts; industrial jobs must keep the drone clear of the hammer and its frame. The witnesses never teleport the rig or bypass service logic. These are playability
 witnesses, not claims about how easy the routes are for a human pilot. The check
 also runs as part of `npm run verify`. Freight flights must gain height in every
 plume and sink through cold gaps; the cycling route must wait for pressure, and
@@ -210,7 +260,16 @@ the return must carry both mechanics and land outside hot air. An ablation test
 removes only the updrafts and confirms full throttle cannot lift any loaded route
 off the ground. This checks that the new mechanic supplies necessary work.
 
-`npm run test:guides` separately exercises the six hidden experiments, including
+Foundry witnesses fill real moulds, count real hammer strokes and machine contacts,
+release separate pieces into welding jigs, and set the qualified product down at
+Dispatch. An additional anvil flight leaves the ingot loose, forges it, picks it
+up again, and delivers it. They also check material caps and guard against
+contact-driven launches. Focused tests cover capture energy, repeated pickup/release, equal opposite magnetic reactions and torque, solid-body contact, press damage and normally-on magnets, release momentum,
+loose-piece forging, permanent collision-mesh deformation, exactly three distinct downstroke contacts, rejected near-misses,
+fluid retention/spills, magnet selectivity, bounded neighbour search, machine
+timing, processing requirements, and renderer immutability.
+
+`npm run test:guides` separately exercises the six guide routes, including
 contact, release, winching, and continuous cable clearance around their rims.
 
 CI has **one Ubuntu job, one Node version (22.16.0), and no matrix**. It runs

@@ -2,8 +2,10 @@ import { DT } from '#game/constants';
 import { stopAt } from '#game/moving-stops';
 import { drawMovingStop } from '#game/render/platforms';
 import { drawCableGuide } from '#game/render/guides';
+import { drawFoundry } from '#game/render/foundry';
 import { cityBuildings } from '#game/render/city';
 import { drawUpdraft } from '#game/render/updrafts';
+import { drawWorkshop, drawTool } from '#game/render/workshop';
 import { boilerPower } from '#game/updrafts';
 import { clamp } from '#game/math';
 import { point } from '#game/physics';
@@ -96,6 +98,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
   }
   function background(t) {
+    if (sim.industry) { drawFoundry(ctx, renderCam, width, height, sim.time, reduced); return; }
     ctx.fillStyle = sim.level.theme === 1 ? '#e9e6d9' : sim.level.theme === 2 ? '#e0e9e5' : '#e2ebdf';
     ctx.fillRect(0, 0, width, height);
     const sunX = width * .79 - (renderCam.x - 15) * 2, sunY = height * .2 + (renderCam.y - 8) * 1.5;
@@ -150,8 +153,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
       return;
     const { x, y, w, h, style } = r;
     if (style === 'earth') {
-      box(x, y, w, h, '#879e8e');
-      box(x, y + h - .10, w, .10, '#4b7060');
+      box(x, y, w, h, sim.industry ? '#8c9487' : '#879e8e');
+      box(x, y + h - .10, w, .10, sim.industry ? '#626f69' : '#4b7060');
       ctx.strokeStyle = '#a7b8a0';
       ctx.lineWidth = .025;
       for (let xx = x; xx < x + w; xx += 1.3)
@@ -227,7 +230,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     line([[x + .16, y], [x + .16, y + .48]], '#6e6448', .03);
   }
   function station(p, i, t) {
-    const targets = sim.targetStops(), active = targets.includes(i), waiting = sim.jobs.filter(j => j.state === 'waiting' && j.from === i), delivered = sim.jobs.filter(j => j.state === 'delivered' && j.to === i).length;
+    const targets = sim.targetStops(), active = targets.includes(i), waiting = sim.industry ? [] : sim.jobs.filter(j => j.state === 'waiting' && j.from === i), delivered = sim.jobs.filter(j => j.state === 'delivered' && j.to === i).length;
     const color = active ? C.orange : sim.level.practice ? C.teal : '#719080';
     box(p.x - p.w / 2, p.y + .035, p.w, .085, active ? '#eebc65' : '#baceaf');
     for (let xx = p.x - p.w / 2 + .10; xx < p.x + p.w / 2 - .08; xx += .33)
@@ -360,7 +363,9 @@ export function createRenderer(canvas, { reduced = false } = {}) {
       }
     }
     for (const r of sim.level.terrain)
-      building(r);
+      if (r.style !== 'metal') building(r);
+    const workshopDraw = {box, poly, circle, line, text};
+    if (sim.industry) drawWorkshop(ctx, sim, workshopDraw, sceneTime);
     sim.guides.forEach((guide, i) => {
       drawCableGuide(ctx, guide, sim.guideContacts[i]);
       if (map) text(guide.x, guide.y + guide.r + .48, 'GUIDE', .23, '#536b55');
@@ -394,7 +399,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
       line(p, C.teal, .035);
       ctx.setLineDash([]);
       engineDraw(ge, clock, true);
-      cabinDraw(gc, clock, [], true);
+      if (sim.industry) drawTool(ctx, sim, gc, workshopDraw, true);
+      else cabinDraw(gc, clock, [], true);
       ctx.restore();
     }
     const a = point({ ...e }, 0, -.32), b = point({ ...c }, 0, .60), rope = [[a.x, a.y], ...sim.nodes.map(n => {
@@ -404,12 +410,14 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     line(rope, '#eeeada99', .095);
     line(rope, '#3b5247', .04);
     engineDraw(e, clock);
-    cabinDraw(c, clock, sim.onboard());
+    if (sim.industry) drawTool(ctx, sim, c, workshopDraw);
+    else cabinDraw(c, clock, sim.onboard());
     ctx.restore();
     // Off-screen stop labels stay legible and do not obscure the aircraft.
     if (!map && !panel) {
-      sim.targetStops().forEach((i, n) => {
-        const p = pads[i], x = sx(p.x), y = sy(p.y + 2);
+      const targets = sim.industry ? [sim.industry.order(sim)] : sim.targetStops().map(i => pads[i]);
+      targets.forEach((p, n) => {
+        const x = sx(p.x), y = sy(p.y + 2);
         if (x < 20 || x > width - 20 || y < 60 || y > height - 55) {
           const cx = clamp(x, 76, width - 76), cy = clamp(y, 104, height - 72 - n * 28), angle = Math.atan2(y - cy, x - cx);
           ctx.save();

@@ -1,70 +1,18 @@
+import { Body, point, eff, move, vel, impulse } from '#game/rigid-body';
+export { Body, point } from '#game/rigid-body';
 import { DT, G, N, MIN, MAX, MAX_THRUST } from '#game/constants';
 import { clamp, wrap } from '#game/math';
 import { levels } from '#game/levels';
 import { stopAt, deckAt } from '#game/moving-stops';
 import { circleGuide } from '#game/cable-guides';
 import { liftAt, liftArea } from '#game/updrafts';
+import { Workshop } from '#game/industry/workshop';
 /**
  * DOM-free, fixed-step simulation. Massive, freely hinged, tension-only cable
  * links use positional constraints. Winching does work; the rotor applies
  * external thrust to the engine only. Air and terrain exchange momentum.
  * This is a numerical game approximation, not an engineering solver.
  */
-export class Body {
-  constructor(x, y, m, I = 0, kind = 'node') {
-    Object.assign(this, {
-      x,
-      y,
-      m,
-      I,
-      im: 1 / m,
-      ii: I ? 1 / I : 0,
-      a: 0,
-      vx: 0,
-      vy: 0,
-      w: 0,
-      kind,
-      ox: x,
-      oy: y,
-      oa: 0,
-      contacts: [],
-      impact: 0
-    });
-  }
-  setMass(m) {
-    this.I *= m / this.m;
-    this.m = m;
-    this.im = 1 / m;
-    this.ii = this.I ? 1 / this.I : 0;
-  }
-}
-export function point(b, lx = 0, ly = 0) {
-  const c = Math.cos(b.a), s = Math.sin(b.a), rx = lx * c - ly * s, ry = lx * s + ly * c;
-  return {
-    x: b.x + rx,
-    y: b.y + ry,
-    rx,
-    ry,
-    b
-  };
-}
-function eff(p, nx, ny) {
-  const r = p.rx * ny - p.ry * nx;
-  return p.b.im + r * r * p.b.ii;
-}
-function move(p, nx, ny, j) {
-  p.b.x += nx * j * p.b.im;
-  p.b.y += ny * j * p.b.im;
-  p.b.a += (p.rx * ny - p.ry * nx) * j * p.b.ii;
-}
-function vel(p) {
-  return { x: p.b.vx - p.b.w * p.ry, y: p.b.vy + p.b.w * p.rx };
-}
-function impulse(p, nx, ny, j) {
-  p.b.vx += nx * j * p.b.im;
-  p.b.vy += ny * j * p.b.im;
-  p.b.w += (p.rx * ny - p.ry * nx) * j * p.b.ii;
-}
 export function circleRect(x, y, r, t) {
   if (x + r < t.x || x - r > t.x + t.w || y + r < t.y || y - r > t.y + t.h)
     return null;
@@ -104,8 +52,9 @@ export class Sim {
     this.guideVisits = this.guides.map(() => false);
     this.terrain = [...this.level.terrain, ...this.platforms, ...this.guides];
     const p = this.pads[this.level.start];
-    this.engine = new Body(p.x, p.y + .565 + .60 + this.level.cable + .32, 3.6, .78, 'engine');
-    this.cabin = new Body(p.x, p.y + .565, 2.5, .58, 'cabin');
+    const launchY = p.y + .565 + (this.level.industry?.startPiece ? .65 : 0);
+    this.engine = new Body(p.x, launchY + .60 + this.level.cable + .32, 3.6, .78, 'engine');
+    this.cabin = new Body(p.x, launchY, 2.5, .58, 'cabin');
     this.length = this.level.cable;
     this.targetLength = this.length;
     this.nodes = [];
@@ -135,6 +84,7 @@ export class Sim {
     this._prevCab = { x: this.cabin.x, y: this.cabin.y };
     this.stats = { bumps: 0, pickups: 0 };
     this.assisted = false;
+    this.industry = this.level.industry ? new Workshop(this) : null;
   }
   updateStops() {
     for (const platform of this.platforms) {
@@ -171,11 +121,13 @@ export class Sim {
     }
   }
   collideBody(b, first) {
-    const samples = b.kind === 'engine' ? ENG_SAMPLES : b.kind === 'cabin' ? CAB_SAMPLES : [[0, 0, .043]];
+    if (b.jigSlot !== undefined || b.delivered) return;
+    const samples = b.kind === 'engine' ? ENG_SAMPLES : b.kind === 'cabin' ? this.industry?.samples() || CAB_SAMPLES : b.kind === 'piece' ? b.colliders : [[0, 0, .043]];
     for (let s = 0; s < samples.length; s++) {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
       for (let k = 0; k < this.terrain.length; k++) {
-        const t = this.terrain[k], c = t.guide === undefined ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
+        const t = this.terrain[k];
+        const c = t.guide === undefined && !t.circle ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
         if (!c)
           continue;
         if (b.kind === 'node' && t.guide !== undefined) {
@@ -183,22 +135,31 @@ export class Sim {
           this.guideVisits[t.guide] = true;
         }
         const j = c.depth / eff(p, c.nx, c.ny);
+        const oldX = b.x, oldY = b.y, oldA = b.a;
         move(p, c.nx, c.ny, j);
+        // Industrial contacts use split position correction. Depenetration is
+        // geometric repair, not an impulse proportional to depth / timestep.
+        if (this.industry) {
+          b.ox += b.x - oldX; b.oy += b.y - oldY; b.oa += b.a - oldA;
+        }
         // Keep one contact per sample / terrain pair, from the earliest collision.
         const key = s * this.terrain.length + k;
         if (!b.contacts.some(z => z.key === key)) {
-          const v = vel(p), surfaceVX = t.vx || 0, surfaceVY = t.vy || 0;
+          const v = vel(p), surfaceVX = (t.vx || 0) - (t.spin || 0) * (t.r || 0) * c.ny,
+            surfaceVY = (t.vy || 0) + (t.spin || 0) * (t.r || 0) * c.nx;
           const incoming = -((v.x - surfaceVX) * c.nx + (v.y - surfaceVY) * c.ny);
           const ca = Math.cos(b.a), sa = Math.sin(b.a);
           b.contacts.push({
             key,
+            terrain: k,
+            ...(samples[s][3] ? {part: samples[s][3]} : {}),
             lx: lx - (ca * c.nx + sa * c.ny) * r,
             ly: ly - (-sa * c.nx + ca * c.ny) * r,
             nx: c.nx,
             ny: c.ny,
             incoming,
-            surfaceVX,
-            surfaceVY,
+            surfaceVX: b.kind === 'piece' && t.hammer !== undefined ? 0 : surfaceVX,
+            surfaceVY: b.kind === 'piece' && t.hammer !== undefined ? clamp(surfaceVY, -.7, 1.5) : surfaceVY,
             depth: c.depth
           });
           if (b.kind !== 'node')
@@ -211,7 +172,7 @@ export class Sim {
     // Mid-link collision samples stop the visible cable cutting through corners.
     const a = this.end(i), b = this.end(i + 1), x = (a.x + b.x) * .5, y = (a.y + b.y) * .5;
     for (const t of this.terrain) {
-      const c = t.guide === undefined ? circleRect(x, y, .03, t) : circleGuide(x, y, .03, t);
+      const c = t.guide === undefined && !t.circle ? circleRect(x, y, .03, t) : circleGuide(x, y, .03, t);
       if (!c)
         continue;
       if (t.guide !== undefined) {
@@ -254,7 +215,10 @@ export class Sim {
     this.updateStops();
     this.guideContacts.fill(false);
     this.hitCooldown = Math.max(0, this.hitCooldown - DT);
+    if (this.industry) this.bodies = [this.engine, ...this.nodes, this.cabin,
+      ...this.industry.pieces.filter(p => p.jigSlot === undefined && !p.delivered)];
     this.controls(u);
+    this.industry?.beforeStep(this, u, DT);
     this.wind = this.windAt(this.engine.x, this.engine.y);
     this._tx = 0;
     this._ty = 0;
@@ -281,12 +245,14 @@ export class Sim {
       else
         for (let i = N - 1; i >= 0; i--)
           this.constrain(i);
+      this.industry?.constrainGrip(this);
       // Rope circles and midpoint samples collide as well as both vehicle bodies.
       if (it % 3 === 0 || it === 25) {
         for (const b of this.bodies)
           this.collideBody(b, it === 0);
         for (let i = 0; i < N; i++)
           this.collideCable(i);
+        this.industry?.collidePieces(this);
       }
       const e = this.engine, c = this.cabin, dx = c.x - e.x, dy = c.y - e.y, d = Math.hypot(dx, dy);
       if (d < .89 && d > 1e-6) {
@@ -315,16 +281,18 @@ export class Sim {
         impulse(p, -c.ny, c.nx, j);
       }
     }
+    this.industry?.finishContacts(this);
     const blend = 1 - Math.exp(-DT * 16);
     this.tensionX += (this._tx - this.tensionX) * blend;
     this.tensionY += (this._ty - this.tensionY) * blend;
-    const hit = Math.max(this.engine.impact, this.cabin.impact);
+    // Industrial tools and workpieces absorb their working impacts; the drone
+    // uses the same relative-speed damage and cooldown as every other route.
+    const hit = this.industry ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
     if (hit > 2.6 && this.hitCooldown <= 0) {
       this.hitCooldown = .32;
       this.lastImpact = hit;
-      const damage = (hit - 2.6) * 9;
       if (!this.level.practice)
-        this.hull = Math.max(0, this.hull - damage);
+        this.hull = Math.max(0, this.hull - (hit - 2.6) * 9);
       this.stats.bumps++;
       this.events.push({ type: 'hit', severity: hit });
     }
@@ -343,8 +311,10 @@ export class Sim {
       this.fail(this.level.water ? 'This is not the ferry service.' : 'A little too close to sea level.');
     else if (c.x < -6 || c.x > this.level.width + 6 || c.y > this.level.height + 12 || this.engine.y > this.level.height + 14)
       this.fail('You have left the service area.');
-    if (!this.failed)
-      this.serviceStop();
+    if (!this.failed) {
+      if (this.industry) this.industry.afterStep(this, DT);
+      else this.serviceStop();
+    }
   }
   serviceStop() {
     if (this.level.practice)
@@ -403,6 +373,7 @@ export class Sim {
     this.events.push({ type: 'fail', reason });
   }
   targetStops() {
+    if (this.industry) return [];
     const onboard = this.onboard();
     return [...new Set((onboard.length ? onboard.map(j => j.to) : this.jobs.filter(j => j.state === 'waiting').map(j => j.from)))];
   }
@@ -441,7 +412,8 @@ export class Sim {
       stops: this.pads.map(({x, y, vx, vy, name}) => ({x, y, vx, vy, name})),
       guides: this.guides.map((g, i) => ({x: g.x, y: g.y, r: g.r,
         contact: this.guideContacts[i], visited: this.guideVisits[i]})),
-      tension: [this.tensionX, this.tensionY]
+      tension: [this.tensionX, this.tensionY],
+      ...(this.industry ? {industry: this.industry.snapshot()} : {})
     };
   }
 }

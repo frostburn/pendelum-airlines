@@ -1,11 +1,12 @@
 import { DT, MIN, MAX, VERSION } from '#game/constants';
 import { clamp, fmt } from '#game/math';
-import { levels, serviceRoutes, routeNumber, nextRoute, resumeRoute } from '#game/levels';
+import { levels, worlds, worldIndex, nextRoute, resumeRoute } from '#game/levels';
 import { Sim } from '#game/physics';
 import { physicsTests } from '#game/diagnostics';
 import { createRenderer } from '#game/render/renderer';
 import { C } from '#game/ui/theme';
 import { panelMarkup } from '#game/ui/panels';
+import { bindToolButton } from '#game/ui/tool-button';
 import { createStore } from '#game/storage';
 import { createAudio } from '#game/audio';
 import { GHOST_INTERVAL, MAX_GHOST_FRAMES, encodePose, sampleGhost } from '#game/ghost';
@@ -14,7 +15,8 @@ const { $, $$ } = { $: s => document.querySelector(s), $$: s => [...document.que
 const canvas = $('#game'), view = $('#viewport');
 const { saved, persist } = createStore(levels.length, () => toast('Browser storage is full or unavailable. This session still works.'));
 saved.last = resumeRoute(saved.last);
-let sim = new Sim(saved.last), attempt = 1, keys = new Set(), touch = { x: 0, y: 0, winch: 0 }, mapHold = false, mapLatched = false, showGhost = saved.ghost;
+let sim = new Sim(saved.last), attempt = 1, keys = new Set(), touch = { x: 0, y: 0, winch: 0, action: false }, mapHold = false, mapLatched = false, showGhost = saved.ghost;
+let selectedWorld = worldIndex(sim.index);
 let panel = 'intro', returnPanel = null, overTime = 0, record = [], lastRecorded = -1, newRecord = false;
 let last = 0, acc = 0, uiAccumulator = 0, toastTimer = 0;
 let soundOn = saved.sound;
@@ -30,6 +32,7 @@ function toast(text) {
 function clearInput() {
   keys.clear();
   touch.x = touch.y = touch.winch = 0;
+  clearToolInput();
   mapHold = false;
   $('#joystick i').style.transform = '';
   $$('.touch-winch button').forEach(b => b.classList.remove('pressed'));
@@ -54,6 +57,7 @@ function toggleSound() {
 }
 function loadRoute(i, go = true) {
   sim = new Sim(clamp(Math.floor(i), 0, levels.length - 1));
+  selectedWorld = worldIndex(sim.index);
   attempt++;
   record = [];
   lastRecorded = -1;
@@ -108,13 +112,15 @@ function showPanel(kind, remember = true) {
   $('#modal').hidden = false;
   const d = $('#dialog');
   d.classList.toggle('wide', kind === 'routes' || kind === 'help');
+  d.classList.toggle('world-picker', kind === 'routes');
   d.innerHTML = panelMarkup(kind, {
     sim,
     saved,
     soundOn,
     showGhost,
     attempt,
-    newRecord
+    newRecord,
+    selectedWorld
   });
   requestAnimationFrame(() => d.querySelector('.primary,button')?.focus({ preventScroll: true }));
   updateUI();
@@ -124,6 +130,12 @@ $('#dialog').addEventListener('click', e => {
   if (!b)
     return;
   startAudio();
+  if (b.dataset.world !== undefined) {
+    selectedWorld = Number(b.dataset.world);
+    showPanel('routes', false);
+    requestAnimationFrame(() => $('#dialog').querySelector(`[data-world="${selectedWorld}"]`)?.focus({preventScroll: true}));
+    return;
+  }
   if (b.dataset.route !== undefined) {
     loadRoute(Number(b.dataset.route));
     return;
@@ -205,7 +217,7 @@ window.addEventListener('keydown', e => {
   }
   if (e.target.matches('input') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(key))
     return;
-  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE'].includes(key))
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyJ'].includes(key))
     e.preventDefault();
   if (!e.repeat) {
     if (key === 'KeyR') {
@@ -320,18 +332,26 @@ $$('[data-touch]').forEach(b => {
   b.addEventListener('pointercancel', release);
   b.addEventListener('lostpointercapture', release);
 });
+const toolButton = $('#toolBtn');
+const clearToolInput = bindToolButton(toolButton, () => !panel && !mapHold && !mapLatched,
+  active => { touch.action = active; });
 function inputs() {
   return {
     x: clamp((keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + touch.x, -1, 1),
     y: clamp((keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) + touch.y, -1, 1),
     winch: (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0) + touch.winch,
-    precision: keys.has('Space')
+    precision: keys.has('Space'),
+    action: keys.has('KeyJ') || touch.action
   };
 }
 function events() {
   while (sim.events.length) {
     const ev = sim.events.shift();
-    if (ev.type === 'board') {
+    if (ev.type === 'machine') {
+      tone([220, 330], .025);
+      toast(ev.message);
+    }
+    else if (ev.type === 'board') {
       tone([440, 660]);
       toast(`${ev.job.name} aboard → ${sim.level.pads[ev.job.to].name}.`);
     }
@@ -361,10 +381,12 @@ function events() {
   }
 }
 function updateUI() {
-  $('#routeNumber').textContent = sim.level.hidden ? 'EXPERIMENTAL ROUTE' : sim.level.practice ? 'FREE PRACTICE · NO TIMETABLE' : `${sim.level.collection || 'LOCAL SERVICE'} · ROUTE ${String(routeNumber(sim.index)).padStart(2, '0')} / ${serviceRoutes.length}`;
+  const wi = worldIndex(sim.index), world = worlds[wi];
+  $('#routeNumber').textContent = `WORLD ${wi + 1} · ${world.name} · ${world.routes.indexOf(sim.index) + 1} / ${world.routes.length}`;
   $('#routeName').textContent = sim.level.name;
   $('#routeSub').textContent = sim.level.sub;
   $('#flightTip').textContent = sim.level.tip;
+  $('#fareCounter span').textContent = sim.industry ? 'WORK ORDERS' : 'FARES DELIVERED';
   $('#fareCount').textContent = sim.level.practice ? '∞' : `${sim.delivered} / ${sim.jobs.length}`;
   $('#clock').textContent = fmt(sim.time);
   $('#bestTime').textContent = saved.best[sim.index] ? fmt(saved.best[sim.index].time) : '—';
@@ -380,7 +402,7 @@ function updateUI() {
     Math.abs(near.y + .565 - sim.cabin.y) < 4;
   $('#cabinSpeed').textContent = onApproach
     ? 'DECK Δ ' + Math.hypot(sim.cabin.vx - near.vx, sim.cabin.vy - near.vy).toFixed(1) + ' m/s'
-    : 'CABIN ' + Math.hypot(sim.cabin.vx, sim.cabin.vy).toFixed(1) + ' m/s';
+    : (sim.industry ? 'TOOL ' : 'CABIN ') + Math.hypot(sim.cabin.vx, sim.cabin.vy).toFixed(1) + ' m/s';
   $('#cabinSpeed').title = onApproach ? 'Cabin speed relative to ' + near.name + '. Land below 0.7 m/s.' : 'Cabin speed through the world.';
   const aboard = sim.onboard(), targets = sim.targetStops();
   $('#ticketLabel').textContent = sim.level.practice ? 'Free practice' : sim.done ? 'Service complete' : aboard.some(j => j.cargo) ? 'HEAVY FREIGHT · USE UPDRAFTS' : aboard.length ? `${aboard.length} / 2 SEATS · DROP-OFF` : 'NEXT FARE · PICKUP';
@@ -393,6 +415,19 @@ function updateUI() {
   $('#objective').textContent = sim.level.practice ? 'Make a little room for the swing.' : sim.done ? 'All fares delivered.' : targets.map(i => sim.level.pads[i].name).join(' / ');
   $('#ticketDetail').textContent = sim.level.practice ? 'No damage from bumps. R resets the rig.' : sim.servicing >= 0 ? 'Hold the landing… boarding / drop-off in progress.' : aboard.length ? aboard.map(j => j.name + ' → ' + sim.level.pads[j.to].name).join(' · ') : sim.jobs.filter(j => j.state === 'waiting').map(j => j.name + ' at ' + sim.level.pads[j.from].name).join(' · ');
   $('#serviceBar').style.width = clamp(sim.service / .55 * 100, 0, 100) + '%';
+  const toolButton = $('#toolBtn');
+  toolButton.hidden = !sim.industry;
+  if (sim.industry) {
+    const work = sim.industry, order = work.order(sim);
+    $('#ticketLabel').textContent = `METAL WORKS · ${(work.tool === 'hook' ? 'magnet' : work.tool).toUpperCase()}`;
+    $('#objective').textContent = order.title;
+    $('#ticketDetail').textContent = order.detail;
+    $('#serviceBar').style.width = clamp(order.progress * 100, 0, 100) + '%';
+    $('#flightTip').textContent = order.detail;
+    toolButton.textContent = work.tool === 'ladle' ? 'Hold J · pour right' : 'Hold J · magnet off';
+    toolButton.classList.toggle('pressed', work.action);
+    toolButton.setAttribute('aria-pressed', String(work.action));
+  }
   $('#mapLabel').hidden = !(mapHold || mapLatched);
   $('#mapBtn').classList.toggle('active', mapHold || mapLatched);
   $('#pauseBtn').textContent = panel === 'pause' ? 'Resume' : 'Pause';

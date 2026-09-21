@@ -61,7 +61,7 @@ test('guide artwork uses the collision centres and radii without changing the si
   const circles = [];
   const context = new Proxy({
     arc(x, y, r) { circles.push({x, y, r}); },
-    measureText: text => ({width: text.length * 6}),
+    createLinearGradient: () => ({addColorStop() {}}), measureText: text => ({width: text.length * 6}),
   }, {get: (target, key) => key in target ? target[key] : () => {}});
   for (let i = 14; i < levels.length; i++) {
     const s = new Sim(i), before = JSON.stringify(s);
@@ -82,7 +82,7 @@ test('On the move IDs and ghosts keep their meaning when guide routes are append
     'The stop is leaving', 'Third floor, occasionally', 'Mind the moving gap',
     'Connections are approximate', 'Catch the next lift', 'Last boat, first train'
   ]);
-  assert.equal(routeNumber(14), 0);
+  assert.equal(routeNumber(14), 10);
   assert.equal(levels[14].name, 'A little guidance');
   const saved = {last: 13, sound: false, ghost: true,
     best: {13: {time: 90, hull: 100, ghost: [Array(16).fill(123)]}}};

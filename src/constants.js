@@ -6,4 +6,4 @@ export const MIN = 1.65;
 export const MAX = 7.5;
 export const MAX_THRUST = 190;
 export const TAU = Math.PI * 2;
-export const VERSION = '1.3.0';
+export const VERSION = '1.4.0';
