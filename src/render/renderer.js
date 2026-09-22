@@ -339,9 +339,11 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     tx = Math.max(tx, e.x - halfW + 1.6, c.x - halfW + 1.6);
     // Keep a nearby NPC handoff in view while the empty magnet waits above it.
     if (sim.level.logistics && !sim.industry.heldPiece) {
-      const worker = sim.industry.workers.find(w => w.cargo && Math.abs(w.x - e.x) < halfW - 2);
+      const worker = sim.industry.workers.find(w => w.cargo && Math.abs(w.x - e.x) < 12);
       if (worker) {
-        scale = Math.min(scale, height / Math.max(10, e.y + 2));
+        const left = Math.min(e.x, c.x, worker.x - 2.2), right = Math.max(e.x, c.x, worker.x + 3.5);
+        scale = Math.min(scale, height / Math.max(10, e.y + 2), width / (right - left + 2));
+        tx = (left + right) * .5;
         ty = Math.max(4, e.y * .5 + .2);
       }
     }

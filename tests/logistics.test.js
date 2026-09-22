@@ -93,3 +93,17 @@ test('all logistics routes are bounded, deterministic and render without advanci
     assert.deepEqual(s.industry.snapshot(), before);
   }
 });
+
+test('a narrow handoff view contains the drone and the nearby route tug', () => {
+  const ctx = new Proxy({measureText: () => ({width: 1})}, {get: (t, k) => t[k] ?? (() => {})});
+  const renderer = createRenderer({getContext: () => ctx}, {reduced: true});
+  const s = new Sim(39), w = s.industry.workers[0];
+  Object.assign(s.engine, {x: 31, y: 13.5}); Object.assign(s.cabin, {x: 31, y: 9});
+  w.x = 23; w.cargo = s.industry.pieces[0]; w.state = 'carrying';
+  renderer.resize(390, 550); renderer.render(s, {alpha: 1});
+  const {camera} = renderer.view();
+  for (const [x, y] of [[31, 13.5], [31, 9], [20.8, .1], [26.5, 1.9]]) {
+    const sx = (x - camera.x) * camera.scale + 195, sy = 275 - (y - camera.y) * camera.scale;
+    assert.ok(sx > 0 && sx < 390 && sy > 0 && sy < 550, `handoff clipped at ${sx}, ${sy}`);
+  }
+});

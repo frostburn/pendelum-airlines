@@ -74,7 +74,7 @@ export function drawDepot(ctx, sim, draw, time) {
         box(w.x + 1.84, w.y - .25, .3, .5, color, ink);
       } else {
         line([[w.x + 2.04, .95], [w.x + 2.35, .95]], ink, .09);
-        text(w.x - .4, .75, 'MUTT', .24, cream);
+        text(w.x + 2.75, .5, 'MUTT', .16, cream);
       }
     } else {
       box(w.x - 2, 0, 4, 1.05, steel, ink);
