@@ -58,13 +58,12 @@ export class Depot extends Workshop {
   }
   scanPassages(sim) {
     for (const w of this.workers) if (w.passage) {
-      const lane = w.passage;
-      for (const p of this.pieces) {
-        if (!this.ready(w, p) || p.attached || p.delivered) continue;
-        const b = this.bounds(p), previous = p.ox ?? p.x;
-        if ((previous - lane.scanner) * lane.direction < 0 && (p.x - lane.scanner) * lane.direction >= 0 &&
-            b.bottom >= lane.bottom - .05 && b.top <= lane.top + .05) this.receipt(sim, w, p);
-      }
+      const lane = w.passage, p = w.cargo;
+      // A stowaway can ride the deck, but only its accepted consignment scans.
+      if (!p || !this.ready(w, p) || p.attached || p.delivered) continue;
+      const b = this.bounds(p), previous = p.ox ?? p.x;
+      if ((previous - lane.scanner) * lane.direction < 0 && (p.x - lane.scanner) * lane.direction >= 0 &&
+          b.bottom >= lane.bottom - .05 && b.top <= lane.top + .05) this.receipt(sim, w, p);
     }
   }
   supported(p, worker) {

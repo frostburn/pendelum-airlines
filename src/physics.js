@@ -289,9 +289,9 @@ export class Sim {
     const blend = 1 - Math.exp(-DT * 16);
     this.tensionX += (this._tx - this.tensionX) * blend;
     this.tensionY += (this._ty - this.tensionY) * blend;
-    // Industrial tools and workpieces absorb their working impacts; the drone
-    // uses the same relative-speed damage and cooldown as every other route.
-    const hit = this.industry ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
+    // Metalworking tools absorb their working impacts. Fulfillment restores
+    // ordinary rig damage, including fast magnet collisions with guards/staff.
+    const hit = this.industry && !this.level.logistics ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
     if (hit > 2.6 && this.hitCooldown <= 0) {
       this.hitCooldown = .32;
       this.lastImpact = hit;

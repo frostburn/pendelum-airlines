@@ -26,7 +26,8 @@ Hold J to hand one off, collect after sign-off, and set it at the matching
 address. Wrong clerks, incomplete routes and wrong addresses do not consume a
 parcel. Taking a load before its internal scan earns no receipt; taking it after the
 scan preserves the receipt and sends the empty worker home. No worker attacks the drone or applies special
-damage. Moving vehicles use normal collision speed damage.
+damage. Each trip scans only the worker's accepted parcel, even if another load
+rides along. The engine and magnet use normal collision speed damage.
 
 The racks and tunnels use closed front guards over a rear freight lane. The
 engine, magnet and cable collide with the front guard. Parcels use the lane's

@@ -66,6 +66,19 @@ test('staff reject the wrong route and priority queue without deleting cargo', (
   assert.equal(returns.industry.ready(clerk, returns.industry.pieces[0]), false, 'return label needs the inventory handoff');
 });
 
+test('a second parcel riding the same deck cannot share its accepted load’s scan', () => {
+  for (const id of [41, 44]) {
+    const s = new Sim(id), d = s.industry, w = d.workers[0], [accepted, stowaway] = d.pieces;
+    onDeck(accepted, w); accepted.x += .75;
+    onDeck(stowaway, w); stowaway.x -= .75;
+    advance(s, 35, () => stowaway.x > w.passage.scanner + .8);
+    assert.ok(stowaway.x > w.passage.scanner + .8, 'both free parcels physically pass the scanner');
+    assert.equal(accepted.receipts[w.id], true);
+    assert.equal(stowaway.receipts[w.id], undefined, 'the second parcel still needs its own handoff');
+    assert.deepEqual(w.completed, [accepted.code], 'one trip cannot advance the priority queue twice');
+  }
+});
+
 test('a clerk on break resumes work on the parcel left on the counter', () => {
   const s = new Sim(43), d = s.industry, w = d.workers[1], p = d.pieces[0];
   p.receipts.haul = true; onDeck(p, w);
@@ -135,9 +148,32 @@ test('every transport scanner sits inside a guard that blocks the entire flight 
   }
 });
 
+test('fulfillment magnet impacts use ordinary damage thresholds and cooldown', () => {
+  for (const speed of [1, 5]) {
+    const s = new Sim(37), g = s.industry.workers[0].passage;
+    const dx = g.end + .56 - s.cabin.x, dy = 5 - s.cabin.y;
+    for (const b of s.bodies) { b.x += dx; b.y += dy; b.vx = -speed; }
+    s.step({action: true});
+    assert.equal(s.engine.impact, 0, 'the engine remains above the rack');
+    assert.ok(s.cabin.contacts.some(c => s.terrain[c.terrain].freightGuard));
+    if (speed === 1) assert.equal(s.hull, 100, 'slow touches do not damage the rig');
+    else {
+      assert.ok(s.cabin.impact > 2.6);
+      assert.equal(s.hull, 100 - (s.cabin.impact - 2.6) * 9);
+      assert.ok(s.hull > 0 && s.hull < 100, 'a moderate collision is survivable');
+      const hull = s.hull, resetX = g.end + .56 - s.cabin.x;
+      for (const b of s.bodies) { b.x += resetX; b.vx = -speed; }
+      s.step({action: true});
+      assert.ok(s.cabin.impact > 2.6);
+      assert.equal(s.hull, hull, 'another contact during the cooldown causes no extra damage');
+    }
+  }
+});
+
 test('flying over a checkpoint or parking without crossing it awards no transport receipt', () => {
   const s = new Sim(37), d = s.industry, w = d.workers[0], p = d.pieces[0], g = w.passage;
   Object.assign(p, {ox: g.scanner - 1, x: g.scanner + 1, y: g.roof + 2});
+  w.cargo = p;
   d.scanPassages(s); assert.deepEqual(p.receipts, {});
   onDeck(p, w); w.x = 25; w.state = 'unloading'; w.cargo = p;
   p.x = 25; p.ox = 25;

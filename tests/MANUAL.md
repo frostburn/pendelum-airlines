@@ -134,7 +134,8 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
    the trailer physically support the load; snatch it as soon as the whole parcel clears the guard. Parking is optional.
 5. In Priority is a colour, try the wrong clerk and wrong address. Try flying through the guarded rack with the shortest cable: the front mesh blocks the drone, tool and cable. Flying a parcel over the rack must not grant a scan. In The
    manifest says otherwise, present ECO before EXP: the NEXT sign must explain
-   the refusal. Replace it with EXP and complete both trips.
+   the refusal. Put both parcels on the same deck: only the accepted one earns
+   a scan. Complete a separate accepted trip for the other parcel.
 6. Leave a parcel for Sal during a break; work must resume automatically.
    Complete returns and cross-dock jobs, checking each parcel’s receipt trail.
 7. Complete The last metre and Overnight guarantee with both parcels. The
@@ -147,3 +148,5 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
    pursue it and shove it through physical contact. Receipts survive and the
    parcel remains recoverable. Lure Pip west, fly high, then drop at the address.
    It must stop pursuing high cargo and ignore delivered or unprocessed parcels.
+10. Tap a guard slowly with the magnet, then hit it fast while keeping the engine
+    clear. Only the fast hit damages integrity, using the usual impact cooldown.
