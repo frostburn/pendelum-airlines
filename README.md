@@ -17,7 +17,7 @@ uses J to pour right; release it to level the vessel.
 | --- | --- |
 | A magnetic personality / Buried treasure, mostly sand | Rake black magnetite out of loose sand, carry it to the refinery hopper, and release it inside. The second order exceeds one magnet load. |
 | Do not drink the orange / Two moulds, one bad idea | Fill below a furnace tap, back out from under it, and pour into one or two moulds. Missed droplets cool into slag; the tap provides refills. |
-| The hammer has right of way / The double shift | Put a bar under three real downstroke impacts, either held by the magnet or loose on the anvil. The hammer knocks, bends and flattens the free load. On The double shift, visit presses 1 → 2 → 1 for those three blows. Keep the engine clear. |
+| The hammer has right of way / The double shift | Put a bar under real downstroke impacts (three in the first forging job), either held by the magnet or loose on the anvil. The hammer knocks, bends and flattens the free load. On The double shift, take two hits at each press, in either order. Keep the engine clear. |
 | A turn for the better / Against the grain | Maintain contact with the spinning lathe or moving belt. The surfaces pull on the workpiece as it is shaped and polished. |
 | Some assembly required / Three-part harmony | Bring separate parts to free jig marks and release them. The three-part order requires every part to be polished before welding. Pick up the assembly and deliver it. |
 | From orange to shiny / The complete works | Cast, exchange the ladle at the Tool rack, collect the casting, forge, turn, polish, and deliver. The final order also needs a ready-made bracket and welding. |
@@ -36,7 +36,7 @@ forging needs actual downward hammer contacts with the metal; turning and
 polishing need workpiece contact with moving surfaces. The welding jig consumes
 distinct qualified pieces and releases one collectible assembly. There is no
 anvil clamp or forge position override; released pieces collide with the hammer
-and qualify for the same three-hit order as suspended pieces. Five deforming
+and qualify for the same hit requirements as suspended pieces. Five deforming
 cross-sections drive both the ingot silhouette and its held/free collision shapes. A stroke counts once,
 requires an incoming contact speed above 2 m/s, and must hit the workpiece rather
 than just the magnet or engine. Industrial collisions still shove and spin the

@@ -70,10 +70,10 @@ export const metalRoutes = [
     work: {startPiece: blank, requires: {forge: 3}, hammers: [hammer(15)]}, gold: 65, silver: 110
   }),
   workshop({
-    name: 'The double shift', sub: 'Left, right, left. Still only three blows.',
-    hint: 'Take one hit at press 1, one at press 2, then return to press 1 for the final blow. Leave J released as you carry the bent bar.',
-    tip: 'Red means the hammer is about to fall. Both held and loose workpieces count. Collect the bar after each hit, then fly over the frame to the next press.',
-    width: 49, work: {startPiece: blank, requires: {forge: 3}, hammerOrder: [0, 1, 0], hammers: [hammer(14, 4.8), hammer(31, 4.2, .4)]},
+    name: 'The double shift', sub: 'Two presses. Two blows apiece.',
+    hint: 'Take two hits at each press, in either order. Leave J released as you carry the bent bar.',
+    tip: 'Red means the hammer is about to fall. Both held and loose workpieces count. Finish two hits at one press, then fly over the frame to the other.',
+    width: 49, work: {startPiece: blank, requires: {forge: 4}, hammerHits: [2, 2], hammers: [hammer(14, 4.8), hammer(31, 4.2, .4)]},
     gold: 110, silver: 185
   }),
   workshop({

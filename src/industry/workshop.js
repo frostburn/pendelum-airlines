@@ -96,13 +96,24 @@ export class Workshop {
       Object.assign(h.collider, {y: pose.bottom, vy: (pose.bottom - previous) / dt});
     });
   }
+  forgeTarget() {
+    return this.config.hammerHits?.reduce((sum, hits) => sum + hits, 0) || 3;
+  }
+  needsHammer(piece, index) {
+    return this.config.hammerHits ? (piece.stamps[index] || 0) < this.config.hammerHits[index] : piece.forge < 3;
+  }
   nextHammer(piece) {
-    return piece.forge >= 3 ? undefined : (this.config.hammerOrder || [0, 0, 0])[piece.forge];
+    const index = this.hammers.findIndex((_, i) => this.needsHammer(piece, i));
+    return index < 0 ? undefined : index;
+  }
+  forgeProgress(piece) {
+    return this.config.hammerHits ? this.config.hammerHits.map((hits, i) =>
+      `press ${i + 1}: ${piece.stamps[i] || 0} / ${hits}`).join(' · ') : `${piece.forge} / 3 good hits`;
   }
   pieceAtHammer(index) {
     const h = this.hammers[index];
     return this.pieces.find(p => !p.attached && !p.delivered && !p.assembled && p.jigSlot === undefined &&
-      this.nextHammer(p) === index && p.x > h.collider.x - .95 && p.x < h.collider.x + h.collider.w + .65 &&
+      p.x > h.collider.x - .95 && p.x < h.collider.x + h.collider.w + .65 &&
       p.y > h.y && p.y < h.y + 6.6);
   }
   forge(sim) {
@@ -115,7 +126,7 @@ export class Workshop {
     }
   }
   strike(sim, p, index, hit, angle) {
-    if (p.assembled || p.forge >= 3 || index !== this.nextHammer(p)) return;
+    if (p.assembled || !this.needsHammer(p, index)) return;
     const h = this.hammers[index];
     if (!h || h.collider.vy >= -1) return;
     const stroke = Math.floor(sim.time / h.period + (h.phase || 0));
@@ -137,7 +148,7 @@ export class Workshop {
     }
     const q = worldPoint(p, hit.lx, hit.ly);
     this.burst(q.x, q.y, '#ffb449', 18);
-    sim.events.push({type: 'machine', message: `Clang. ${p.forge} / 3 good hits. ${p.forge === 3 ? 'Collect the forged workpiece.' : 'Keep the metal under the next stroke.'}`});
+    sim.events.push({type: 'machine', message: `Clang. ${this.forgeProgress(p)}. ${p.forge === this.forgeTarget() ? 'Collect the forged workpiece.' : this.needsHammer(p, index) ? 'Keep the metal under the next stroke.' : 'Take the workpiece to the other press.'}`});
   }
   rebound(sim, h) {
     h.rebound = {stroke: Math.floor(sim.time / h.period + (h.phase || 0)),
@@ -185,7 +196,7 @@ export class Workshop {
     const p = this.heldPiece;
     if (p && !p.assembled) {
       const contacts = p.contacts.map(contact => sim.terrain[contact.terrain]);
-      if (contacts.some(t => t?.machine === 'lathe') && (!this.hammers.length || p.forge >= 3) && p.cut < 1) {
+      if (contacts.some(t => t?.machine === 'lathe') && (!this.hammers.length || this.nextHammer(p) === undefined) && p.cut < 1) {
         p.cut = Math.min(1, p.cut + dt / 3.5);
         p.colliders = pieceSamples(p);
         if (this.tick % 18 === 0) {
@@ -316,18 +327,18 @@ export class Workshop {
       if (this.jig && !this.jig.complete && this.jig.weld) return target('Welding in progress', 'The jig releases the assembly when the arc stops.', this.jig.x, this.jig.y, this.jig.weld / 2.4, 'Welding jig');
       const stock = this.hammers.map((_, i) => this.pieceAtHammer(i)).find(Boolean) ||
         this.pieces.find(p => p.jigSlot === undefined && !p.delivered);
-      const h = stock && this.hammers[this.nextHammer(stock)];
+      const h = stock && this.hammers.find((_, i) => this.pieceAtHammer(i) === stock);
       if (h && stock.x > h.collider.x - .95 && stock.x < h.collider.x + h.collider.w + .65 &&
           stock.y > h.y && stock.y < h.y + 6.6)
-        return target('Hammer · loose workpiece', `${stock.forge} / 3 good hits · keep clear, then collect the forged metal`,
-          stock.x, stock.y, stock.forge / 3, 'Hammer');
+        return target('Hammer · loose workpiece', `${this.forgeProgress(stock)} · keep clear; collect when this press is finished`,
+          stock.x, stock.y, stock.forge / this.forgeTarget(), 'Hammer');
       return target(stock?.assembled ? 'Collect the welded assembly' : 'Pick up a workpiece', 'Lower the magnet above the part. It grips automatically; hold J to release.', stock?.x ?? c.rack.x, stock?.y ?? c.rack.y);
     }
     if (!p.assembled) {
       const h = this.hammers[this.nextHammer(p)];
       if (h) return target('Put the ingot under the hammer',
-        `${p.forge} / 3 good hits · held or loose · press ${this.nextHammer(p) + 1}`,
-        h.x, h.y + 2, p.forge / 3, 'Hammer');
+        `${this.forgeProgress(p)} · held or loose`,
+        h.x, h.y + 2, p.forge / this.forgeTarget(), 'Hammer');
       if (this.lathes.length && p.cut < 1) return target('Hold the workpiece on the lathe', 'The rotating cutter pulls sideways. Keep the blank in contact.', this.lathes[0].x, this.lathes[0].y + 1, p.cut, 'Lathe');
       if (c.belts?.length && p.polish < 1) return target('Push the workpiece into the belt', 'Use the left face. Counter its downward pull until polished.', c.belts[0].x, c.belts[0].y + 1.5, p.polish, 'Polishing belt');
       if (this.jig) {
@@ -342,7 +353,7 @@ export class Workshop {
       liquid: this.material.liquid.length, spilled: this.material.spilled,
       molds: this.molds.map(({fill, capacity, ready}) => ({fill, capacity, ready})),
       heldPiece: this.heldPiece?.id ?? null, active: this.tool === 'ladle' ? this.action : !this.action,
-      pieces: this.pieces.map(p => ({id: p.id, x: p.x, y: p.y, a: p.a, vx: p.vx, vy: p.vy, w: p.w, attached: p.attached, forge: p.forge, sections: p.sections.map(s => ({...s})), cut: p.cut, polish: p.polish, assembled: p.assembled, jigSlot: p.jigSlot})),
+      pieces: this.pieces.map(p => ({id: p.id, x: p.x, y: p.y, a: p.a, vx: p.vx, vy: p.vy, w: p.w, attached: p.attached, forge: p.forge, stamps: {...p.stamps}, sections: p.sections.map(s => ({...s})), cut: p.cut, polish: p.polish, assembled: p.assembled, jigSlot: p.jigSlot})),
       metrics: {...this.material.metrics}};
   }
 }

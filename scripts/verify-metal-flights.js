@@ -44,7 +44,7 @@ export function flyMetalRoute(id, observe = () => {}, {looseForge = false} = {})
   function* machines() {
     if (work.hammers.length) yield {x: sim.cabin.x, y: sim.cabin.y + 1, cable: 7.2,
       until: () => sim.length > 7.15, max: 8, name: 'pay out'};
-    while (work.hammers.length && work.heldPiece.forge < 3) {
+    while (work.hammers.length && work.nextHammer(work.heldPiece) !== undefined) {
       const hammer = work.hammers[work.nextHammer(work.heldPiece)], count = work.heldPiece.forge;
       yield* travel(hammer.x - 1.6, hammer.y + 2.4);
       if (looseForge) {
@@ -54,7 +54,7 @@ export function flyMetalRoute(id, observe = () => {}, {looseForge = false} = {})
         yield {x: hammer.x + .25, y: hammer.y + 1.8, action: true,
           until: () => !work.heldPiece, max: 1, name: 'leave on anvil'};
         yield {x: hammer.x - 1.6, y: hammer.y + 2.4, action: true,
-          until: () => piece.forge >= 3 || work.hammers[work.nextHammer(piece)] !== hammer,
+          until: () => work.nextHammer(piece) === undefined || work.hammers[work.nextHammer(piece)] !== hammer,
           max: hammer.period * 5, name: 'forge loose'};
         yield* pick(piece);
       } else {
@@ -154,6 +154,8 @@ export function flyMetalRoute(id, observe = () => {}, {looseForge = false} = {})
     }
   }
   assert.ok(sim.done, `${sim.level.name}: ${sim.reason || 'work order unfinished'}`);
+  if (config.hammerHits) assert.ok(work.pieces.some(p => config.hammerHits.every((hits, i) => p.stamps[i] === hits)),
+    'delivery requires the exact quota at each press');
   if (looseForge) assert.equal(looseHits, 3, 'the anvil flight must forge entirely through hits on released metal');
   assert.equal(sim.hull, 100, `${sim.level.name}: the flight must keep the drone clear of the hammer`);
   assert.ok(maximumSpeed < 12, 'contacts or changes in payload must not launch the rig');

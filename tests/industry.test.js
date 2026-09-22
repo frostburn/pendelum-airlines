@@ -222,8 +222,40 @@ test('hammer damage uses ordinary relative impact speed and cooldown', () => {
   assert.equal(s.hull, hull, 'continued contact respects the ordinary hit cooldown');
 });
 
-test('slow touches, upstrokes and the wrong press cannot substitute for a good forging hit', () => {
-  for (const [index, velocity] of [[0, 0], [0, -.5], [0, 4], [1, -8]]) {
+test('double shift counts two hits per press in either order, never twice per stroke', () => {
+  for (const order of [[0, 0, 1, 1], [1, 1, 0, 0], [1, 0, 1, 0]]) {
+    const s = new Sim(29), w = s.industry, p = w.pieces[0];
+    for (const [step, index] of order.entries()) {
+      const h = w.hammers[index];
+      s.time = (step + 1) * 20;
+      Object.assign(h.collider, {y: 3.5, vy: -8});
+      Object.assign(p, {x: h.x + 1.4, y: 3.52 - Math.max(...p.colliders.map(([, y, r]) => y + r)),
+        a: 0, vx: 0, vy: 0, w: 0, contacts: []});
+      s.collideBody(p, true);
+      assert.ok(p.contacts.some(c => s.terrain[c.terrain] === h.collider));
+      w.forge(s);
+      assert.equal(p.forge, step + 1);
+      // Re-present the same stroke across a held/loose transition.
+      h.collider.vy = -8;
+      p.attached = !p.attached;
+      w.forge(s);
+      assert.equal(p.forge, step + 1);
+      assert.equal(meetsOrder(p, w.config.requires), step === 3);
+      assert.match(w.forgeProgress(p), /press 1: [0-2] \/ 2 · press 2: [0-2] \/ 2/);
+      if (p.stamps[index] === 2) {
+        s.time += 10; h.collider.vy = -8;
+        w.forge(s);
+        assert.equal(p.forge, step + 1, 'a third hit at one press cannot replace a hit at the other');
+      }
+    }
+    assert.deepEqual(p.stamps, {0: 2, 1: 2});
+    assert.equal(w.nextHammer(p), undefined);
+    assert.equal(w.forgeTarget(), 4);
+  }
+});
+
+test('slow touches and upstrokes cannot substitute for a good forging hit', () => {
+  for (const [index, velocity] of [[0, 0], [0, -.5], [0, 4], [1, -.5]]) {
     const s = new Sim(29), w = s.industry, p = w.pieces[0], h = w.hammers[index];
     w.heldPiece = p; p.attached = true; w.updateMass(s);
     Object.assign(h.collider, {y: 3.5, vy: velocity});

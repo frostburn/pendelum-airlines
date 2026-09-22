@@ -85,9 +85,9 @@ export function drawWorkshop(ctx, sim, draw, time) {
     stripes(h.x - 1.1, h.y - .14, 1.65);
     text(h.x - .2, h.y + 1.25, 'WORKPIECE HERE →', .22, edge);
     text(h.x + 1.8, 10.0, `PRESS ${i + 1} · ${h.warning ? 'STAND CLEAR' : 'CYCLING'}`, .30, edge);
-    const part = w.heldPiece && w.nextHammer(w.heldPiece) === i ? w.heldPiece : w.pieceAtHammer(i);
-    if (part && w.nextHammer(part) === i)
-      text(h.x - 1.7, h.y + 2.05, `${part.forge} / 3 GOOD HITS`, .30, '#a45736');
+    const part = w.heldPiece || w.pieceAtHammer(i);
+    if (part && !part.assembled)
+      text(h.x - 1.7, h.y + 2.05, `${w.config.hammerHits ? part.stamps[i] || 0 : part.forge} / ${w.config.hammerHits?.[i] || 3} GOOD HITS`, .30, '#a45736');
   });
   for (const lathe of w.lathes) {
     box(lathe.x - 1.25, 0, 2.5, .4, steel, edge);
