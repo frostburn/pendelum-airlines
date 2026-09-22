@@ -41,10 +41,19 @@ export function drawDepotBackground(ctx, cam, width, height, scene) {
 export function drawDepot(ctx, sim, draw, time) {
   const {box, poly, circle, line, text} = draw, depot = sim.industry;
   const ink = '#334a4b', steel = '#668379', cream = '#f1e8ce';
-  for (const r of sim.level.terrain) if (r.style === 'metal') {
+  for (const r of sim.level.terrain) if (r.style === 'metal' && !r.freightGuard) {
     box(r.x, r.y, r.w, r.h, '#adb5a3', ink);
     box(r.x, r.y + r.h - .12, r.w, .12, steel);
-    if (r.y > 2.5 && r.h < .6) {
+    if (r.rackSolid && r.h > 1.6) {
+      for (let y = r.y + .25; y + 1 < r.y + r.h; y += 1.2) {
+        for (let x = r.x + .2; x + .7 < r.x + r.w; x += 1) {
+          box(x, y + .1, .7, .85, '#baaa83', '#7f8c76');
+          box(x + .30, y + .1, .10, .85, '#d5c7a3');
+        }
+        box(r.x, y, r.w, .1, steel);
+      }
+    }
+    if (r.y > 2.5 && r.h < .6 && !r.rackSolid) {
       text(r.x + r.w / 2, r.y + r.h + .45, 'LOADS ONLY · LOW CLEARANCE', .25, ink);
       for (let x = r.x + .2; x < r.x + r.w; x += .6) box(x, r.y + .06, .25, .12, '#dba858');
     }
@@ -55,7 +64,7 @@ export function drawDepot(ctx, sim, draw, time) {
     if (w.kind !== 'clerk') {
       line([[home.x - 2, .12], [home.dropX + 2, .12]], '#9baca0', .05);
       text(home.x, .45, 'LOAD HERE · HOLD J', .22, ink);
-      text(home.dropX, home.dropY + 1.7, 'COLLECT HERE', .25, ink);
+      text(home.dropX, home.dropY + 1.7, 'OPTIONAL PARKING', .23, ink);
       box(w.x - 2.1, .44, 5.45, .56, color, ink);
       for (const x of [w.x - 1.45, w.x + 2.7]) {
         circle(x, .42, .36, ink); circle(x, .42, .17, '#abb8ae');
@@ -113,4 +122,35 @@ export function drawDepot(ctx, sim, draw, time) {
     ctx.restore();
     if (!p.delivered) text(p.x, p.y - .88, `${p.code} · ${done}/${p.route.length}`, .22, ink);
   }
+  // Front guards are drawn over the rear cargo lane and its vehicles. Cargo
+  // floor/ceiling are solid too; only the guarded rear track admits parcels.
+  for (const w of depot.workers) if (w.passage) {
+    const g = w.passage, width = g.end - g.x;
+    ctx.save(); ctx.globalAlpha = .15;
+    box(g.x, 0, width, g.roof, '#416e68'); ctx.restore();
+    line([[g.x, 0], [g.x, g.roof], [g.end, g.roof], [g.end, 0]], ink, .12);
+    for (let x = g.x + .6; x < g.end; x += .6) line([[x, 0], [x, g.roof]], '#6f8b8075', .025);
+    for (let y = .5; y < g.roof; y += .5) line([[g.x, y], [g.end, y]], '#6f8b8075', .025);
+    box(g.scanner - .22, g.top - .12, .44, .25, ink);
+    line([[g.scanner, g.bottom + .1], [g.scanner, g.top - .12]], '#d59751', .035);
+    circle(g.scanner, g.top + .02, .075, w.completed.length ? '#91d391' : '#efc57a');
+    text(g.scanner, g.top + .47, 'SCAN', .23, ink);
+    text(g.scanner, g.roof + .45, w.kind === 'forklift' ? 'GUARDED RACK · NO ROTORS' : 'GUARDED FREIGHT TUNNEL', .25, ink);
+    const exit = g.direction > 0 ? g.end : g.x;
+    text(exit + g.direction * 1.3, g.bottom + .65, g.direction > 0 ? 'SNATCH →' : '← SNATCH', .22, '#427764');
+  }
+  const m = depot.marshal;
+  if (m) {
+    box(m.body.x, m.body.y + .22, m.body.w, m.body.h - .22, '#b46655', ink);
+    box(m.blade.x, m.blade.y, m.blade.w, m.blade.h, '#cc9875', ink);
+    for (let y = .25; y < 3.5; y += .45) line([[m.blade.x, y], [m.blade.x + .28, y + .15]], '#7c4d43', .055);
+    for (const x of [m.x - .3, m.x + .3]) { circle(x, .2, .24, ink); circle(x, .2, .09, '#b7bdab'); }
+    box(m.x - .39, 1.02, .78, .35, ink);
+    for (const x of [m.x - .20, m.x + .20]) circle(x, 1.19, .06, '#f4d38c');
+    box(m.x - .48, 1.5, .96, .13, '#c99055', ink);
+    text(m.x + .5, 4.4, 'PIP · RETURNS MARSHAL', .26, '#925445');
+    text(m.x + .5, 4.0, m.message, .21, '#925445');
+    text(m.home, .25, 'RETURNS', .24, '#925445');
+  }
+
 }

@@ -32,18 +32,20 @@ test('Yard Dog noses under low cargo without snapping it or accepting an attache
   assert.equal(w.state, 'waiting'); assert.match(w.message, /LET ME/);
 });
 
-test('forklift lifts and transports a free body before issuing its receipt', () => {
+test('forklift scans a free body inside the guarded rack before parking', () => {
   const s = new Sim(37), d = s.industry, w = d.workers[0], p = d.pieces[0];
   onDeck(p, w); advance(s, 4);
   assert.ok(w.state === 'lifting'); assert.deepEqual(p.receipts, {});
   advance(s, 35, () => p.receipts.store);
   assert.equal(p.receipts.store, true);
-  assert.ok(Math.abs(p.x - 25) < .6 && p.y > 4.8);
+  assert.ok(Math.abs(p.x - w.passage.scanner) < .05 && p.y > 4.8);
+  assert.equal(w.state, 'carrying');
+  assert.equal(d.canPickup(p), false);
   assert.equal(p.attached, false); assert.equal(p.grip, undefined);
   assert.deepEqual(w.completed, ['A2']);
 });
 
-test('removing a load during transport cancels credit and sends the worker home', () => {
+test('removing a load before its scanner earns no credit and sends the worker home', () => {
   const s = new Sim(39), d = s.industry, w = d.workers[0], p = d.pieces[0];
   onDeck(p, w); advance(s, 6);
   assert.equal(w.state, 'carrying');
@@ -106,4 +108,56 @@ test('a narrow handoff view contains the drone and the nearby route tug', () => 
     const sx = (x - camera.x) * camera.scale + 195, sy = 275 - (y - camera.y) * camera.scale;
     assert.ok(sx > 0 && sx < 390 && sy > 0 && sy < 550, `handoff clipped at ${sx}, ${sy}`);
   }
+});
+
+
+test('every transport scanner sits inside a guard that blocks the entire flight rig', () => {
+  for (let id = 36; id < 48; id++) {
+    const s = new Sim(id), d = s.industry;
+    for (const w of d.workers) if (w.passage) {
+      const g = w.passage;
+      assert.ok(g.scanner > g.x + 1.65 && g.scanner < g.end - 1.65);
+      const guard = s.terrain.find(t => t.freightGuard === w.id);
+      assert.ok(guard && g.bottom > 0 && g.top < guard.h);
+      for (const b of [s.engine, s.cabin, s.nodes[0]]) {
+        Object.assign(b, {x: g.scanner, y: (g.bottom + g.top) / 2, a: 0, contacts: [], impact: 0});
+        s.collideBody(b, true);
+        assert.ok(b.contacts.some(c => s.terrain[c.terrain] === guard), `${b.kind} must collide with the front guard`);
+      }
+      const p = d.pieces[0];
+      Object.assign(p, {x: g.scanner, y: w.dropY + .43, a: 0, contacts: []});
+      s.collideBody(p, true);
+      assert.ok(!p.contacts.some(c => s.terrain[c.terrain] === guard), 'loose cargo occupies the rear lane');
+      assert.equal(d.canPickup(p), false);
+      p.x = g.direction > 0 ? g.end + .8 : g.x - .8;
+      assert.equal(d.canPickup(p), true, 'pickup unlocks at the geometric edge, not at parking');
+    }
+  }
+});
+
+test('flying over a checkpoint or parking without crossing it awards no transport receipt', () => {
+  const s = new Sim(37), d = s.industry, w = d.workers[0], p = d.pieces[0], g = w.passage;
+  Object.assign(p, {ox: g.scanner - 1, x: g.scanner + 1, y: g.roof + 2});
+  d.scanPassages(s); assert.deepEqual(p.receipts, {});
+  onDeck(p, w); w.x = 25; w.state = 'unloading'; w.cargo = p;
+  p.x = 25; p.ox = 25;
+  d.afterStep(s, 2); assert.deepEqual(p.receipts, {});
+});
+
+test('Pip pursues and physically shoves qualified parcels, with receipts preserved', () => {
+  const s = new Sim(44), d = s.industry, p = d.pieces[0], m = d.marshal;
+  p.receipts.haul = true;
+  Object.assign(p, {x: m.x - 6, y: .43, a: 0, vx: 0, vy: 0});
+  // Keep the drop unaccepted so we can observe a full physical shove.
+  p.destination = 'dispatch'; const start = p.x;
+  let contacted = false;
+  for (let i = 0; i < 9 / DT; i++) {
+    s.step({action: true});
+    contacted ||= p.contacts.some(c => s.terrain[c.terrain] === m.blade || s.terrain[c.terrain] === m.body);
+  }
+  assert.ok(contacted, 'interference must come from a real moving contact');
+  assert.ok(p.x < start - 1, 'the parcel is pushed away from dispatch');
+  assert.equal(p.receipts.haul, true); assert.equal(d.pieces.length, 2);
+  p.y = 7; d.beforeStep(s, {action: true}, DT);
+  assert.equal(m.target, null, 'carrying high breaks pursuit');
 });

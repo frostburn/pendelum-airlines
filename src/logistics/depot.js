@@ -1,5 +1,6 @@
 import { Workshop } from '#game/industry/workshop';
-import { pieceBottom, pieceSamples } from '#game/industry/workpiece';
+import { pieceBottom, pieceSamples, pieceOutline } from '#game/industry/workpiece';
+import { worldPoint } from '#game/industry/geometry';
 import { clamp } from '#game/math';
 
 // NPCs are powered machines on fixed lanes. Their decks exchange ordinary
@@ -16,11 +17,55 @@ export class Depot extends Workshop {
       return {speed: 1.35, liftSpeed: .75, dwell: 1.2, ...spec, deck, body, mast,
         state: 'waiting', clock: 0, lost: 0, cargo: null, completed: [], vx: 0, vy: 0, message: 'READY FOR PARCEL'};
     });
+    if (this.manifest.marshal) {
+      const spec = this.manifest.marshal;
+      const body = {x: spec.x - .6, y: 0, w: 1.2, h: 1.55, style: 'metal', vx: 0};
+      const blade = {x: spec.x - .78, y: .1, w: .28, h: 3.55, style: 'metal', vx: 0};
+      this.marshal = {...spec, body, blade, vx: 0, target: null, message: 'KEEP THE SHELVES CLEAR'};
+      sim.terrain.push(body, blade);
+    }
     this.pieces.forEach((p, i) => {
       Object.assign(p, this.manifest.parcels[i], {receipts: {}, settle: 0});
       p.sections = [-.65, -.325, 0, .325, .65].map(x => ({x, lo: -.43, hi: .43}));
       p.colliders = pieceSamples(p);
     });
+  }
+  bounds(p) {
+    const points = pieceOutline(p).map(([x, y]) => worldPoint(p, x, y));
+    return {left: Math.min(...points.map(q => q.x)), right: Math.max(...points.map(q => q.x)),
+      bottom: Math.min(...points.map(q => q.y)), top: Math.max(...points.map(q => q.y))};
+  }
+  canPickup(p) {
+    const b = this.bounds(p);
+    // The front mesh shields the tool. A parcel becomes accessible as soon as
+    // its whole silhouette leaves the guard, even while the worker is moving.
+    return !this.workers.some(w => w.passage && b.right > w.passage.x && b.left < w.passage.end && b.bottom < w.passage.roof);
+  }
+  updateMarshal(dt) {
+    const m = this.marshal;
+    if (!m) return;
+    const p = this.pieces.filter(p => !p.delivered && p.route.every(id => p.receipts[id]) &&
+      p.x >= m.home && p.x <= m.end && pieceBottom(p) < 4.4)
+      .sort((a, b) => Math.abs(a.x - m.x) - Math.abs(b.x - m.x))[0];
+    m.target = p?.id ?? null; m.message = p ? `THAT BELONGS IN RETURNS · ${p.code}` : 'KEEP THE SHELVES CLEAR';
+    const goal = p ? clamp(p.x + .1, m.home, m.end) : m.x;
+    const old = m.x, delta = goal - m.x;
+    const desired = Math.sign(delta) * Math.min(m.speed, Math.sqrt(2 * Math.abs(delta)));
+    m.vx += clamp(desired - m.vx, -dt, dt);
+    if (Math.abs(delta) < Math.abs(m.vx * dt)) { m.x = goal; m.vx = 0; } else m.x += m.vx * dt;
+    Object.assign(m.body, {x: m.x - .6, vx: (m.x - old) / dt});
+    Object.assign(m.blade, {x: m.x - .78, vx: m.body.vx});
+  }
+  scanPassages(sim) {
+    for (const w of this.workers) if (w.passage) {
+      const lane = w.passage;
+      for (const p of this.pieces) {
+        if (!this.ready(w, p) || p.attached || p.delivered) continue;
+        const b = this.bounds(p), previous = p.ox ?? p.x;
+        if ((previous - lane.scanner) * lane.direction < 0 && (p.x - lane.scanner) * lane.direction >= 0 &&
+            b.bottom >= lane.bottom - .05 && b.top <= lane.top + .05) this.receipt(sim, w, p);
+      }
+    }
   }
   supported(p, worker) {
     return !p.delivered && !p.attached && Math.abs(p.x - worker.x) < 1.35 &&
@@ -52,6 +97,7 @@ export class Depot extends Workshop {
   }
   beforeStep(sim, input, dt) {
     super.beforeStep(sim, input, dt);
+    this.updateMarshal(dt);
     for (const [i, w] of this.workers.entries()) {
       w.deckIndex ??= sim.terrain.indexOf(w.deck);
       const home = this.manifest.workers[i];
@@ -73,6 +119,7 @@ export class Depot extends Workshop {
   }
   afterStep(sim, dt) {
     this.tick++;
+    this.scanPassages(sim);
     for (const w of this.workers) {
       if (w.state === 'waiting') {
         const p = this.pieces.find(p => this.supported(p, w));
@@ -88,7 +135,7 @@ export class Depot extends Workshop {
         if (w.kind === 'clerk') this.receipt(sim, w);
         else { w.state = 'lifting'; w.message = 'PUTTING IT AWAY'; }
       } else if (w.state === 'lifting' || w.state === 'carrying') {
-        w.message = w.state === 'lifting' ? 'GOING UP' : w.kind === 'tug' ? 'KEEPING TO THE ROUTE' : 'PUTTING IT AWAY';
+        w.message = w.cargo?.receipts[w.id] ? 'SCANNED · SNATCH BEYOND GUARD' : w.state === 'lifting' ? 'GOING UP' : 'THROUGH THE SCANNER';
         w.lost = w.cargo && this.supported(w.cargo, w) ? 0 : w.lost + dt;
         if (w.lost > .65) { w.state = 'returning'; w.cargo = null; w.message = 'WHERE DID IT GO?'; continue; }
         if (w.arrived) { w.state = w.state === 'lifting' ? 'carrying' : 'unloading'; w.clock = 0; }
@@ -96,7 +143,7 @@ export class Depot extends Workshop {
         w.message = 'COLLECT AT THIS END';
         if (w.cargo && this.supported(w.cargo, w)) {
           w.clock += dt;
-          if (w.clock > .65 && !w.cargo.receipts[w.id]) this.receipt(sim, w);
+          if (!w.cargo.receipts[w.id]) w.message = 'NO SCAN · TAKE BACK TO INTAKE';
         } else {
           w.state = 'returning'; w.cargo = null; w.clock = 0;
         }
@@ -119,11 +166,10 @@ export class Depot extends Workshop {
     }
     if (this.pieces.every(p => p.delivered)) { sim.done = true; sim.events.push({type: 'complete'}); }
   }
-  receipt(sim, w) {
-    const p = w.cargo;
+  receipt(sim, w, p = w.cargo) {
     p.receipts[w.id] = true; w.completed.push(p.code);
     w.message = 'DONE · YOUR TURN';
-    sim.events.push({type: 'machine', message: `${w.name}: ${p.code} ${w.kind === 'clerk' ? 'signed off' : 'unloaded'}. Please collect it.`});
+    sim.events.push({type: 'machine', message: `${w.name}: ${p.code} ${w.kind === 'clerk' ? 'signed off' : 'scanned inside the guard'}. ${w.kind === 'clerk' ? 'Please collect it.' : 'Snatch it when it clears.'}`});
     if (w.kind === 'clerk') { w.cargo = null; w.clock = 0; }
   }
   nextWorker(p) { return this.workers.find(w => w.id === p.route.find(id => !p.receipts[id])); }
@@ -141,6 +187,7 @@ export class Depot extends Workshop {
   }
   snapshot() {
     return {...super.snapshot(), parcels: this.pieces.map(p => ({id: p.id, code: p.code, receipts: {...p.receipts}, delivered: !!p.delivered})),
-      workers: this.workers.map(w => ({id: w.id, x: w.x, y: w.y, state: w.state, cargo: w.cargo?.id ?? null, completed: [...w.completed]}))};
+      workers: this.workers.map(w => ({id: w.id, x: w.x, y: w.y, state: w.state, cargo: w.cargo?.id ?? null, completed: [...w.completed]})),
+      marshal: this.marshal ? {x: this.marshal.x, vx: this.marshal.vx, target: this.marshal.target} : null};
   }
 }

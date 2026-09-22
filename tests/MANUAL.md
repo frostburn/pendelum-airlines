@@ -128,11 +128,11 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
    J to set it down; wait for the receipt and collect it. Try dispatching before
    scanning, then retry correctly. The parcel must remain recoverable.
 3. Let Yard Dog lift and carry its load. Confirm the crate rests freely on its
-   forks, and grabbing it before the end cancels credit. Let the dog return and
-   retry. It signs off only at the high handoff. Check its load stays in view.
+   forks, and grabbing it before the internal scanner earns no credit. Let the dog return and
+   retry. The scan must happen inside the rack. Snatch it beyond the guard while the dog is still moving; the receipt must survive. Check its load stays in view.
 4. Let Mutt carry a parcel through the low tunnel while flying over it. Watch
-   the trailer physically support the load; collect it only after unloading.
-5. In Priority is a colour, try the wrong clerk and wrong address. In The
+   the trailer physically support the load; snatch it as soon as the whole parcel clears the guard. Parking is optional.
+5. In Priority is a colour, try the wrong clerk and wrong address. Try flying through the guarded rack with the shortest cable: the front mesh blocks the drone, tool and cable. Flying a parcel over the rack must not grant a scan. In The
    manifest says otherwise, present ECO before EXP: the NEXT sign must explain
    the refusal. Replace it with EXP and complete both trips.
 6. Leave a parcel for Sal during a break; work must resume automatically.
@@ -142,3 +142,8 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
 8. Pause while a worker is driving or scanning; motion and timers freeze.
    Restart resets workers, receipts, cargo, and queue order. View the map,
    resize, and pan between indoor racks and street frontages: geometry is stable.
+
+9. In the final four jobs, bring a qualified parcel low near dispatch. Pip must
+   pursue it and shove it through physical contact. Receipts survive and the
+   parcel remains recoverable. Lure Pip west, fly high, then drop at the address.
+   It must stop pursuing high cargo and ignore delivered or unprocessed parcels.

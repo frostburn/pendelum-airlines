@@ -5,7 +5,7 @@ const introArt = `<svg class="intro-art" viewBox="0 0 145 175" aria-hidden="true
 export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, newRecord, selectedWorld = worldIndex(sim.index) }) {
   if (kind === 'intro' && sim.level.logistics) return `<h1 id="dialogTitle">Welcome to<br>fulfillment.</h1>
 <p class="lead">Helpful colleagues. Very specific routines.</p><p>${sim.level.hint}</p>
-<div class="note">Magnets stay on. Hold J to release a parcel onto a counter, fork or trailer. Staff work on resting cargo; collect it after their sign-off and follow its route to the matching address.</div>
+<div class="note">Magnets stay on. Hold J to release a parcel onto a counter, fork or trailer. Staff work on resting cargo; collect it after its scan and follow its route to the matching address.</div>
 <div class="actions"><button class="primary" data-action="close">Start shift</button><button data-action="help">Controls</button><button data-action="routes">Worlds</button></div>`;
   if (kind === 'intro' && sim.industry) return `<h1 id="dialogTitle">Welcome to<br>the works.</h1>
 <p class="lead">${sim.level.name} · ${sim.level.sub}</p><p>${sim.level.hint}</p>
@@ -67,7 +67,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
 <p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
 <h3>Fulfillment</h3>
-<p>Each parcel has a route and an address. Hold J to set it on a worker’s counter, forks or trailer. Yard Dog lifts and puts it away; Mutt transports it; clerks scan or sign. Let moving staff finish their trip before collecting. Loads are unsecured. Check the NEXT sign for queues. Staff on break resume automatically if you leave the parcel on their counter. Only the correct address accepts a fully processed parcel.</p>
+<p>Each parcel has a route and an address. Hold J to set it on a worker’s counter, forks or trailer. Yard Dog works behind a guarded rack; Mutt drives through a guarded tunnel. Both scan parcels inside the obstacle. The front guards block the drone, tool and cable. Fly over, then snatch the parcel as soon as it clears the far edge; parking is optional. Loads are unsecured. Clerks scan or sign at their counters. Check the NEXT sign for queues. Staff on break resume automatically if you leave the parcel on their counter. Only the correct address accepts a fully processed parcel. In later jobs, Pip actively pursues low completed parcels and shoves them away from shelves. Lure it aside, then carry high and make your drop.</p>
 <h3>Metal works</h3>
 <p><b>Hold J, or hold the tool button:</b> switch the normally-on magnet off and drop its load, or tip a ladle to the right. Release J to restore the magnet or level the ladle again. The magnet collects black ore; yellow sand stays behind. Drop ore inside the refinery hopper.</p>
 <p>Fill a ladle under the furnace tap, then pour through a mould’s open top. Droplets spill and cool into slag; return to the tap for more. On a production-line job, land at the Tool rack after casting to fit the workpiece magnet.</p>

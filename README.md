@@ -13,9 +13,10 @@ inconvenient staff routines:
 
 - **Yard Dog** is a putaway forklift that noses under low-hanging cargo in
   its loading bay. Release a parcel onto its forks, let it lift
-  and carry the load to its high handoff, then collect it. It returns empty for
-  the next parcel. Inventory is recorded at the handoff, not on initial pickup.
-- **Mutt** drives an unsecured trailer through loading tunnels. Loads ride on
+  and carry the load through the rack. Its scanner is inside the obstruction.
+  Snatch the parcel as soon as it clears the far guard; parking is optional.
+- **Mutt** drives an unsecured trailer through guarded loading tunnels, with
+  scanners inside each tunnel. Loads ride on
   its physical deck. Some runs insist on the manifest's priority order.
 - **Bea, Ivo and Sal** scan, relabel or sign at counters. They need released,
   supported cargo. A parcel left on a counter waits through the clerk's break.
@@ -23,15 +24,27 @@ inconvenient staff routines:
 Parcels are solid magnetic loads with their own route, address, and receipts.
 Hold J to hand one off, collect after sign-off, and set it at the matching
 address. Wrong clerks, incomplete routes and wrong addresses do not consume a
-parcel. Taking a vehicle's load mid-trip cancels that transfer; the worker
-returns so it can be retried. No worker attacks the drone or applies special
+parcel. Taking a load before its internal scan earns no receipt; taking it after the
+scan preserves the receipt and sends the empty worker home. No worker attacks the drone or applies special
 damage. Moving vehicles use normal collision speed damage.
+
+The racks and tunnels use closed front guards over a rear freight lane. The
+engine, magnet and cable collide with the front guard. Parcels use the lane's
+solid floor and ceiling behind it. Magnetic pickup is shielded until the whole
+parcel clears the guard. Every scanner lies well inside its obstacle; neither
+flying over it nor waiting at the far parking spot grants transport credit.
+
+The final four jobs introduce **Pip, the returns marshal**. It actively pursues
+low, fully processed parcels and uses a physical powered pusher to clear the
+shelves. It never deletes cargo or revokes receipts. Bait it west, carry above
+its reach, then drop at the address before it catches up. A second parcel can
+also distract it. Ordinary contact physics supplies the interference.
 
 The jobs cover intake, high-bay putaway, colour sorting, linehaul tunnels,
 returns, shared forklifts, cross-docking, reception breaks, priority queues,
 misrouted depots, separate doorsteps, and a complete overnight chain. Indoor
 racking gives way to loading bays and street frontages, with stable background
-geometry. Each route has at most two parcels and three staff members; moving
+geometry. Each route has at most two parcels, three processing workers and one marshal; moving
 platforms use acceleration-limited powered motion and ordinary friction. There
 are no cargo teleports, attachment overrides, or growing NPC/particle pools.
 
@@ -139,7 +152,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, 35 simulated flights, and a standalone build
+npm run verify   # syntax, tests, 37 simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```

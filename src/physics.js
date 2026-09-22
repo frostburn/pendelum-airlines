@@ -128,6 +128,9 @@ export class Sim {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
       for (let k = 0; k < this.terrain.length; k++) {
         const t = this.terrain[k];
+        // Cargo travels in the rear lane behind a closed front guard. The
+        // aircraft, tool and cable stay in the foreground and cannot enter it.
+        if (t.freightGuard && b.kind === 'piece') continue;
         const c = t.guide === undefined && !t.circle ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
         if (!c)
           continue;
