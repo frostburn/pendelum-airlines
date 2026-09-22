@@ -3,6 +3,10 @@ import { fmt } from '#game/math';
 const closeButton = '<button class="icon close" data-action="close" aria-label="Close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>';
 const introArt = `<svg class="intro-art" viewBox="0 0 145 175" aria-hidden="true"><path d="M10 19h103M35 15v12m55-12v12" stroke="#253f41" stroke-width="3" stroke-linecap="round"/><path d="M25 29h75l-8 15H34Z" fill="#37796c" stroke="#253f41" stroke-width="2.5"/><rect x="50" y="27" width="26" height="25" rx="7" fill="#ce7046" stroke="#253f41" stroke-width="2.5"/><path d="M64 51q13 40 45 71" fill="none" stroke="#253f41" stroke-width="2"/><path d="M103 108 86 133l40-14Z" fill="none" stroke="#253f41" stroke-width="2"/><g transform="translate(106 139) rotate(-20)"><path d="M-24-17v34h48v-34" fill="#eebc65" stroke="#253f41" stroke-width="2.5" stroke-linejoin="round"/><path d="M-28 21h56M-24 1h48" stroke="#253f41" stroke-width="2.5" stroke-linecap="round"/><circle cy="-16" r="8" fill="#edcda5"/><path d="M-9 0v-7q9-7 18 0v7" fill="#37796c"/><path d="M-11-18h22l-4-6H-7Z" fill="#253f41"/></g><path d="M21 111q-2 36 34 44" stroke="#8eaaa0" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/></svg>`;
 export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, newRecord, selectedWorld = worldIndex(sim.index) }) {
+  if (kind === 'intro' && sim.level.logistics) return `<h1 id="dialogTitle">Welcome to<br>fulfillment.</h1>
+<p class="lead">Helpful colleagues. Very specific routines.</p><p>${sim.level.hint}</p>
+<div class="note">Magnets stay on. Hold J to release a parcel onto a counter, fork or trailer. Staff work on resting cargo; collect it after their sign-off and follow its route to the matching address.</div>
+<div class="actions"><button class="primary" data-action="close">Start shift</button><button data-action="help">Controls</button><button data-action="routes">Worlds</button></div>`;
   if (kind === 'intro' && sim.industry) return `<h1 id="dialogTitle">Welcome to<br>the works.</h1>
 <p class="lead">${sim.level.name} · ${sim.level.sub}</p><p>${sim.level.hint}</p>
 <div class="manual"><strong>WASD / arrows</strong><span>Fly the engine.</span><strong>Q / E</strong><span>Reel in / pay out cable.</span>
@@ -62,6 +66,8 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <h3>On the move</h3>
 <p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
 <p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
+<h3>Fulfillment</h3>
+<p>Each parcel has a route and an address. Hold J to set it on a worker’s counter, forks or trailer. Yard Dog lifts and puts it away; Mutt transports it; clerks scan or sign. Let moving staff finish their trip before collecting. Loads are unsecured. Check the NEXT sign for queues. Staff on break resume automatically if you leave the parcel on their counter. Only the correct address accepts a fully processed parcel.</p>
 <h3>Metal works</h3>
 <p><b>Hold J, or hold the tool button:</b> switch the normally-on magnet off and drop its load, or tip a ladle to the right. Release J to restore the magnet or level the ladle again. The magnet collects black ore; yellow sand stays behind. Drop ore inside the refinery hopper.</p>
 <p>Fill a ladle under the furnace tap, then pour through a mould’s open top. Droplets spill and cool into slag; return to the tap for more. On a production-line job, land at the Tool rack after casting to fit the workpiece magnet.</p>
@@ -82,7 +88,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>`;
   else if (kind === 'pause')
     return `${closeButton}<h2 id="dialogTitle">Service suspended.</h2>
-<p class="lead">${sim.industry ? 'The hammer is taking the same break you are.' : 'The passengers appreciate this unusually steady moment.'}</p>
+<p class="lead">${sim.level.logistics ? 'The whole shift is taking the same break you are.' : sim.industry ? 'The hammer is taking the same break you are.' : 'The passengers appreciate this unusually steady moment.'}</p>
 <p>${sim.level.name} · ${fmt(sim.time)} · ${sim.delivered} / ${sim.jobs.length} delivered</p>
 <div class="actions">
 <button class="primary" data-action="close">Resume flight</button>
@@ -114,7 +120,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
   else if (kind === 'result') {
     const grade = sim.industry ? 'Work order complete' : sim.time <= sim.level.gold ? 'Express service' : sim.time <= sim.level.silver ? 'Right on schedule' : 'Everyone arrived';
     return `<h2 id="dialogTitle">${grade}.</h2>
-<p class="lead">${sim.industry ? 'Useful metal. Unlikely methods. Dispatch accepts the result.' : 'All fares delivered. Nobody had to finish the journey on foot.'}</p>
+<p class="lead">${sim.level.logistics ? 'Every parcel reached its address. The staff consider this entirely their achievement.' : sim.industry ? 'Useful metal. Unlikely methods. Dispatch accepts the result.' : 'All fares delivered. Nobody had to finish the journey on foot.'}</p>
 <div class="result-clock">${fmt(sim.time)}</div>
 <div class="result-caption">${newRecord ? 'NEW PERSONAL BEST · GHOST SAVED' : sim.assisted ? 'PRACTICE / ASSISTED RUN' : `PERSONAL BEST ${fmt(saved.best[sim.index]?.time || sim.time)}`}</div>
 <div class="result-stats">
@@ -128,7 +134,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>
 <div>
 <strong>${sim.delivered}</strong>
-<span>${sim.industry ? 'Finished orders' : 'Happy fares'}</span>
+<span>${sim.level.logistics ? 'Parcels delivered' : sim.industry ? 'Finished orders' : 'Happy fares'}</span>
 </div>
 </div>
 <p>Express target: ${fmt(sim.level.gold)}. Your best run is available as a ghost on the next attempt.</p>

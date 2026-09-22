@@ -386,7 +386,7 @@ function updateUI() {
   $('#routeName').textContent = sim.level.name;
   $('#routeSub').textContent = sim.level.sub;
   $('#flightTip').textContent = sim.level.tip;
-  $('#fareCounter span').textContent = sim.industry ? 'WORK ORDERS' : 'FARES DELIVERED';
+  $('#fareCounter span').textContent = sim.level.logistics ? 'PARCELS DELIVERED' : sim.industry ? 'WORK ORDERS' : 'FARES DELIVERED';
   $('#fareCount').textContent = sim.level.practice ? '∞' : `${sim.delivered} / ${sim.jobs.length}`;
   $('#clock').textContent = fmt(sim.time);
   $('#bestTime').textContent = saved.best[sim.index] ? fmt(saved.best[sim.index].time) : '—';
@@ -419,7 +419,7 @@ function updateUI() {
   toolButton.hidden = !sim.industry;
   if (sim.industry) {
     const work = sim.industry, order = work.order(sim);
-    $('#ticketLabel').textContent = `METAL WORKS · ${(work.tool === 'hook' ? 'magnet' : work.tool).toUpperCase()}`;
+    $('#ticketLabel').textContent = `${sim.level.logistics ? 'FULFILLMENT' : 'METAL WORKS'} · ${(work.tool === 'hook' ? 'magnet' : work.tool).toUpperCase()}`;
     $('#objective').textContent = order.title;
     $('#ticketDetail').textContent = order.detail;
     $('#serviceBar').style.width = clamp(order.progress * 100, 0, 100) + '%';

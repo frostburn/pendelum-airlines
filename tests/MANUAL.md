@@ -11,7 +11,7 @@ of `dist/index.html`. Check the console for errors throughout.
    Continue up until its base is below the viewport. The roof and upper facade
    should remain visible until their complete visual bounds leave the screen.
    Descend and repeat at another window size; there should be no pop-out/pop-in.
-4. Check all three worlds and their twelve entries per page. Board and deliver on First fare;
+4. Check all four worlds and their twelve entries per page. Board and deliver on First fare;
    restart and check the best-run ghost. Debug-assisted runs must not save records.
 5. At a phone-sized viewport with touch enabled, use the thumb stick and both
    winch buttons. Releasing or cancelling a touch should release its control.
@@ -119,3 +119,26 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
 9. Metal works has factory sheds, silos, pipe bridges, chimney stacks and gantry
    cranes instead of the town and hills. Fly both directions and change viewport
    size: silhouettes must not jump or change shape. Passenger worlds keep their town.
+
+## Fulfillment staff and parcels
+
+1. Open world four on desktop, portrait mobile and short landscape viewports.
+   All twelve jobs and four world buttons fit; keyboard focus remains usable.
+2. In Please put it down, hover with the parcel at Bea’s counter: no scan. Hold
+   J to set it down; wait for the receipt and collect it. Try dispatching before
+   scanning, then retry correctly. The parcel must remain recoverable.
+3. Let Yard Dog lift and carry its load. Confirm the crate rests freely on its
+   forks, and grabbing it before the end cancels credit. Let the dog return and
+   retry. It signs off only at the high handoff. Check its load stays in view.
+4. Let Mutt carry a parcel through the low tunnel while flying over it. Watch
+   the trailer physically support the load; collect it only after unloading.
+5. In Priority is a colour, try the wrong clerk and wrong address. In The
+   manifest says otherwise, present ECO before EXP: the NEXT sign must explain
+   the refusal. Replace it with EXP and complete both trips.
+6. Leave a parcel for Sal during a break; work must resume automatically.
+   Complete returns and cross-dock jobs, checking each parcel’s receipt trail.
+7. Complete The last metre and Overnight guarantee with both parcels. The
+   delivery count advances separately and completion requires every address.
+8. Pause while a worker is driving or scanning; motion and timers freeze.
+   Restart resets workers, receipts, cargo, and queue order. View the map,
+   resize, and pan between indoor racks and street frontages: geometry is stable.

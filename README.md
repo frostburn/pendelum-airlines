@@ -1,9 +1,39 @@
 # Pendulum Airlines
 
 A tiny flying taxi, a long cable, and a passenger cabin with its own plans.
-Three worlds, 35 handmade jobs, a practice yard, touch controls, synthesized sound,
+Four worlds, 47 handmade jobs, a practice yard, touch controls, synthesized sound,
 personal bests, and interpolated best-run ghosts. Each world fits twelve level
 tiles onto one screen; switch worlds instead of scrolling. All jobs are open.
+
+## Fulfillment
+
+World four follows parcels from a fulfillment center through loading yards,
+regional depots and customer doorsteps. Twelve jobs use neutral, often
+inconvenient staff routines:
+
+- **Yard Dog** is a putaway forklift that noses under low-hanging cargo in
+  its loading bay. Release a parcel onto its forks, let it lift
+  and carry the load to its high handoff, then collect it. It returns empty for
+  the next parcel. Inventory is recorded at the handoff, not on initial pickup.
+- **Mutt** drives an unsecured trailer through loading tunnels. Loads ride on
+  its physical deck. Some runs insist on the manifest's priority order.
+- **Bea, Ivo and Sal** scan, relabel or sign at counters. They need released,
+  supported cargo. A parcel left on a counter waits through the clerk's break.
+
+Parcels are solid magnetic loads with their own route, address, and receipts.
+Hold J to hand one off, collect after sign-off, and set it at the matching
+address. Wrong clerks, incomplete routes and wrong addresses do not consume a
+parcel. Taking a vehicle's load mid-trip cancels that transfer; the worker
+returns so it can be retried. No worker attacks the drone or applies special
+damage. Moving vehicles use normal collision speed damage.
+
+The jobs cover intake, high-bay putaway, colour sorting, linehaul tunnels,
+returns, shared forklifts, cross-docking, reception breaks, priority queues,
+misrouted depots, separate doorsteps, and a complete overnight chain. Indoor
+racking gives way to loading bays and street frontages, with stable background
+geometry. Each route has at most two parcels and three staff members; moving
+platforms use acceleration-limited powered motion and ordinary friction. There
+are no cargo teleports, attachment overrides, or growing NPC/particle pools.
 
 ## Metal works
 
@@ -109,7 +139,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, 23 simulated flights, and a standalone build
+npm run verify   # syntax, tests, 35 simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```
@@ -216,7 +246,7 @@ trim. A base below the viewport is not grounds to hide a roof that is still visi
 The original `pendulum-airlines-v1` storage key and 20 Hz ghost format are retained.
 Route array indices are persistent save IDs: the original seven services stay at
 0–6, Sunday service stays at 7, On the move occupies 8–13, Around the bend occupies
-14–19, Heavy lifting occupies 20–23, and Metal works is appended at 24–35.
+14–19, Heavy lifting occupies 20–23, Metal works occupies 24–35, and Fulfillment is appended at 36–47.
 `worlds` declares picker order separately from those IDs. Next route follows world
 order and skips free practice. Every earlier route remains directly resumable;
 reopening the guide routes does not remap their records. Append definitions rather

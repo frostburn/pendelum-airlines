@@ -7,6 +7,7 @@ import { stopAt, deckAt } from '#game/moving-stops';
 import { circleGuide } from '#game/cable-guides';
 import { liftAt, liftArea } from '#game/updrafts';
 import { Workshop } from '#game/industry/workshop';
+import { Depot } from '#game/logistics/depot';
 /**
  * DOM-free, fixed-step simulation. Massive, freely hinged, tension-only cable
  * links use positional constraints. Winching does work; the rotor applies
@@ -84,7 +85,7 @@ export class Sim {
     this._prevCab = { x: this.cabin.x, y: this.cabin.y };
     this.stats = { bumps: 0, pickups: 0 };
     this.assisted = false;
-    this.industry = this.level.industry ? new Workshop(this) : null;
+    this.industry = this.level.logistics ? new Depot(this) : this.level.industry ? new Workshop(this) : null;
   }
   updateStops() {
     for (const platform of this.platforms) {
