@@ -7,6 +7,7 @@ import { stopAt, deckAt } from '#game/moving-stops';
 import { circleGuide } from '#game/cable-guides';
 import { liftAt, liftArea } from '#game/updrafts';
 import { Workshop } from '#game/industry/workshop';
+import { Depot } from '#game/logistics/depot';
 /**
  * DOM-free, fixed-step simulation. Massive, freely hinged, tension-only cable
  * links use positional constraints. Winching does work; the rotor applies
@@ -84,7 +85,7 @@ export class Sim {
     this._prevCab = { x: this.cabin.x, y: this.cabin.y };
     this.stats = { bumps: 0, pickups: 0 };
     this.assisted = false;
-    this.industry = this.level.industry ? new Workshop(this) : null;
+    this.industry = this.level.logistics ? new Depot(this) : this.level.industry ? new Workshop(this) : null;
   }
   updateStops() {
     for (const platform of this.platforms) {
@@ -127,6 +128,9 @@ export class Sim {
       const [lx, ly, r] = samples[s], p = point(b, lx, ly);
       for (let k = 0; k < this.terrain.length; k++) {
         const t = this.terrain[k];
+        // Cargo travels in the rear lane behind a closed front guard. The
+        // aircraft, tool and cable stay in the foreground and cannot enter it.
+        if (t.freightGuard && b.kind === 'piece') continue;
         const c = t.guide === undefined && !t.circle ? circleRect(p.x, p.y, r, t) : circleGuide(p.x, p.y, r, t);
         if (!c)
           continue;
@@ -285,9 +289,9 @@ export class Sim {
     const blend = 1 - Math.exp(-DT * 16);
     this.tensionX += (this._tx - this.tensionX) * blend;
     this.tensionY += (this._ty - this.tensionY) * blend;
-    // Industrial tools and workpieces absorb their working impacts; the drone
-    // uses the same relative-speed damage and cooldown as every other route.
-    const hit = this.industry ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
+    // Metalworking tools absorb their working impacts. Fulfillment restores
+    // ordinary rig damage, including fast magnet collisions with guards/staff.
+    const hit = this.industry && !this.level.logistics ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
     if (hit > 2.6 && this.hitCooldown <= 0) {
       this.hitCooldown = .32;
       this.lastImpact = hit;

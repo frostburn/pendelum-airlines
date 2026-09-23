@@ -225,10 +225,11 @@ export class Workshop {
       } else part.settle = 0;
     }
   }
+  canPickup() { return true; }
   pullPieces(sim, dt) {
     const c = sim.cabin, pole = point(c, 0, -.18);
     for (const p of this.pieces) {
-      if (p.attached || p.jigSlot !== undefined || p.delivered) continue;
+      if (p.attached || p.jigSlot !== undefined || p.delivered || !this.canPickup(p)) continue;
       const local = localPoint(c, p.x, p.y);
       if (local.y >= -.18 || Math.abs(local.x) > 1.7) continue;
       const surface = closestSurface(p, pole.x, pole.y), q = point(p, surface.x, surface.y);

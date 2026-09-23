@@ -5,7 +5,7 @@ import { stopAt, deckAt } from '#game/moving-stops';
 import { MIN, MAX } from '#game/constants';
 
 test('all routes and the practice yard have valid geometry and tickets', () => {
-  assert.equal(levels.length, 36);
+  assert.equal(levels.length, 48);
   assert.equal(levels.filter(level => level.practice).length, 1);
   for (const level of levels) {
     assert.ok(level.name && level.width > 0 && level.height > 0);

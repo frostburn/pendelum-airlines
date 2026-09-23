@@ -1170,7 +1170,7 @@ input[type=range] {
 .world-heading {padding-right:32px;}
 .world-heading h2 {font-size:27px;margin:6px 0 0;}
 .world-heading .eyeline {font-size:9px;}
-.world-tabs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.world-tabs {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
 .world-tabs button {text-align:left;padding:12px;min-width:0;}
 .world-tabs span {display:block;font:9px var(--mono);color:var(--muted);margin-bottom:5px;}
 .world-tabs strong {font-size:13px;}

@@ -11,7 +11,7 @@ of `dist/index.html`. Check the console for errors throughout.
    Continue up until its base is below the viewport. The roof and upper facade
    should remain visible until their complete visual bounds leave the screen.
    Descend and repeat at another window size; there should be no pop-out/pop-in.
-4. Check all three worlds and their twelve entries per page. Board and deliver on First fare;
+4. Check all four worlds and their twelve entries per page. Board and deliver on First fare;
    restart and check the best-run ghost. Debug-assisted runs must not save records.
 5. At a phone-sized viewport with touch enabled, use the thumb stick and both
    winch buttons. Releasing or cancelling a touch should release its control.
@@ -119,3 +119,34 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
 9. Metal works has factory sheds, silos, pipe bridges, chimney stacks and gantry
    cranes instead of the town and hills. Fly both directions and change viewport
    size: silhouettes must not jump or change shape. Passenger worlds keep their town.
+
+## Fulfillment staff and parcels
+
+1. Open world four on desktop, portrait mobile and short landscape viewports.
+   All twelve jobs and four world buttons fit; keyboard focus remains usable.
+2. In Please put it down, hover with the parcel at Bea’s counter: no scan. Hold
+   J to set it down; wait for the receipt and collect it. Try dispatching before
+   scanning, then retry correctly. The parcel must remain recoverable.
+3. Let Yard Dog lift and carry its load. Confirm the crate rests freely on its
+   forks, and grabbing it before the internal scanner earns no credit. Let the dog return and
+   retry. The scan must happen inside the rack. Snatch it beyond the guard while the dog is still moving; the receipt must survive. Check its load stays in view.
+4. Let Mutt carry a parcel through the low tunnel while flying over it. Watch
+   the trailer physically support the load; snatch it as soon as the whole parcel clears the guard. Parking is optional.
+5. In Priority is a colour, try the wrong clerk and wrong address. Try flying through the guarded rack with the shortest cable: the front mesh blocks the drone, tool and cable. Flying a parcel over the rack must not grant a scan. In The
+   manifest says otherwise, present ECO before EXP: the NEXT sign must explain
+   the refusal. Put both parcels on the same deck: only the accepted one earns
+   a scan. Complete a separate accepted trip for the other parcel.
+6. Leave a parcel for Sal during a break; work must resume automatically.
+   Complete returns and cross-dock jobs, checking each parcel’s receipt trail.
+7. Complete The last metre and Overnight guarantee with both parcels. The
+   delivery count advances separately and completion requires every address.
+8. Pause while a worker is driving or scanning; motion and timers freeze.
+   Restart resets workers, receipts, cargo, and queue order. View the map,
+   resize, and pan between indoor racks and street frontages: geometry is stable.
+
+9. In the final four jobs, bring a qualified parcel low near dispatch. Pip must
+   pursue it and shove it through physical contact. Receipts survive and the
+   parcel remains recoverable. Lure Pip west, fly high, then drop at the address.
+   It must stop pursuing high cargo and ignore delivered or unprocessed parcels.
+10. Tap a guard slowly with the magnet, then hit it fast while keeping the engine
+    clear. Only the fast hit damages integrity, using the usual impact cooldown.

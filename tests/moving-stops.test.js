@@ -143,10 +143,10 @@ test('legacy route IDs and saved ghosts survive the expansion', () => {
   assert.equal(routeNumber(8), 8);
   assert.equal(nextRoute(13), 16);
   assert.equal(nextRoute(23), 24);
-  assert.equal(serviceRoutes.length, 35);
+  assert.equal(serviceRoutes.length, 47);
   const markup = panelMarkup('routes', {sim: new Sim(8), saved});
   assert.equal((markup.match(/data-route=/g) || []).length, 12);
   assert.match(markup, /data-route="7"/);
   assert.match(panelMarkup('result', {sim: new Sim(6), saved}), /data-action="next"/);
-  assert.doesNotMatch(panelMarkup('result', {sim: new Sim(35), saved}), /data-action="next"/);
+  assert.doesNotMatch(panelMarkup('result', {sim: new Sim(47), saved}), /data-action="next"/);
 });

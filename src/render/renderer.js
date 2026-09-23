@@ -2,6 +2,7 @@ import { DT } from '#game/constants';
 import { stopAt } from '#game/moving-stops';
 import { drawMovingStop } from '#game/render/platforms';
 import { drawCableGuide } from '#game/render/guides';
+import { drawDepot, drawDepotBackground } from '#game/render/depot';
 import { drawFoundry } from '#game/render/foundry';
 import { cityBuildings } from '#game/render/city';
 import { drawUpdraft } from '#game/render/updrafts';
@@ -98,6 +99,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
   }
   function background(t) {
+    if (sim.level.logistics) { drawDepotBackground(ctx, renderCam, width, height, sim.level.logistics.scene); return; }
     if (sim.industry) { drawFoundry(ctx, renderCam, width, height, sim.time, reduced); return; }
     ctx.fillStyle = sim.level.theme === 1 ? '#e9e6d9' : sim.level.theme === 2 ? '#e0e9e5' : '#e2ebdf';
     ctx.fillRect(0, 0, width, height);
@@ -335,6 +337,16 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     ty = clamp(ty, halfH - 2, Math.max(halfH - 2, sim.level.height + 14 - halfH));
     tx = Math.min(tx, e.x + halfW - 1.6, c.x + halfW - 1.6);
     tx = Math.max(tx, e.x - halfW + 1.6, c.x - halfW + 1.6);
+    // Keep a nearby NPC handoff in view while the empty magnet waits above it.
+    if (sim.level.logistics && !sim.industry.heldPiece) {
+      const worker = sim.industry.workers.find(w => w.cargo && Math.abs(w.x - e.x) < 12);
+      if (worker) {
+        const left = Math.min(e.x, c.x, worker.x - 2.2), right = Math.max(e.x, c.x, worker.x + 3.5);
+        scale = Math.min(scale, height / Math.max(10, e.y + 2), width / (right - left + 2));
+        tx = (left + right) * .5;
+        ty = Math.max(4, e.y * .5 + .2);
+      }
+    }
     const blend = reduced || snapCamera ? 1 : 1 - Math.exp(-elapsed * 3.5);
     cam.x += (tx - cam.x) * blend;
     cam.y += (ty - cam.y) * blend;
@@ -365,7 +377,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     for (const r of sim.level.terrain)
       if (r.style !== 'metal') building(r);
     const workshopDraw = {box, poly, circle, line, text};
-    if (sim.industry) drawWorkshop(ctx, sim, workshopDraw, sceneTime);
+    if (sim.level.logistics) drawDepot(ctx, sim, workshopDraw, sceneTime);
+    else if (sim.industry) drawWorkshop(ctx, sim, workshopDraw, sceneTime);
     sim.guides.forEach((guide, i) => {
       drawCableGuide(ctx, guide, sim.guideContacts[i]);
       if (map) text(guide.x, guide.y + guide.r + .48, 'GUIDE', .23, '#536b55');

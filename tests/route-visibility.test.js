@@ -5,21 +5,22 @@ import { Sim } from '#game/physics';
 import { parseSaved } from '#game/storage';
 import { panelMarkup } from '#game/ui/panels';
 
-test('three world pages cover each persistent route exactly once, twelve tiles at a time', () => {
-  assert.deepEqual(worlds.map(w => w.routes.length), [12, 12, 12]);
+test('four world pages cover each persistent route exactly once, twelve tiles at a time', () => {
+  assert.deepEqual(worlds.map(w => w.routes.length), [12, 12, 12, 12]);
   assert.equal(new Set(visibleRoutes).size, levels.length);
-  assert.equal(serviceRoutes.length, 35);
+  assert.equal(serviceRoutes.length, 47);
   worlds.forEach((world, selectedWorld) => {
     const markup = panelMarkup('routes', {sim: new Sim(0), saved: {best: {}}, selectedWorld});
     const ids = [...markup.matchAll(/data-route="(\d+)"/g)].map(m => Number(m[1]));
     assert.deepEqual(ids, world.routes);
-    assert.equal((markup.match(/data-world=/g) || []).length, 3);
+    assert.equal((markup.match(/data-world=/g) || []).length, 4);
     assert.match(markup, new RegExp(`data-world="${selectedWorld}" aria-pressed="true"`));
     world.routes.forEach(id => assert.equal(worldIndex(id), selectedWorld));
   });
   assert.equal(nextRoute(15), 10);
   assert.equal(nextRoute(23), 24);
-  assert.equal(nextRoute(35), null);
+  assert.equal(nextRoute(35), 36);
+  assert.equal(nextRoute(47), null);
   assert.equal(nextRoute(7), null);
 });
 
