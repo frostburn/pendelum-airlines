@@ -1174,6 +1174,7 @@ input[type=range] {
 .world-tabs button {text-align:left;padding:12px;min-width:0;}
 .world-tabs span {display:block;font:9px var(--mono);color:var(--muted);margin-bottom:5px;}
 .world-tabs strong {font-size:13px;}
+.world-tabs .world-short {display:none;}
 .world-tabs [aria-pressed=true] {background:var(--teal);border-color:var(--teal);color:var(--paper);}
 .world-tabs [aria-pressed=true] span {color:#d7e4cf;}
 .world-picker .route-list {grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:10px;margin:0;min-height:0;}
@@ -1203,7 +1204,8 @@ input[type=range] {
   .world-picker .route-button strong {font-size:11px;}
   .world-picker .route-button small {font-size:7px;}
   .world-tabs button {padding:9px 6px;}
-  .world-tabs strong {font-size:11px;}
+  .world-tabs .world-full {display:none;}
+  .world-tabs .world-short {display:block;font-size:11px;}
   .world-heading h2 {font-size:21px;}
   .world-heading .eyeline {font-size:7px;}
 }

@@ -44,7 +44,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
   else if (kind === 'routes') {
     const world = worlds[selectedWorld] || worlds[0];
     return `${closeButton}<div class="world-heading"><span class="eyeline">PENDULUM AIRLINES · ROUTE BOOK</span><h2 id="dialogTitle">Choose your next bad idea.</h2></div>
-<nav class="world-tabs" aria-label="Worlds">${worlds.map((w, i) => `<button data-world="${i}" aria-pressed="${i === selectedWorld}"><span>WORLD ${i + 1}</span><strong>${w.name}</strong></button>`).join('')}</nav>
+<nav class="world-tabs" aria-label="Worlds">${worlds.map((w, i) => `<button data-world="${i}" aria-pressed="${i === selectedWorld}" aria-label="World ${i + 1}: ${w.name}"><span>WORLD ${i + 1}</span><strong class="world-full">${w.name}</strong><strong class="world-short" aria-hidden="true">${w.short}</strong></button>`).join('')}</nav>
 <div class="route-list" aria-label="${world.name}">${world.routes.map((id, n) => {
       const l = levels[id], best = saved.best[id];
       return `<button class="route-button ${id === sim.index ? 'current' : ''}" data-route="${id}" title="${l.sub}">
