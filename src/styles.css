@@ -1170,7 +1170,7 @@ input[type=range] {
 .world-heading {padding-right:32px;}
 .world-heading h2 {font-size:27px;margin:6px 0 0;}
 .world-heading .eyeline {font-size:9px;}
-.world-tabs {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.world-tabs {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
 .world-tabs button {text-align:left;padding:12px;min-width:0;}
 .world-tabs span {display:block;font:9px var(--mono);color:var(--muted);margin-bottom:5px;}
 .world-tabs strong {font-size:13px;}
@@ -1218,4 +1218,19 @@ input[type=range] {
   .world-picker .route-button strong {font-size:10px;}
   .world-picker .route-button small {font-size:7px;}
   #dialog.world-picker {grid-template-rows:auto auto minmax(0,1fr);}
+}
+
+#fireControls {position:absolute;right:20px;bottom:70px;z-index:2;display:flex;gap:5px;}
+#fireControls[hidden],#fireControls button[hidden] {display:none;}
+#fireControls button {min-width:44px;min-height:44px;padding:8px;background:var(--paper);touch-action:none;}
+#fireControls button.pressed {background:var(--teal);color:white;}
+@media (max-width:700px), (pointer:coarse) {
+  #toolBtn {right:12px;bottom:122px;font-size:10px;max-width:150px;}
+  #fireControls {right:12px;bottom:174px;display:grid;grid-template-columns:repeat(2,auto);}
+  #fireControls button {font-size:10px;}
+}
+
+@media (max-height:500px) and (min-width:641px) {
+  #fireControls {bottom:66px;right:146px;display:flex;}
+  #toolBtn {bottom:14px;right:146px;}
 }

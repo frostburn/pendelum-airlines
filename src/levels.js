@@ -7,6 +7,7 @@ import { guideRoutes } from '#game/routes/around-the-bend';
 import { freightRoutes } from '#game/routes/heavy-lifting';
 import { metalRoutes } from '#game/routes/metal-works';
 import { fulfillmentRoutes } from '#game/routes/fulfillment';
+import { fireRoutes } from '#game/routes/fire-service';
 export const levels = [
   {
     name: 'First fare',
@@ -188,7 +189,8 @@ export const levels = [
   ...guideRoutes,
   ...freightRoutes,
   ...metalRoutes,
-  ...fulfillmentRoutes
+  ...fulfillmentRoutes,
+  ...fireRoutes
 ];
 
 // Array indices are persistent save IDs; never insert before an existing route.
@@ -196,7 +198,8 @@ export const worlds = [
   {name: 'Local service', sub: 'First fares, moving stops, and a little guidance.', routes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15]},
   {name: 'Further afield', sub: 'Trickier connections, cable guides, and heavy lifting.', routes: [10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23]},
   {name: 'Metal works', sub: 'Mine it. Melt it. Hit it. Make something useful.', routes: metalRoutes.map((_, i) => 24 + i)},
-  {name: 'Fulfillment', sub: 'Helpful staff. Inconvenient routines. Every parcel has a journey.', routes: fulfillmentRoutes.map((_, i) => 36 + i)}
+  {name: 'Fulfillment', sub: 'Helpful staff. Inconvenient routines. Every parcel has a journey.', routes: fulfillmentRoutes.map((_, i) => 36 + i)},
+  {name: 'Fire service', sub: 'A powerful hose. A familiar bucket. An entirely unsuitable aircraft.', routes: fireRoutes.map((_, i) => 48 + i)}
 ];
 export const worldIndex = index => Math.max(0, worlds.findIndex(w => w.routes.includes(index)));
 export const visibleRoutes = worlds.flatMap(w => w.routes);

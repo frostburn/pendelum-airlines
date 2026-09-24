@@ -33,6 +33,7 @@ function clearInput() {
   keys.clear();
   touch.x = touch.y = touch.winch = 0;
   clearToolInput();
+  clearFireInputs.forEach(clear => clear());
   mapHold = false;
   $('#joystick i').style.transform = '';
   $$('.touch-winch button').forEach(b => b.classList.remove('pressed'));
@@ -217,7 +218,7 @@ window.addEventListener('keydown', e => {
   }
   if (e.target.matches('input') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(key))
     return;
-  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyJ'].includes(key))
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyJ', 'KeyI', 'KeyK', 'KeyL', 'KeyU'].includes(key))
     e.preventDefault();
   if (!e.repeat) {
     if (key === 'KeyR') {
@@ -335,13 +336,20 @@ $$('[data-touch]').forEach(b => {
 const toolButton = $('#toolBtn');
 const clearToolInput = bindToolButton(toolButton, () => !panel && !mapHold && !mapLatched,
   active => { touch.action = active; });
+const clearFireInputs = ['aimUp', 'aimDown', 'flip', 'swap'].map(name =>
+  bindToolButton(document.querySelector(`[data-fire="${name}"]`),
+    () => !!sim.level.fire && !panel && !mapHold && !mapLatched,
+    active => { touch[name] = active; }));
 function inputs() {
   return {
     x: clamp((keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + touch.x, -1, 1),
     y: clamp((keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) + touch.y, -1, 1),
     winch: (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0) + touch.winch,
     precision: keys.has('Space'),
-    action: keys.has('KeyJ') || touch.action
+    action: keys.has('KeyJ') || touch.action,
+    aim: (keys.has('KeyI') || touch.aimUp ? 1 : 0) - (keys.has('KeyK') || touch.aimDown ? 1 : 0),
+    flip: keys.has('KeyL') || touch.flip,
+    swap: keys.has('KeyU') || touch.swap
   };
 }
 function events() {
@@ -386,7 +394,7 @@ function updateUI() {
   $('#routeName').textContent = sim.level.name;
   $('#routeSub').textContent = sim.level.sub;
   $('#flightTip').textContent = sim.level.tip;
-  $('#fareCounter span').textContent = sim.level.logistics ? 'PARCELS DELIVERED' : sim.industry ? 'WORK ORDERS' : 'FARES DELIVERED';
+  $('#fareCounter span').textContent = sim.level.fire ? 'FIRES COOLED' : sim.level.logistics ? 'PARCELS DELIVERED' : sim.industry ? 'WORK ORDERS' : 'FARES DELIVERED';
   $('#fareCount').textContent = sim.level.practice ? '∞' : `${sim.delivered} / ${sim.jobs.length}`;
   $('#clock').textContent = fmt(sim.time);
   $('#bestTime').textContent = saved.best[sim.index] ? fmt(saved.best[sim.index].time) : '—';
@@ -417,14 +425,18 @@ function updateUI() {
   $('#serviceBar').style.width = clamp(sim.service / .55 * 100, 0, 100) + '%';
   const toolButton = $('#toolBtn');
   toolButton.hidden = !sim.industry;
+  $('#fireControls').hidden = !sim.level.fire;
+  $$('[data-fire]').forEach(button => {
+    button.hidden = !!sim.level.fire && sim.industry.tool !== 'hose' && button.dataset.fire !== 'swap';
+  });
   if (sim.industry) {
     const work = sim.industry, order = work.order(sim);
-    $('#ticketLabel').textContent = `${sim.level.logistics ? 'FULFILLMENT' : 'METAL WORKS'} · ${(work.tool === 'hook' ? 'magnet' : work.tool).toUpperCase()}`;
+    $('#ticketLabel').textContent = `${sim.level.fire ? 'FIRE SERVICE' : sim.level.logistics ? 'FULFILLMENT' : 'METAL WORKS'} · ${(work.tool === 'hook' ? 'magnet' : sim.level.fire && work.tool === 'ladle' ? 'bucket' : work.tool).toUpperCase()}`;
     $('#objective').textContent = order.title;
     $('#ticketDetail').textContent = order.detail;
     $('#serviceBar').style.width = clamp(order.progress * 100, 0, 100) + '%';
     $('#flightTip').textContent = order.detail;
-    toolButton.textContent = work.tool === 'ladle' ? 'Hold J · pour right' : 'Hold J · magnet off';
+    toolButton.textContent = work.tool === 'hose' ? 'Hold J · spray' : work.tool === 'ladle' ? 'Hold J · pour right' : 'Hold J · magnet off';
     toolButton.classList.toggle('pressed', work.action);
     toolButton.setAttribute('aria-pressed', String(work.action));
   }

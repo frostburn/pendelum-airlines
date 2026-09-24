@@ -1,4 +1,5 @@
 import { Body, point, eff, move, vel, impulse } from '#game/rigid-body';
+import { Fireground } from '#game/fire/fireground';
 export { Body, point } from '#game/rigid-body';
 import { DT, G, N, MIN, MAX, MAX_THRUST } from '#game/constants';
 import { clamp, wrap } from '#game/math';
@@ -85,7 +86,7 @@ export class Sim {
     this._prevCab = { x: this.cabin.x, y: this.cabin.y };
     this.stats = { bumps: 0, pickups: 0 };
     this.assisted = false;
-    this.industry = this.level.logistics ? new Depot(this) : this.level.industry ? new Workshop(this) : null;
+    this.industry = this.level.fire ? new Fireground(this) : this.level.logistics ? new Depot(this) : this.level.industry ? new Workshop(this) : null;
   }
   updateStops() {
     for (const platform of this.platforms) {
@@ -279,7 +280,7 @@ export class Sim {
         const normal = Math.max(0, -vn / eff(p, c.nx, c.ny));
         if (normal)
           impulse(p, c.nx, c.ny, normal);
-        const vt = v.x * (-c.ny) + v.y * c.nx, friction = b.kind === 'node' ? .02 : .55;
+        const vt = v.x * (-c.ny) + v.y * c.nx, friction = b.friction ?? (b.kind === 'node' ? .02 : .55);
         const maxJ = friction * (normal + b.m * G * DT / Math.max(1, b.contacts.length));
         const j = clamp(-vt / eff(p, -c.ny, c.nx), -maxJ, maxJ);
         impulse(p, -c.ny, c.nx, j);
@@ -289,9 +290,9 @@ export class Sim {
     const blend = 1 - Math.exp(-DT * 16);
     this.tensionX += (this._tx - this.tensionX) * blend;
     this.tensionY += (this._ty - this.tensionY) * blend;
-    // Metalworking tools absorb their working impacts. Fulfillment restores
+    // Metalworking tools absorb their working impacts. Other worlds use
     // ordinary rig damage, including fast magnet collisions with guards/staff.
-    const hit = this.industry && !this.level.logistics ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
+    const hit = this.industry && !this.level.logistics && !this.level.fire ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
     if (hit > 2.6 && this.hitCooldown <= 0) {
       this.hitCooldown = .32;
       this.lastImpact = hit;

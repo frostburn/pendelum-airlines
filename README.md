@@ -1,9 +1,48 @@
 # Pendulum Airlines
 
 A tiny flying taxi, a long cable, and a passenger cabin with its own plans.
-Four worlds, 47 handmade jobs, a practice yard, touch controls, synthesized sound,
+Five worlds, 59 handmade jobs, a practice yard, touch controls, synthesized sound,
 personal bests, and interpolated best-run ghosts. Each world fits twelve level
 tiles onto one screen; switch worlds instead of scrolling. All jobs are open.
+
+## Fire service
+
+World five adds twelve calls built around a suspended hose nozzle, its recoil,
+and the metalworking bucket filled with water. Hold **J** to spray or pour right;
+**I / K** raise and lower the nozzle and **L** turns it around. Rest at the Tool
+rack and press **U** to exchange the hose and bucket. Matching on-screen buttons
+support touch and keyboard activation. Flight and winch controls stay the same.
+
+| Call | Job |
+| --- | --- |
+| Mandatory training | Aim the moving nozzle at two training stacks and manage the kick. |
+| Window of opportunity | Send water through a workshop opening while keeping the rotor outside. |
+| The other side of the fence | Clear the fence with the stream, then reach the raised stock. |
+| The bucket list | Scoop water from a basin and pour across three timber beds. |
+| Both ends of the street | Turn the nozzle to attack stores on both sides of an alley. |
+| The warm way up | Cool elevated fires while their updrafts fade beneath the rig. |
+| Unscheduled delivery | Chase a burning wheeled crate that the water jet pushes away. |
+| Under the eaves | Find water trajectories into two workshops under stepped roofs. |
+| Nobody told the sprinklers | Supply a rooftop header that feeds an enclosed storeroom. |
+| The neighbour’s shed | Wet the next stack and stop fire spreading along the row. |
+| Water goes somewhere | Pour onto terraced stock; excess water runs off and keeps falling. |
+| All available appliances | Combine sprinkler supply, moving cargo, roof fires and refills. |
+
+Hover the hose low over a blue basin with J released to refill its finite tank.
+Dip an upright bucket below the surface to scoop. Water changes the suspended
+load, follows ballistic paths, reacts against the bucket walls and loose cargo,
+and must cross an open header mouth to feed its sprinklers. Roofs and walls stop
+the stream. Cool every heat bar and keep them cold for two seconds to finish;
+wet stock resists reignition from still-burning neighbours.
+
+The 120 Hz water field is capped at 192 droplets, with 30 per bucket and 90 in
+the tank. The hose has equal opposite recoil; refill shares momentum with the
+incoming stationary water. Bucket weight comes from liquid contact forces using
+the existing ladle walls. Swept water contacts prevent thin-wall tunnelling,
+and only nearby drops inside the bucket need a liquid pressure solve. Airborne
+water expires after six seconds; carrying water does not consume that lifetime.
+Headers emit only the water they have received. These are bounded game physics,
+with ordinary collision damage and deterministic fire, spray and smoke clocks.
 
 ## Fulfillment
 
@@ -153,7 +192,7 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, 37 simulated flights, and a standalone build
+npm run verify   # syntax, tests, 49 simulated flights, and a standalone build
 npm run build   # produces dist/index.html
 npm run preview # serves the built document on the same local port
 ```
@@ -172,7 +211,9 @@ use the dev server or build it rather than opening that template directly.
 | Q / E | Reel in / lower the cabin |
 | Mouse wheel / cable slider | Set the winch target |
 | Space | Precision flight |
-| Hold J / tool button | Switch the normally-on magnet off to drop metal, or tip the ladle right |
+| Hold J / tool button | Switch the normally-on magnet off to drop metal, tip the ladle/bucket right, or spray the hose |
+| I / K · L | Raise / lower the hose nozzle · turn it around |
+| U | Swap hose and bucket while resting at the Tool rack |
 | R | Restart the current route |
 | Hold V | Paused route overview |
 | P / Escape | Pause / resume |
@@ -190,6 +231,7 @@ mass, and the two seats can hold passengers with different destinations.
 - `src/cable-guides.js`: circular contact geometry for fixed cable guides.
 - `src/updrafts.js`: spatial lift fields, body area factors, and boiler schedules.
 - `src/industry/`: bounded materials, tool state, free parts, and machine processing.
+- `src/fire/`: finite water, hose recoil, bucket scooping, heat, spread and sprinkler supply.
 - `src/routes/`: shared geometry helpers and all route collections.
 - `src/render/`: drawing and camera; stable city slots and viewport culling.
 - `src/ui/`: dialog templates and shared drawing colors/fonts.
@@ -260,7 +302,7 @@ trim. A base below the viewport is not grounds to hide a roof that is still visi
 The original `pendulum-airlines-v1` storage key and 20 Hz ghost format are retained.
 Route array indices are persistent save IDs: the original seven services stay at
 0–6, Sunday service stays at 7, On the move occupies 8–13, Around the bend occupies
-14–19, Heavy lifting occupies 20–23, Metal works occupies 24–35, and Fulfillment is appended at 36–47.
+14–19, Heavy lifting occupies 20–23, Metal works occupies 24–35, and Fulfillment occupies 36–47, and Fire service is appended at 48–59.
 `worlds` declares picker order separately from those IDs. Next route follows world
 order and skips free practice. Every earlier route remains directly resumable;
 reopening the guide routes does not remap their records. Append definitions rather
@@ -294,7 +336,7 @@ City regressions cross the old wrap boundary in both directions and check the
 real renderer. Guide tests cover contact geometry, both vehicle bodies, cable
 nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
 
-`npm run test:flights` completes 23 moving-stop, freight, and foundry jobs using normal analog
+`npm run test:flights` completes 49 moving-stop, freight, foundry, fulfillment and fire-service flights using normal analog
 flight, winch and tool-button inputs. Every job must complete at full integrity.
 Passenger jobs must avoid damaging impacts; industrial jobs must keep the drone clear of the hammer and its frame. The witnesses never teleport the rig or bypass service logic. These are playability
 witnesses, not claims about how easy the routes are for a human pilot. The check

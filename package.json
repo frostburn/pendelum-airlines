@@ -1,6 +1,6 @@
 {
   "name": "pendelum-airlines",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "description": "A physics-based flying taxi with a very lively suspended cabin.",
   "type": "module",
@@ -13,7 +13,7 @@
     "preview": "node scripts/serve.js --dist",
     "check": "node scripts/check.js",
     "test": "node --test",
-    "test:flights": "node scripts/verify-flights.js && node scripts/verify-freight-flights.js && node scripts/verify-metal-flights.js && node scripts/verify-logistics-flights.js",
+    "test:flights": "node scripts/verify-flights.js && node scripts/verify-freight-flights.js && node scripts/verify-metal-flights.js && node scripts/verify-logistics-flights.js && node scripts/verify-fire-flights.js",
     "test:guides": "node scripts/verify-guide-flights.js",
     "test:watch": "node --test --watch",
     "verify": "npm run check && npm test && npm run test:flights && npm run build"
