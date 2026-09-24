@@ -26,7 +26,13 @@ export function flyDemolitionRoute(id, observe = () => {}) {
       yield* move(exit, height, {name: 'leave facade'});
       if (site.heldPiece?.width > 3) yield* cable(3.8);
     }
-    const high = id === 67 || id === 69 ? 12 : 11;
+    let high = id === 67 || id === 69 ? 12 : 11;
+    if (site.heldPiece) {
+      const p = site.heldPiece, roof = Math.max(...sim.level.terrain.map(r => r.y + r.h));
+      // A slab picked up while leaning can hang vertically. Clear the roof
+      // with the whole load, including its possible rotation during travel.
+      high = Math.max(high, roof + 1.2 + p.radius + Math.abs(sim.cabin.y - p.y));
+    }
     yield* move(sim.cabin.x, high, {name: 'climb'});
     yield* move(x, high, {name: 'cross'});
     yield* move(x, y, {name: 'descend'});
@@ -42,13 +48,13 @@ export function flyDemolitionRoute(id, observe = () => {}) {
     if (id === 67 && j.id === 'shutter-brace') {
       yield* move(3, 4);
       yield* cable(7.5);
-      yield* move(8, 4);
-      yield* move(8, 2.3);
+      yield* move(5, 4);
+      yield* move(5, 2.3);
       const vertical = () => Math.max(-1, Math.min(1, (10.2 - sim.engine.y) * 1.3 / 3.8));
-      yield {name: 'build the swing', max: 6, x: 8, y: 2.3, until: () => sim.engine.x > 14,
+      yield {name: 'build the swing', max: 12, x: 5, y: 2.3, until: () => sim.engine.x > 20.5 || j.broken,
         raw: () => ({x: 1, y: vertical()})};
       yield {name: 'swing under the canopy', max: 5, x: 14, y: 2.3, until: () => j.broken,
-        raw: () => ({x: Math.max(-1, Math.min(1, ((14 - sim.engine.x) * 2 - sim.engine.vx * .8) / 5)), y: vertical()})};
+        raw: () => ({x: Math.max(-1, Math.min(1, ((20.5 - sim.engine.x) * 2 - sim.engine.vx * .8) / 5)), y: vertical()})};
       yield* move(11, 3.5, {name: 'back out'});
       yield* cable(1.65);
       return;
@@ -57,9 +63,12 @@ export function flyDemolitionRoute(id, observe = () => {}) {
     for (let attempt = 0; attempt < 4 && !j.broken; attempt++) {
       const p = jointPoints(j)[0], direction = p.y < 1.2 && Math.abs(Math.sin(j.a.a + (j.a.height > j.a.width ? Math.PI / 2 : 0))) < .5 ? 0 : j.approach ?? -1;
       if (!direction) {
-        if (id === 67) { yield* travel(11, 3.5); yield* move(p.x, 3.5); }
-        else yield* travel(p.x, p.y + 4.5);
-        yield {x: p.x, y: p.y - 1.5, max: 7, name: 'drop on splice', until: () => j.broken};
+        // Aim onto the shutter's upper face, just inside its foot. A drop onto
+        // the outside corner glances off rather than delivering a direct blow.
+        const x = p.x + (id === 67 ? .65 : 0);
+        if (id === 67) { yield* travel(11, 3.5); yield* move(x, 3.5); }
+        else yield* travel(x, p.y + 4.5);
+        yield {x, y: p.y - 1.5, max: 7, name: 'drop on splice', allowTimeout: true, until: () => j.broken};
       } else {
         const x = p.x + direction * 4.7, y = Math.max(1.05, p.y + .15);
         if (id === 67 || id === 69) {
@@ -79,7 +88,11 @@ export function flyDemolitionRoute(id, observe = () => {}) {
       yield* travel(11, bounds(p).top + 1.4);
       yield* move(p.x, bounds(p).top + 1.4);
     } else yield* travel(p.x, bounds(p).top + 2);
-    yield {x: () => p.x, y: () => bounds(p).top + .20,
+    // A heavier strike can leave a slab leaning into its building. Descend to
+    // the actual surface above its centre, not the top of its bounding box.
+    const surfaceY = () => p.y + Math.min(p.width / (2 * Math.max(1e-6, Math.abs(Math.sin(p.a)))),
+      p.height / (2 * Math.max(1e-6, Math.abs(Math.cos(p.a)))));
+    yield {x: () => p.x, y: () => surfaceY() + .20,
       max: 25, until: () => site.heldPiece === p, name: `collect ${p.id}`};
   }
   function* deliver(g) {
@@ -108,7 +121,7 @@ export function flyDemolitionRoute(id, observe = () => {}) {
       const x = typeof stage.x === 'function' ? stage.x() : stage.x, y = typeof stage.y === 'function' ? stage.y() : stage.y;
       hoverTrim += Math.max(-.7, Math.min(.7, y - sim.cabin.y)) * DT * .045;
       hoverTrim = Math.max(-.6, Math.min(.6, hoverTrim));
-      if (['position', 'climb', 'cross', 'descend', 'leave facade', 'under eaves', 'align salvage'].includes(stage.name) && Math.abs(x - sim.cabin.x) < 1.5)
+      if (['position', 'climb', 'cross', 'descend', 'leave facade', 'under eaves', 'align salvage', 'drop on splice'].includes(stage.name) && Math.abs(x - sim.cabin.x) < 1.5)
         trimX = Math.max(-.8, Math.min(.8, trimX + (x - sim.cabin.x) * DT * .16));
       const u = {...(stage.raw ? stage.raw() : steer(sim, x + trimX, y + hoverTrim)), action: !!stage.action, swap: !!stage.swap};
       if (stage.cable) u.winch = Math.sign(stage.cable - sim.targetLength);

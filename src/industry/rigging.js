@@ -26,7 +26,7 @@ export function constrainGrip(cabin, piece) {
   if (!piece?.grip) return;
   const g = piece.grip;
   for (const [nx, ny] of [[1, 0], [0, 1]]) {
-    const a = point(cabin, 0, -.18), b = point(piece, g.x, g.y);
+    const a = point(cabin, g.poleX ?? 0, g.poleY ?? -.18), b = point(piece, g.x, g.y);
     const error = (b.x - a.x) * nx + (b.y - a.y) * ny;
     const j = clamp(error, -.1, .1) / (eff(a, nx, ny) + eff(b, nx, ny));
     splitMove(a, nx, ny, j); splitMove(b, nx, ny, -j);
@@ -40,7 +40,7 @@ export function gripVelocity(cabin, piece) {
   if (!piece?.grip) return;
   const g = piece.grip;
   for (const [nx, ny] of [[1, 0], [0, 1]]) {
-    const a = point(cabin, 0, -.18), b = point(piece, g.x, g.y), av = vel(a), bv = vel(b);
+    const a = point(cabin, g.poleX ?? 0, g.poleY ?? -.18), b = point(piece, g.x, g.y), av = vel(a), bv = vel(b);
     const j = ((bv.x - av.x) * nx + (bv.y - av.y) * ny) / (eff(a, nx, ny) + eff(b, nx, ny));
     impulse(a, nx, ny, j); impulse(b, nx, ny, -j);
   }

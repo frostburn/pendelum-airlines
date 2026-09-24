@@ -9,8 +9,14 @@ tiles onto one screen; switch worlds instead of scrolling. All jobs are open.
 
 World six adds twelve contracts with a suspended wrecking ball, breakable orange
 connections, permanent blue hinges, and the normally-on salvage magnet. Fly to
-build a swing; a fast ball contact close to a bolt breaks that connection. **U**
-swaps ball and magnet while steady at a Tool rack. **Hold J** to release salvage.
+build a swing; a fast, direct ball contact close to a bolt breaks that connection.
+The ball has twice its original mass (11 versus 5.5), with solid-sphere inertia
+and the same finite rotor thrust. Allow room to accelerate and brake. Connections
+need more than 3.4 m/s approach speed within 0.9 m of the bolt; slow shoves and
+glancing hits further along a beam do not count. Salvage must fit inside narrower
+marked bays. **U** swaps ball and magnet low and slow at the single tool rack.
+Residual rolling and tool rotation are allowed, and a tap is buffered for 0.65 s
+while slowing down. Jobs without salvage have no rack. **Hold J** to release salvage.
 The aircraft takes ordinary collision damage; the ball absorbs its working blows.
 
 | Contract | What the collapse makes possible |
@@ -34,6 +40,8 @@ be captured with the existing dissipative magnet grip. Contacts apply equal and
 opposite impulses at a shared world point, including friction. Position repair
 is separated from velocity, so resolving overlap does not launch the cargo.
 The demolition magnet uses a gentler approach field for broad loose beams.
+Its face can grip a leaning slab at either end, retaining the actual contact
+point and orientation rather than snapping the load to the middle of the head.
 
 Physics runs at the existing 240 Hz with at most **16 members, 24 joints and 48
 cosmetic dust/spark particles**; these contracts use at most three members. There

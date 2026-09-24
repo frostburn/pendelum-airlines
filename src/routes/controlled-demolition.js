@@ -6,16 +6,18 @@ const release = (id, name, joints) => ({id, name, type: 'release', joints});
 const place = (id, name, piece, x, y, w, extra = {}) => ({id, name, type: 'place', piece, x, y, w, ...extra});
 const deliver = (id, name, piece, x, y, w, after) => ({...place(id, name, piece, x, y, w), type: 'deliver', after});
 function contract(spec) {
-  const racks = [{x: 3, y: .8}, ...(spec.racks || [])];
+  const launch = {x: 3, y: .8};
+  const racks = spec.goals.some(g => g.type === 'deliver') ? [{x: spec.rackX ?? launch.x, y: .8}] : [];
   const width = spec.width || 42, out = {x: width - 5, y: .8, w: 8};
   return {collection: 'Controlled demolition', theme: 1, height: 24, cable: 3.8, start: 0, gold: 150, silver: 240, ...spec,
-    width, industry: {tool: 'ball', goal: 'demolition', rack: racks[0], output: out},
+    width, industry: {tool: 'ball', goal: 'demolition', rack: racks[0] || launch, output: out},
     demolition: {members: spec.members, joints: spec.joints, goals: spec.goals, racks},
-    pads: [pad(3, .8, 'Tool rack', 3.6), pad(out.x, out.y, 'Reclamation', out.w)],
+    pads: [pad(launch.x, launch.y, 'Site entrance', 3.6), pad(out.x, out.y, 'Reclamation', out.w)],
     terrain: [...(spec.ground || [rect(-12, -40, width + 24, 40, 'earth')]),
-      ...racks.map(r => block(r.x, r.y, 3.8, 'metal')), block(out.x, out.y, out.w, 'metal'), ...(spec.terrain || [])],
+      block(launch.x, launch.y, 3.8, 'metal'), ...racks.filter(r => r.x !== launch.x).map(r => block(r.x, r.y, 3.8, 'metal')),
+      block(out.x, out.y, out.w, 'metal'), ...(spec.terrain || [])],
     jobs: spec.goals.map(g => ({from: 0, to: 1, name: g.name})),
-    tip: spec.tip || 'Orange bolts break under a moving ball. Blue pins remain as hinges. Fly back for a run-up; pushing slowly will not cut a connection. U swaps tools at a rack.'};
+    tip: spec.tip || `The heavy ball needs room to accelerate and brake. Hit orange bolts directly with a fast swing; blue pins remain as hinges.${racks.length ? ' Press U low and slow over the single tool rack; residual rolling is fine.' : ' This job only needs the ball.'}`};
 }
 export const demolitionRoutes = [
   contract({name: 'Garden variety vandalism', gold: 28, silver: 45, sub: 'The garden wall has applied for early retirement.',
@@ -30,16 +32,16 @@ export const demolitionRoutes = [
     joints: [bolt('left-hanger', 'sign', 16.65, 6, {approach: -1}), bolt('right-hanger', 'sign', 21.35, 6, {approach: 1})],
     goals: [release('right', 'Release the right hanger', ['right-hanger']),
       {id: 'lower', name: 'Lower the sign on its remaining hanger', type: 'rotate', piece: 'sign', angle: -Math.PI / 2, tolerance: .3, after: ['right']},
-      release('left', 'Cut the remaining hanger', ['left-hanger']), deliver('ship', 'Reclaim the sign', 'sign', 37, .8, 8, ['lower', 'left'])]}),
+      release('left', 'Cut the remaining hanger', ['left-hanger']), deliver('ship', 'Reclaim the sign', 'sign', 37, .8, 6.4, ['lower', 'left'])]}),
   contract({name: 'The roof is the door', sub: 'There is a perfectly good engine inside. There was a door.', width: 49, gold: 145, silver: 220,
     hint: 'Unbolt the roof, then lift it away with the magnet and park it on the wide middle slab. The opening lets you lower the magnet into the sealed workshop for its motor.',
     terrain: [rect(15, 0, .5, 6.3, 'brick'), rect(23, 0, .5, 6.3, 'brick'), block(32, .8, 10, 'metal')],
-    racks: [{x: 10, y: .8}],
+    rackX: 10,
     members: [steel('roof', 19.25, 6.65, 8.5, .7, {mass: 5.5}), steel('motor', 19.25, .55, 1.3, 1.1, {mass: 3.5, material: 'machine'})],
     joints: [bolt('west-roof-bolt', 'roof', 15.3, 6.7, {approach: -1}), bolt('east-roof-bolt', 'roof', 23.2, 6.7, {approach: 1})],
     goals: [release('open', 'Unbolt the workshop roof', ['west-roof-bolt', 'east-roof-bolt']),
       deliver('roof', 'Park the roof on the middle slab', 'roof', 32, .8, 10, ['open']),
-      deliver('motor', 'Retrieve the motor through the new opening', 'motor', 44, .8, 8, ['roof'])]}),
+      deliver('motor', 'Retrieve the motor through the new opening', 'motor', 44, .8, 3.2, ['roof'])]}),
   contract({name: 'Gravity forwarding', gold: 42, silver: 65, sub: 'This parcel exceeds the aircraft’s weight allowance.',
     hint: 'Release the right end of the loading floor. The blue hinge and the low pier turn it into a chute for the heavy crate. Catch the crate in the striped bay.',
     terrain: [block(21, 2.2, .65, 'metal'), rect(27.7, 0, .25, .7, 'metal')],
@@ -75,14 +77,14 @@ export const demolitionRoutes = [
     goals: [release('fold', 'Release the frame brace', ['frame-brace']),
       place('lower', 'Fold the crossbar into the right-hand bay', 'crossbar', 24.2, .55, 8, {after: ['fold']}),
       release('free', 'Detach the lowered crossbar', ['left-knee', 'right-knee']),
-      deliver('ship', 'Reclaim the crossbar', 'crossbar', 42, .8, 8, ['lower', 'free'])]}),
+      deliver('ship', 'Reclaim the crossbar', 'crossbar', 42, .8, 7.2, ['lower', 'free'])]}),
   contract({name: 'Under new management', gold: 130, silver: 205, sub: 'The demolition permit is under the awning.', width: 44,
     hint: 'Keep the rotors above the canopy and pay out cable to swing the ball under its left edge. Cut the tall shutter’s orange brace, then recover the fallen shutter.',
     terrain: [rect(15, 7, 11, .5, 'roof'), rect(25.5, 0, .5, 7, 'brick')],
     members: [steel('shutter', 19, 2.6, .55, 4.6, {mass: 4})],
     joints: [bolt('shutter-brace', 'shutter', 19, 3.8, {approach: -1}), bolt('shutter-foot', 'shutter', 19, .3, {approach: -1})],
     goals: [release('open', 'Remove the shutter connections', ['shutter-brace', 'shutter-foot']),
-      deliver('ship', 'Slide the shutter out beneath the canopy', 'shutter', 39, .8, 8, ['open'])]}),
+      deliver('ship', 'Slide the shutter out beneath the canopy', 'shutter', 39, .8, 5.8, ['open'])]}),
   contract({name: 'Fall away from each other', gold: 60, silver: 95, sub: 'Two chimneys. One very expensive gap.', width: 49,
     hint: 'Approach from between the chimneys and knock each outward into its own bay. Their blue feet stay pinned. Plan the retreat before the second chimney falls.',
     members: [steel('west', 17, 3, .7, 5.3, {mass: 8, metal: false, material: 'brick'}),
@@ -98,9 +100,9 @@ export const demolitionRoutes = [
     members: [steel('floor', 21, 4.2, 7, .65, {mass: 5.5}), steel('machine', 21, 5.1, 1.1, 1.15, {mass: 3, material: 'machine'})],
     joints: [bolt('floor-west', 'floor', 17.8, 4.2, {approach: -1}), bolt('floor-east', 'floor', 24.2, 4.2, {approach: 1})],
     goals: [release('cut', 'Drop the workshop floor', ['floor-west', 'floor-east']),
-      deliver('motor', 'Recover the machine from the fallen floor', 'machine', 44, .8, 8, ['cut']),
-      deliver('floor', 'Bring the floor out sideways', 'floor', 34, .8, 8.5, ['motor'])],
-    racks: [{x: 10, y: .8}]}),
+      deliver('motor', 'Recover the machine from the fallen floor', 'machine', 44, .8, 3.2, ['cut']),
+      deliver('floor', 'Bring the floor out sideways', 'floor', 34, .8, 8, ['motor'])],
+    rackX: 10}),
   contract({name: 'Downstream consequences', sub: 'The next department is directly underneath.', width: 48, gold: 65, silver: 95,
     hint: 'Lower the right-hand receiving chute first, then release the higher left chute. The heavy consignment must slide across both fallen floors into the bay.',
     terrain: [block(20.4, 5.5, .6, 'metal'), block(27.3, 1.5, 1, 'metal'), rect(36, 0, .25, .8, 'metal')],
@@ -113,16 +115,16 @@ export const demolitionRoutes = [
   contract({name: 'The bridge is still on the manifest', sub: 'The form requests demolition and preservation.', width: 59, gold: 190, silver: 290,
     tip: 'Keep the bridge joined until both cradle tasks are signed off. Cutting its middle splice early loses the contract. After the catches, strike down on the splice, then U fits the magnet at a rack.',
     hint: 'Lower both bridge sections onto the waiting cradles before cutting their middle splice. Change to the magnet and deliver each numbered section to its matching slab.',
-    racks: [{x: 35, y: .8}],
+    rackX: 35,
     terrain: [block(17, 2.2, 6.2, 'metal'), block(23, 2.2, 6.2, 'metal'), block(43, .8, 7.5, 'metal')],
     members: [steel('west-deck', 17, 7, 5.9, .6, {mass: 5, label: '01'}), steel('east-deck', 23, 7, 5.9, .6, {mass: 5, label: '02'})],
     joints: [bolt('west-bearing', 'west-deck', 14.3, 7, {approach: -1}),
       bolt('east-bearing', 'east-deck', 25.7, 7, {approach: 1}),
       bolt('middle-splice', 'west-deck', 20, 7, {b: 'east-deck', approach: 0, weld: true})],
     goals: [release('lower', 'Release the outer bridge bearings', ['west-bearing', 'east-bearing']),
-      place('catch-west', 'Set section 01 on its cradle', 'west-deck', 17, 2.2, 8.5, {angle: 0, after: ['lower'], joined: 'middle-splice'}),
-      place('catch-east', 'Set section 02 on its cradle', 'east-deck', 23, 2.2, 8.5, {angle: 0, after: ['lower'], joined: 'middle-splice'}),
+      place('catch-west', 'Set section 01 on its cradle', 'west-deck', 17, 2.2, 6.5, {angle: 0, after: ['lower'], joined: 'middle-splice', label: 'SECTION 01'}),
+      place('catch-east', 'Set section 02 on its cradle', 'east-deck', 23, 2.2, 6.5, {angle: 0, after: ['lower'], joined: 'middle-splice', label: 'SECTION 02'}),
       {...release('split', 'Cut the middle splice', ['middle-splice']), after: ['catch-west', 'catch-east']},
-      deliver('one', 'Deliver section 01 to slab 01', 'west-deck', 43, .8, 7.5, ['catch-west', 'split']),
-      deliver('two', 'Deliver section 02 to slab 02', 'east-deck', 54, .8, 8, ['catch-east', 'split'])]})
+      {...deliver('one', 'Deliver section 01 to slab 01', 'west-deck', 43, .8, 6.9, ['catch-west', 'split']), label: 'SECTION 01'},
+      {...deliver('two', 'Deliver section 02 to slab 02', 'east-deck', 54, .8, 6.9, ['catch-east', 'split']), label: 'SECTION 02'}]})
 ];

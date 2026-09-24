@@ -72,7 +72,7 @@ test('actual keyboard handlers rearm fire and demolition controls across held ov
       key(control, false);
     }
     for (const [name, mode] of Object.entries(modes)) {
-      window.pendulum.load(60); frame();
+      window.pendulum.load(61); frame();
       assert.equal(node('#toolBtn').hidden, true);
       assert.equal(node('#fireControls').hidden, false);
       assert.equal(node('#fireControls').getAttribute('aria-label'), 'Demolition tool controls');
@@ -90,6 +90,13 @@ test('actual keyboard handlers rearm fire and demolition controls across held ov
     swapButton.dispatchEvent(Object.assign(new Event('pointerdown', {cancelable: true}), {pointerId: 1})); frame();
     assert.equal(state().industry.tool, 'hook', 'the visible touch swap button operates demolition tools');
     swapButton.dispatchEvent(Object.assign(new Event('pointerup'), {pointerId: 1})); frame();
+
+    window.pendulum.load(60); frame();
+    assert.equal(node('#fireControls').hidden, true, 'ball-only jobs have no irrelevant tool controls');
+    assert.equal(swapButton.hidden, true);
+    key('KeyU'); frame();
+    assert.equal(state().industry.tool, 'ball', 'ball-only jobs cannot exchange tools');
+    key('KeyU', false);
 
   } finally {
     for (const [key, descriptor] of Object.entries(previous)) {

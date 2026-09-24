@@ -4,6 +4,7 @@ import { clamp } from '#game/math';
 export const STRUCTURE_LIMIT = 16;
 export const JOINT_LIMIT = 24;
 export const BALL_RADIUS = .66;
+export const BALL_MASS = 11;
 
 export function member(spec, id) {
   const m = spec.mass ?? 5, w = spec.width, h = spec.height;

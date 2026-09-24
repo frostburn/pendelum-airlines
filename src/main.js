@@ -341,7 +341,7 @@ const clearToolInput = bindToolButton(toolButton, () => !panel && !mapHold && !m
   active => { touch.action = active; });
 const clearFireInputs = ['aimUp', 'aimDown', 'flip', 'swap'].map(name =>
   bindToolButton(document.querySelector(`[data-fire="${name}"]`),
-    () => (!!sim.level.fire || !!sim.level.demolition && name === 'swap') && !panel && !mapHold && !mapLatched,
+    () => (!!sim.level.fire || !!sim.level.demolition?.racks.length && name === 'swap') && !panel && !mapHold && !mapLatched,
     active => { touch[name] = active; }));
 function inputs() {
   return {
@@ -428,11 +428,12 @@ function updateUI() {
   $('#serviceBar').style.width = clamp(sim.service / .55 * 100, 0, 100) + '%';
   const toolButton = $('#toolBtn');
   toolButton.hidden = !sim.industry || sim.industry.tool === 'ball';
-  $('#fireControls').hidden = !sim.level.fire && !sim.level.demolition;
+  $('#fireControls').hidden = !sim.level.fire && !sim.level.demolition?.racks.length;
   $('#fireControls').setAttribute('aria-label', sim.level.demolition ? 'Demolition tool controls' : 'Fire appliance controls');
   $('[data-fire="swap"]').setAttribute('aria-label', sim.level.demolition ? 'Swap wrecking ball and magnet at Tool rack (U)' : 'Swap hose and bucket at Tool rack (U)');
   $$('[data-fire]').forEach(button => {
-    button.hidden = (!!sim.level.demolition || !!sim.level.fire && sim.industry.tool !== 'hose') && button.dataset.fire !== 'swap';
+    button.hidden = (!!sim.level.demolition || !!sim.level.fire && sim.industry.tool !== 'hose') && button.dataset.fire !== 'swap' ||
+      !!sim.level.demolition && !sim.level.demolition.racks.length;
   });
   if (sim.industry) {
     const work = sim.industry, order = work.order(sim);

@@ -2,7 +2,7 @@ import { Workshop } from '#game/industry/workshop';
 import { point, vel, eff, impulse } from '#game/rigid-body';
 import { gripVelocity } from '#game/industry/rigging';
 import { wrap } from '#game/math';
-import { STRUCTURE_LIMIT, JOINT_LIMIT, BALL_RADIUS, member, joint, jointPoints, solveJoint,
+import { STRUCTURE_LIMIT, JOINT_LIMIT, BALL_RADIUS, BALL_MASS, member, joint, jointPoints, solveJoint,
   circleMember, collideMembers, contactVelocity, bounds } from '#game/demolition/structure';
 
 export class DemolitionSite extends Workshop {
@@ -15,28 +15,40 @@ export class DemolitionSite extends Workshop {
     this.pieces = this.site.members.map(spec => member(spec, spec.id));
     this.joints = this.site.joints.map(spec => joint(spec, this.pieces));
     this.goals = this.site.goals.map(g => ({...g, complete: false, clock: 0}));
-    this.previousSwap = false; this.breakCount = 0; this.cooldown = 0;
+    this.previousSwap = false; this.swapRequest = 0; this.breakCount = 0; this.cooldown = 0;
   }
   updateMass(sim) {
-    const mass = this.tool === 'ball' ? 5.5 : 2.5;
-    if (sim.cabin.m !== mass) sim.cabin.setMass(mass);
+    const mass = this.tool === 'ball' ? BALL_MASS : 2.5;
+    if (sim.cabin.m !== mass) {
+      sim.cabin.setMass(mass);
+      sim.cabin.I = this.tool === 'ball' ? .4 * mass * BALL_RADIUS ** 2 : .58;
+      sim.cabin.ii = 1 / sim.cabin.I;
+    }
   }
   samples() { return this.tool === 'ball' ? [[0, 0, BALL_RADIUS]] : super.samples(); }
-  clearInput() { this.previousSwap = this.action = false; }
+  // The wide salvage head can meet a tilted slab at either end of its face.
+  // Keep that actual contact point in the grip instead of snapping to centre.
+  magnetPoles() { return [[0, -.18], [-.4, -.18], [.4, -.18]]; }
+  clearInput() { this.previousSwap = this.action = false; this.swapRequest = 0; }
   activeJoints(p) { return this.joints.filter(j => !j.broken && (j.a === p || j.b === p)); }
   canPickup(p) { return p.metal && !this.activeJoints(p).length; }
   rackAt(sim) {
     const c = sim.cabin;
-    return this.site.racks.find(r => Math.abs(c.x - r.x) < 1.35 && c.y > r.y + .1 &&
-      c.y < r.y + 1.5 && Math.abs(wrap(c.a)) < .4 && Math.hypot(c.vx, c.vy) < .8);
+    // A sphere has no wrong way up. Small rolls and a crooked magnet are normal
+    // at a rack; a fast fly-by or a falling tool is still not a tool exchange.
+    return this.site.racks.find(r => Math.abs(c.x - r.x) < 1.65 && c.y > r.y + .1 &&
+      c.y < r.y + 1.5 && Math.abs(c.vx) < 1.8 && Math.abs(c.vy) < 1.1);
   }
   beforeStep(sim, input, dt) {
-    if (input.swap && !this.previousSwap && !this.heldPiece && this.rackAt(sim)) {
+    if (input.swap && !this.previousSwap) this.swapRequest = .65;
+    if (this.swapRequest > 0 && !this.heldPiece && this.rackAt(sim)) {
       this.tool = this.tool === 'ball' ? 'hook' : 'ball';
+      this.swapRequest = 0;
       this.updateMass(sim);
       sim.events.push({type: 'machine', message: this.tool === 'ball' ? 'Wrecking ball fitted. Swing into an orange connection.' : 'Salvage magnet fitted. Hold J to release recovered steel.'});
     }
     this.previousSwap = !!input.swap;
+    this.swapRequest = Math.max(0, this.swapRequest - dt);
     this.cooldown = Math.max(0, this.cooldown - dt);
     super.beforeStep(sim, input, dt);
   }
@@ -64,13 +76,13 @@ export class DemolitionSite extends Workshop {
     // Read approach velocity before dissipative contacts stop the ball. One
     // approach breaks at most one connection, never a whole building at once.
     if (this.tool === 'ball' && this.cooldown === 0) {
-      const hits = this.pairContacts.filter(c => c.b === sim.cabin && c.incoming > 2.3)
+      const hits = this.pairContacts.filter(c => c.b === sim.cabin && c.incoming > 3.4)
         .sort((a, b) => b.incoming - a.incoming);
       for (const hit of hits) {
         const q = point(hit.a, hit.al.x, hit.al.y);
         const target = this.activeJoints(hit.a).filter(j => !j.permanent).map(j => ({j,
           distance: Math.hypot(jointPoints(j)[0].x - q.x, jointPoints(j)[0].y - q.y)}))
-          .filter(v => v.distance < 1.45).sort((a, b) => a.distance - b.distance)[0];
+          .filter(v => v.distance < .9).sort((a, b) => a.distance - b.distance)[0];
         if (!target) continue;
         const j = target.j, [p] = jointPoints(j);
         j.broken = true; this.breakCount++; this.cooldown = .28;
@@ -137,7 +149,7 @@ export class DemolitionSite extends Workshop {
     }
     const keepJoined = this.goals.some(g => g.joined && !g.complete);
     return {title: needsMagnet ? 'Tool rack · U fits the salvage magnet' : g.name,
-      detail: `${sim.delivered}/${this.goals.length} signed off · ${keepJoined ? 'Keep the marked splice joined until both catches are signed off' : this.tool === 'ball' ? 'Swing at orange bolts · blue pins stay' : 'Magnet ON · hold J to release'} · U swaps at a rack`,
+      detail: `${sim.delivered}/${this.goals.length} signed off · ${keepJoined ? 'Keep the marked splice joined until both catches are signed off' : this.tool === 'ball' ? 'Fast, direct hits on orange bolts · blue pins stay' : 'Magnet ON · hold J to release'}${this.site.racks.length ? ' · U swaps low and slow at the rack' : ''}`,
       x, y, name, progress: sim.delivered / this.goals.length};
   }
   snapshot() {

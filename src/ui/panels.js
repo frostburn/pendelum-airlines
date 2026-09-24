@@ -6,7 +6,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
   if (kind === 'intro' && sim.level.demolition) return `<h1 id="dialogTitle">Please mind<br>the falling building.</h1>
 <p class="lead">${sim.level.name} · ${sim.level.sub}</p><p>${sim.level.hint}</p>
 <div class="manual"><strong>WASD / Q E</strong><span>Fly / adjust cable. Build a swing before impact.</span>
-<strong>ORANGE / BLUE</strong><span>Breakable connections / permanent hinges.</span><strong>U</strong><span>Swap ball and magnet while steady at a Tool rack.</span>
+<strong>ORANGE / BLUE</strong><span>Fast, direct hits break orange connections. Blue hinges stay.</span>${sim.level.demolition.racks.length ? '<strong>U</strong><span>Swap ball and magnet low and slow at the single rack. Rolling is fine.</span>' : '<strong>BALL ONLY</strong><span>No tool exchange needed for this contract.</span>'}
 <strong>HOLD J</strong><span>Switch the salvage magnet off to release a load.</span></div>
 <div class="note">${sim.level.tip}</div><div class="actions"><button class="primary" data-action="close">Start demolition</button><button data-action="routes">Worlds</button></div>`;
   if (kind === 'intro' && sim.level.fire) return `<h1 id="dialogTitle">Please mind<br>the backdraft.</h1>
@@ -79,7 +79,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
 <p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
 <h3>Controlled demolition</h3>
-<p>Swing the ball into orange connections to break them. Blue pins remain as hinges. Beams, slabs and cargo stay solid as they fall. Rest or hover low at a Tool rack and press U to swap ball and magnet. Only detached steel can be lifted; hold J to release it. Marked bays accept settled pieces. Heavy wooden consignments need gravity and chutes.</p>
+<p>The heavy ball needs room to accelerate and brake. Strike orange connections directly with a fast swing; blue pins remain as hinges. Beams, slabs and cargo stay solid as they fall. Salvage jobs have one tool rack: press U low and slow over it to swap ball and magnet. Residual rolling is fine. Ball-only jobs have no rack. Only detached steel can be lifted; hold J to release it. Fit settled pieces inside the marked bays. Heavy wooden consignments need gravity and chutes.</p>
 <h3>Fire service</h3>
 <p><b>Hold J:</b> spray the hose or tip the bucket right. <b>I / K:</b> raise / lower the nozzle. <b>L:</b> turn it around. Aim follows the swinging tool; the water jet pushes back. Hover low over a blue basin with J released to refill the tank. Dip an upright bucket below the surface to scoop water. Water adds weight, spills, falls and stops at walls.</p>
 <p><b>U:</b> swap hose and bucket while resting on the Tool rack. The on-screen buttons also aim, turn, spray, pour and swap. Fill a rooftop header through its open top to supply the sprinklers inside sealed rooms. Blue pipes lead to their outlets. Hot fires create rising air, and some can spread to neighbouring dry fuel. Cool every heat bar and keep them cold for two seconds to finish.</p>

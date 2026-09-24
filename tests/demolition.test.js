@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Sim } from '#game/physics';
-import { Body } from '#game/rigid-body';
-import { DT } from '#game/constants';
+import { Body, point } from '#game/rigid-body';
+import { DT, G, MAX_THRUST } from '#game/constants';
 import { levels } from '#game/levels';
-import { member, circleMember, collideMembers, contactVelocity, jointPoints, STRUCTURE_LIMIT, JOINT_LIMIT } from '#game/demolition/structure';
+import { member, circleMember, collideMembers, contactVelocity, jointPoints, BALL_MASS, BALL_RADIUS, STRUCTURE_LIMIT, JOINT_LIMIT } from '#game/demolition/structure';
 import { createRenderer } from '#game/render/renderer';
 
 const step = (sim, seconds, input = {}) => { for (let n = 0; n < seconds / DT; n++) sim.step(input); };
@@ -30,7 +30,7 @@ test('pinned frames, counterweights and welded bridge sections stay put before d
 
 test('dynamic beam and ball contact conserves momentum and dissipates energy', () => {
   const a = member({x: 0, y: 0, width: 5, height: .6, mass: 6}, 'beam');
-  const b = new Body(1.2, .85, 5.5, 1, 'cabin'); b.vx = 2; b.vy = -5;
+  const b = new Body(1.2, .85, BALL_MASS, .4 * BALL_MASS * BALL_RADIUS ** 2, 'cabin'); b.vx = 2; b.vy = -5;
   const contacts = []; circleMember(a, b, [[0, 0, .66]], contacts);
   assert.ok(contacts.length);
   const before = momentum([a, b]), ke = energy([a, b]);
@@ -52,6 +52,8 @@ test('only a fast ball contact close to a breakable connection releases it', () 
     site.finishContacts(sim); return site;
   }
   assert.equal(impact(1, 3.8).breakCount, 0, 'slow pushing is not demolition');
+  assert.equal(impact(3, 3.8).breakCount, 0, 'a casual nudge is too slow even on target');
+  assert.equal(impact(5, 2.7).breakCount, 0, 'a fast glancing hit away from the bolt must not cut it');
   assert.equal(impact(4, 1.8).breakCount, 0, 'a hit far from a bolt cannot remotely sever it');
   assert.equal(impact(4, 3.8, 'hook').breakCount, 0, 'the magnet is not a second wrecking ball');
   const site = impact(4, 3.8);
@@ -72,15 +74,75 @@ test('a structural collision damages the drone through ordinary speed-based coll
 });
 
 test('magnet pickup is restricted to detached steel; tool swaps require a rack', () => {
-  const sim = new Sim(62), site = sim.industry;
-  assert.equal(site.canPickup(site.pieces[0]), false);
-  for (const j of site.joints) j.broken = true;
-  assert.equal(site.canPickup(site.pieces[0]), true);
+  const roof = new Sim(62).industry;
+  assert.equal(roof.canPickup(roof.pieces[0]), false);
+  for (const j of roof.joints) j.broken = true;
+  assert.equal(roof.canPickup(roof.pieces[0]), true);
+  const sim = new Sim(61), site = sim.industry;
   sim.step({swap: true}); assert.equal(site.tool, 'hook');
   sim.step({swap: true}); assert.equal(site.tool, 'hook', 'held U cannot swap repeatedly');
   site.clearInput(); sim.step({swap: true}); assert.equal(site.tool, 'ball');
   sim.cabin.x = 8; site.clearInput(); sim.step({swap: true}); assert.equal(site.tool, 'ball');
   assert.equal(new Sim(63).industry.canPickup(new Sim(63).industry.pieces[1]), false, 'heavy wooden freight needs its chute');
+});
+
+test('rack exchanges accept a rotated rolling ball and briefly buffer a slowing approach', () => {
+  const sim = new Sim(61), site = sim.industry, c = sim.cabin;
+  Object.assign(c, {a: 2.5, vx: 1.4, vy: .2, w: -2});
+  const pose = [c.x, c.y, c.a];
+  site.beforeStep(sim, {swap: true}, DT);
+  assert.equal(site.tool, 'hook', 'a rolling sphere has no wrong orientation');
+  assert.deepEqual([c.x, c.y, c.a], pose, 'exchange must not teleport or rotate the cable attachment');
+  site.beforeStep(sim, {swap: true}, DT);
+  assert.equal(site.tool, 'hook', 'holding the key still exchanges only once');
+  site.clearInput(); c.vx = 3;
+  site.beforeStep(sim, {swap: true}, DT);
+  assert.equal(site.tool, 'hook', 'a fast pass is rejected');
+  c.vx = 1.3;
+  site.beforeStep(sim, {}, .2);
+  assert.equal(site.tool, 'ball', 'a recent tap works as the tool slows into the rack');
+  site.clearInput(); c.vy = -2;
+  site.beforeStep(sim, {swap: true}, DT);
+  assert.equal(site.tool, 'ball', 'a falling tool is rejected');
+  site.clearInput(); c.vy = 0;
+  site.beforeStep(sim, {}, DT);
+  assert.equal(site.tool, 'ball', 'pause/overview input clearing cancels pending exchanges');
+  site.heldPiece = {attached: true};
+  site.beforeStep(sim, {swap: true}, DT);
+  assert.equal(site.tool, 'ball', 'a rack cannot exchange a tool with attached cargo');
+  site.heldPiece = null; site.clearInput(); c.x += 5;
+  site.beforeStep(sim, {swap: true}, DT);
+  site.beforeStep(sim, {}, .7); c.x -= 5;
+  site.beforeStep(sim, {}, DT);
+  assert.equal(site.tool, 'ball', 'old taps expire before a later visit');
+});
+
+test('the heavy ball leaves limited thrust reserve but the rig can still climb', () => {
+  const sim = new Sim(60), start = sim.cabin.y;
+  const weight = sim.bodies.reduce((sum, b) => sum + b.m * G, 0);
+  assert.ok(weight > MAX_THRUST * .8 && weight < MAX_THRUST, 'the ball uses most of the actual lift budget');
+  assert.equal(sim.cabin.I, .4 * sim.cabin.m * BALL_RADIUS ** 2);
+  step(sim, 3, {y: 1});
+  assert.ok(sim.cabin.y > start + 2, 'finite rotor thrust still lifts the ball');
+  assert.ok(sim.thrust <= MAX_THRUST);
+  assert.equal(sim.hull, 100);
+});
+
+test('the salvage magnet grips a tilted slab at the touching end without snapping it', () => {
+  const sim = new Sim(61), site = sim.industry, p = site.pieces[0], c = sim.cabin;
+  for (const j of site.joints) j.broken = true;
+  site.tool = 'hook'; site.updateMass(sim);
+  Object.assign(p, {x: 10, y: 4, a: .65});
+  Object.assign(c, {x: 10, y: p.y + p.height / (2 * Math.cos(p.a)) + .4 * Math.tan(p.a) + .18, vx: .7});
+  const before = momentum([c, p]), pose = [p.x, p.y, p.a, c.x, c.y, c.a], ke = energy([c, p]);
+  site.pullPieces(sim, DT);
+  assert.equal(site.heldPiece, p);
+  assert.equal(p.grip.poleX, .4, 'the touching end of the pole face owns this grip');
+  assert.deepEqual([p.x, p.y, p.a, c.x, c.y, c.a], pose);
+  const a = point(c, p.grip.poleX, p.grip.poleY), b = point(p, p.grip.x, p.grip.y);
+  assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 1e-8);
+  momentum([c, p]).forEach((v, i) => assert.ok(Math.abs(v - before[i]) < 1e-8));
+  assert.ok(energy([c, p]) < ke, 'capture dissipates approach energy');
 });
 
 test('catch and delivery goals need settled, released cargo at the actual destination', () => {
@@ -89,6 +151,8 @@ test('catch and delivery goals need settled, released cargo at the actual destin
   assert.equal(site.goalMet(g), false);
   Object.assign(p, {x: g.x, y: g.y + .3, a: 0, vx: 0, vy: 0, w: 0});
   assert.equal(site.goalMet(g), true);
+  p.x += .6; assert.equal(site.goalMet(g), false, 'landing on the slab outside the marked bay is not delivery');
+  p.x = g.x;
   p.attached = true; assert.equal(site.goalMet(g), false);
   p.attached = false; p.vy = -3; assert.equal(site.goalMet(g), false);
   p.vy = 0; p.y += 2; assert.equal(site.goalMet(g), false);
@@ -101,6 +165,8 @@ test('all demolition contracts stay within fixed body and joint budgets and rend
   for (let id = 60; id < 72; id++) {
     const sim = new Sim(id), site = sim.industry;
     assert.ok(site.pieces.length <= STRUCTURE_LIMIT && site.joints.length <= JOINT_LIMIT);
+    assert.equal(site.site.racks.length, site.goals.some(g => g.type === 'deliver') ? 1 : 0,
+      'one useful rack for salvage, none for a ball-only contract');
     assert.equal(new Set(site.pieces.map(p => p.id)).size, site.pieces.length);
     assert.equal(new Set(site.joints.map(j => j.id)).size, site.joints.length);
     for (const g of site.goals) {

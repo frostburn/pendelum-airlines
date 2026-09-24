@@ -426,7 +426,9 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     const pads = sim.level.pads.map(p => stopAt(p, sceneTime));
     pads.forEach((p, i) => {
       if (p.motion) drawMovingStop(ctx, p, sim.level.pads[i], map);
-      station(p, i, clock);
+      // Demolition owns its bay markings and labels. A generic Reclamation
+      // station here would paint a second caption over the salvage placard.
+      if (!sim.level.demolition) station(p, i, clock);
     });
     if (sim.level.wind) {
       windsock(12, 2.4, clock);

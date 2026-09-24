@@ -22,11 +22,18 @@ export function drawDemolition(ctx, sim, draw) {
     for (let i = 0; i < g.w; i += .5) line([[x + i, g.y + .03], [x + i + .16, g.y + .18]], ink, .06);
     line([[x, g.y + .7], [x, g.y + .15], [x + .4, g.y + .15]], color, .06);
     line([[x + g.w, g.y + .7], [x + g.w, g.y + .15], [x + g.w - .4, g.y + .15]], color, .06);
-    text(g.x, g.y - .38, `${g.complete ? '✓ ' : ''}${g.type === 'deliver' ? 'SALVAGE' : 'CATCH BAY'} · ${g.piece.toUpperCase()}`, .23, ink);
+    const label = g.label || g.piece.replaceAll('-', ' ').toUpperCase();
+    const width = Math.min(g.w - .25, Math.max(2.2, label.length * .15 + .4));
+    box(g.x - width / 2, g.y - .82, width, .65, cream, ink);
+    text(g.x, g.y - .35, `${g.complete ? '✓ ' : ''}${g.type === 'deliver' ? 'SALVAGE' : 'CATCH BAY'}`, .17, ink);
+    text(g.x, g.y - .63, label, Math.min(.23, (width - .25) / (label.length * .65)), ink);
   }
+  const launch = sim.pads[0];
+  if (!site.site.racks.some(r => r.x === launch.x)) text(launch.x, launch.y - .38, 'SITE ENTRANCE', .22, ink);
   for (const r of site.site.racks) {
     text(r.x, r.y + 2.2, 'BALL ↔ MAGNET', .27, ink);
-    text(r.x, r.y + 1.8, 'REST HERE · U', .21, '#8d6542');
+    text(r.x, r.y + 1.8, 'LOW + SLOW · U', .21, '#8d6542');
+    text(r.x, r.y - .38, 'TOOL EXCHANGE', .22, ink);
   }
   for (const p of site.pieces) {
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);

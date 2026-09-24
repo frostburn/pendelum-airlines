@@ -152,7 +152,7 @@ export function drawTool(ctx, sim, body, draw, ghost = false) {
     circle(-.17, .19, .34, '#738784');
     line([[-.48, -.18], [.42, .27]], '#334a4f', .10);
     circle(0, .57, .14, '#bd925b', edge);
-    text(0, -.32, 'PA · 05', .15, '#e8d4a5');
+    text(0, -.32, 'PA · 11', .15, '#e8d4a5');
   } else if (w.tool === 'ladle') {
     for (const wall of CUP_WALLS) box(wall.x, wall.y, wall.w, wall.h, '#6c7776', edge);
     line([[-.81, .58], [-.98, .58], [-.98, .85], [0, .60], [.98, .85], [.98, .58], [.81, .58]], edge, .05);
