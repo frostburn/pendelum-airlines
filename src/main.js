@@ -260,8 +260,10 @@ window.addEventListener('keydown', e => {
   }
   if (panel)
     return;
-  if (key === 'KeyV')
+  if (key === 'KeyV' && !mapHold) {
+    clearInput();
     mapHold = true;
+  }
   keys.add(key);
   startAudio();
 });
