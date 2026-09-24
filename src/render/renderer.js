@@ -4,6 +4,7 @@ import { drawMovingStop } from '#game/render/platforms';
 import { drawCableGuide } from '#game/render/guides';
 import { drawDepot, drawDepotBackground } from '#game/render/depot';
 import { drawFoundry } from '#game/render/foundry';
+import { drawFireground, drawFireBackground } from '#game/render/fireground';
 import { cityBuildings } from '#game/render/city';
 import { drawUpdraft } from '#game/render/updrafts';
 import { drawWorkshop, drawTool } from '#game/render/workshop';
@@ -99,6 +100,7 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     }
   }
   function background(t) {
+    if (sim.level.fire) { drawFireBackground(ctx, renderCam, width, height); return; }
     if (sim.level.logistics) { drawDepotBackground(ctx, renderCam, width, height, sim.level.logistics.scene); return; }
     if (sim.industry) { drawFoundry(ctx, renderCam, width, height, sim.time, reduced); return; }
     ctx.fillStyle = sim.level.theme === 1 ? '#e9e6d9' : sim.level.theme === 2 ? '#e0e9e5' : '#e2ebdf';
@@ -337,6 +339,31 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     ty = clamp(ty, halfH - 2, Math.max(halfH - 2, sim.level.height + 14 - halfH));
     tx = Math.min(tx, e.x + halfW - 1.6, c.x + halfW - 1.6);
     tx = Math.max(tx, e.x - halfW + 1.6, c.x - halfW + 1.6);
+    if (sim.level.fire && sim.industry.tool === 'hose')
+      tx = clamp(tx + sim.industry.facing * 1.8, Math.max(e.x, c.x) - halfW + 1.6, Math.min(e.x, c.x) + halfW - 1.6);
+    if (sim.level.fire && sim.industry.tool === 'hose' && width < 640) {
+      // A sheltered target can be several metres beyond the doorway. On a phone
+      // keep the rig and the stock visible together, so the player can aim.
+      const work = sim.industry, targets = work.fires.filter(f => f.heat > .08)
+        .map(f => work.fireBox(f)).filter(b => (b.x + b.w / 2 - c.x) * work.facing > 0 &&
+          Math.abs(b.x + b.w / 2 - c.x) < 12 && Math.abs(b.y + b.h - c.y) < 6);
+      if (targets.length) {
+        const left = Math.min(e.x, c.x, ...targets.map(b => b.x)), right = Math.max(e.x, c.x, ...targets.map(b => b.x + b.w));
+        const bottom = Math.min(e.y - .6, c.y - .9, ...targets.map(b => b.y));
+        const top = Math.max(e.y + .8, c.y + .9, ...targets.map(b => b.y + b.h + 3.8));
+        scale = Math.min(scale, width / (right - left + 3), height / (top - bottom + 2));
+        tx = (left + right) / 2;
+        ty = Math.max(height / (2 * scale) - 1.6, (top + bottom) / 2);
+      }
+    }
+    if (sim.level.fire) {
+      const h = sim.industry.headers.find(h => Math.abs(h.x - c.x) < 5 && c.y > h.y);
+      if (h) {
+        const bottom = Math.min(...h.outlets.map(o => o.y)) - 3.3;
+        scale = Math.min(scale, height / (e.y + 2 - bottom));
+        ty = (e.y + 2 + bottom) / 2;
+      }
+    }
     // Keep a nearby NPC handoff in view while the empty magnet waits above it.
     if (sim.level.logistics && !sim.industry.heldPiece) {
       const worker = sim.industry.workers.find(w => w.cargo && Math.abs(w.x - e.x) < 12);
@@ -375,9 +402,10 @@ export function createRenderer(canvas, { reduced = false } = {}) {
       }
     }
     for (const r of sim.level.terrain)
-      if (r.style !== 'metal') building(r);
+      if (r.style !== 'metal' && r.style !== 'fuel') building(r);
     const workshopDraw = {box, poly, circle, line, text};
-    if (sim.level.logistics) drawDepot(ctx, sim, workshopDraw, sceneTime);
+    if (sim.level.fire) drawFireground(ctx, sim, workshopDraw, sceneTime, reduced);
+    else if (sim.level.logistics) drawDepot(ctx, sim, workshopDraw, sceneTime);
     else if (sim.industry) drawWorkshop(ctx, sim, workshopDraw, sceneTime);
     sim.guides.forEach((guide, i) => {
       drawCableGuide(ctx, guide, sim.guideContacts[i]);

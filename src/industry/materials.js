@@ -29,7 +29,7 @@ function collide(p, box, vx = 0, vy = 0) {
   return true;
 }
 
-function vesselCollision(p, body, walls, react = true) {
+export function vesselCollision(p, body, walls, react = true) {
   const q = localPoint(body, p.x, p.y), c = Math.cos(body.a), s = Math.sin(body.a);
   for (const wall of walls) {
     const h = circleBox(q.x, q.y, p.r, wall);
@@ -41,7 +41,7 @@ function vesselCollision(p, body, walls, react = true) {
     const bvx = body.vx - body.w * ry, bvy = body.vy + body.w * rx;
     const vn = (p.vx - bvx) * nx + (p.vy - bvy) * ny;
     if (vn < 0) {
-      const mass = p.age === undefined ? .14 : .065, arm = rx * ny - ry * nx;
+      const mass = p.mass ?? (p.age === undefined ? .14 : .065), arm = rx * ny - ry * nx;
       const j = -vn / (1 / mass + (react ? 1 / body.m + arm * arm / body.I : 0));
       p.vx += j * nx / mass; p.vy += j * ny / mass;
       if (react) {

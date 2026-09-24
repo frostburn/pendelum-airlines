@@ -152,7 +152,18 @@ export function drawTool(ctx, sim, body, draw, ghost = false) {
     line([[-.81, .58], [-.98, .58], [-.98, .85], [0, .60], [.98, .85], [.98, .58], [.81, .58]], edge, .05);
     circle(0, .60, .13, rust, edge);
     box(-.6, -.56, 1.2, .1, '#9da49b');
-    text(0, -.47, 'HOT', .15, '#efc98a');
+    text(0, -.47, sim.level.fire ? 'WATER' : 'HOT', .15, sim.level.fire ? '#d3f4ef' : '#efc98a');
+  } else if (w.tool === 'hose') {
+    box(-.48, -.51, .96, .81, '#af6148', edge);
+    box(-.38, -.43, .76, .17, '#e2c28c');
+    line([[0, .6], [0, .3]], edge, .06);
+    circle(0, -.12, .20, '#a5bfbd', edge);
+    const a = w.facing > 0 ? w.pitch : Math.PI - w.pitch;
+    const dx = Math.cos(a), dy = Math.sin(a);
+    line([[0, -.12], [dx * .85, -.12 + dy * .85]], edge, .19);
+    line([[dx * .2, -.12 + dy * .2], [dx * .72, -.12 + dy * .72]], '#d8c083', .11);
+    circle(dx * .86, -.12 + dy * .86, .095, '#a5d0d2', edge);
+    text(0, .17, 'PA · FIRE', .135, '#ffedc6');
   } else {
     line([[0, .60], [0, .23]], edge, .07);
     box(-.55, -.13, 1.1, .34, steel, edge);

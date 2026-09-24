@@ -3,6 +3,12 @@ import { fmt } from '#game/math';
 const closeButton = '<button class="icon close" data-action="close" aria-label="Close"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>';
 const introArt = `<svg class="intro-art" viewBox="0 0 145 175" aria-hidden="true"><path d="M10 19h103M35 15v12m55-12v12" stroke="#253f41" stroke-width="3" stroke-linecap="round"/><path d="M25 29h75l-8 15H34Z" fill="#37796c" stroke="#253f41" stroke-width="2.5"/><rect x="50" y="27" width="26" height="25" rx="7" fill="#ce7046" stroke="#253f41" stroke-width="2.5"/><path d="M64 51q13 40 45 71" fill="none" stroke="#253f41" stroke-width="2"/><path d="M103 108 86 133l40-14Z" fill="none" stroke="#253f41" stroke-width="2"/><g transform="translate(106 139) rotate(-20)"><path d="M-24-17v34h48v-34" fill="#eebc65" stroke="#253f41" stroke-width="2.5" stroke-linejoin="round"/><path d="M-28 21h56M-24 1h48" stroke="#253f41" stroke-width="2.5" stroke-linecap="round"/><circle cy="-16" r="8" fill="#edcda5"/><path d="M-9 0v-7q9-7 18 0v7" fill="#37796c"/><path d="M-11-18h22l-4-6H-7Z" fill="#253f41"/></g><path d="M21 111q-2 36 34 44" stroke="#8eaaa0" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/></svg>`;
 export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, newRecord, selectedWorld = worldIndex(sim.index) }) {
+  if (kind === 'intro' && sim.level.fire) return `<h1 id="dialogTitle">Please mind<br>the backdraft.</h1>
+<p class="lead">${sim.level.name} · ${sim.level.sub}</p><p>${sim.level.hint}</p>
+<div class="manual"><strong>WASD / Q E</strong><span>Fly / adjust the cable.</span><strong>HOLD J</strong><span>Spray the hose or tip the bucket right.</span>
+<strong>I / K · L</strong><span>Raise / lower the nozzle · turn it around.</span><strong>U</strong><span>Swap hose and bucket at the Tool rack.</span></div>
+<div class="note">${sim.level.tip} Cool every fire, then watch for embers for two seconds. On-screen buttons operate both tools.</div>
+<div class="actions"><button class="primary" data-action="close">Answer the call</button><button data-action="routes">Worlds</button></div>`;
   if (kind === 'intro' && sim.level.logistics) return `<h1 id="dialogTitle">Welcome to<br>fulfillment.</h1>
 <p class="lead">Helpful colleagues. Very specific routines.</p><p>${sim.level.hint}</p>
 <div class="note">Magnets stay on. Hold J to release a parcel onto a counter, fork or trailer. Staff work on resting cargo; collect it after its scan and follow its route to the matching address.</div>
@@ -38,12 +44,12 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
   else if (kind === 'routes') {
     const world = worlds[selectedWorld] || worlds[0];
     return `${closeButton}<div class="world-heading"><span class="eyeline">PENDULUM AIRLINES · ROUTE BOOK</span><h2 id="dialogTitle">Choose your next bad idea.</h2></div>
-<nav class="world-tabs" aria-label="Worlds">${worlds.map((w, i) => `<button data-world="${i}" aria-pressed="${i === selectedWorld}"><span>WORLD ${i + 1}</span><strong>${w.name}</strong></button>`).join('')}</nav>
+<nav class="world-tabs" aria-label="Worlds">${worlds.map((w, i) => `<button data-world="${i}" aria-pressed="${i === selectedWorld}" aria-label="World ${i + 1}: ${w.name}"><span>WORLD ${i + 1}</span><strong class="world-full">${w.name}</strong><strong class="world-short" aria-hidden="true">${w.short}</strong></button>`).join('')}</nav>
 <div class="route-list" aria-label="${world.name}">${world.routes.map((id, n) => {
       const l = levels[id], best = saved.best[id];
       return `<button class="route-button ${id === sim.index ? 'current' : ''}" data-route="${id}" title="${l.sub}">
 <span class="number">${l.practice ? '∞' : String(n + 1).padStart(2, '0')}</span><strong>${l.name}</strong>
-<small>${l.practice ? 'PRACTICE' : best ? '✓ ' + fmt(best.time) : l.industry ? 'WORK ORDER' : l.collection || 'LOCAL SERVICE'}</small></button>`;
+<small>${l.practice ? 'PRACTICE' : best ? '✓ ' + fmt(best.time) : l.fire ? 'FIRE CALL' : l.industry ? 'WORK ORDER' : l.collection || 'LOCAL SERVICE'}</small></button>`;
     }).join('')}</div><div class="world-footer"><span>${world.sub}</span><b>${world.routes.filter(i => saved.best[i] && !levels[i].practice).length} / ${world.routes.filter(i => !levels[i].practice).length} complete · All open</b></div>`;
   }
   else if (kind === 'help')
@@ -66,6 +72,9 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <h3>On the move</h3>
 <p>Ferries, lifts and shuttle wagons follow repeating schedules. Match the deck’s direction and speed as you land. Near a moving stop, <b>DECK Δ</b> shows your speed relative to it; aim below 0.7 m/s. Arrow length shows how fast the deck is moving. The route map shows its full travel.</p>
 <p>Stops slow down at each end of their travel. Pause freezes them, and restarting resets their schedules along with your ghost. Space can be too slow to keep up with a train.</p>
+<h3>Fire service</h3>
+<p><b>Hold J:</b> spray the hose or tip the bucket right. <b>I / K:</b> raise / lower the nozzle. <b>L:</b> turn it around. Aim follows the swinging tool; the water jet pushes back. Hover low over a blue basin with J released to refill the tank. Dip an upright bucket below the surface to scoop water. Water adds weight, spills, falls and stops at walls.</p>
+<p><b>U:</b> swap hose and bucket while resting on the Tool rack. The on-screen buttons also aim, turn, spray, pour and swap. Fill a rooftop header through its open top to supply the sprinklers inside sealed rooms. Blue pipes lead to their outlets. Hot fires create rising air, and some can spread to neighbouring dry fuel. Cool every heat bar and keep them cold for two seconds to finish.</p>
 <h3>Fulfillment</h3>
 <p>Each parcel has a route and an address. Hold J to set it on a worker’s counter, forks or trailer. Yard Dog works behind a guarded rack; Mutt drives through a guarded tunnel. Both scan parcels inside the obstacle. The front guards block the drone, tool and cable. Fly over, then snatch the parcel as soon as it clears the far edge; parking is optional. Loads are unsecured. Clerks scan or sign at their counters. Check the NEXT sign for queues. Staff on break resume automatically if you leave the parcel on their counter. Only the correct address accepts a fully processed parcel. In later jobs, Pip actively pursues low completed parcels and shoves them away from shelves. Lure it aside, then carry high and make your drop.</p>
 <h3>Metal works</h3>
@@ -88,8 +97,8 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>`;
   else if (kind === 'pause')
     return `${closeButton}<h2 id="dialogTitle">Service suspended.</h2>
-<p class="lead">${sim.level.logistics ? 'The whole shift is taking the same break you are.' : sim.industry ? 'The hammer is taking the same break you are.' : 'The passengers appreciate this unusually steady moment.'}</p>
-<p>${sim.level.name} · ${fmt(sim.time)} · ${sim.delivered} / ${sim.jobs.length} delivered</p>
+<p class="lead">${sim.level.fire ? 'The water is waiting in mid-air.' : sim.level.logistics ? 'The whole shift is taking the same break you are.' : sim.industry ? 'The hammer is taking the same break you are.' : 'The passengers appreciate this unusually steady moment.'}</p>
+<p>${sim.level.name} · ${fmt(sim.time)} · ${sim.delivered} / ${sim.jobs.length} ${sim.level.fire ? 'cooled' : 'delivered'}</p>
 <div class="actions">
 <button class="primary" data-action="close">Resume flight</button>
 <button data-action="restart">Restart route</button>
@@ -106,7 +115,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>
 <div>
 <strong>${sim.delivered}/${sim.jobs.length}</strong>
-<span>Delivered</span>
+<span>${sim.level.fire ? 'Fires cooled' : 'Delivered'}</span>
 </div>
 <div>
 <strong>${attempt}</strong>
@@ -118,9 +127,9 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 <button data-action="routes">Other routes</button>
 </div>`;
   else if (kind === 'result') {
-    const grade = sim.industry ? 'Work order complete' : sim.time <= sim.level.gold ? 'Express service' : sim.time <= sim.level.silver ? 'Right on schedule' : 'Everyone arrived';
+    const grade = sim.level.fire ? 'Incident contained' : sim.industry ? 'Work order complete' : sim.time <= sim.level.gold ? 'Express service' : sim.time <= sim.level.silver ? 'Right on schedule' : 'Everyone arrived';
     return `<h2 id="dialogTitle">${grade}.</h2>
-<p class="lead">${sim.level.logistics ? 'Every parcel reached its address. The staff consider this entirely their achievement.' : sim.industry ? 'Useful metal. Unlikely methods. Dispatch accepts the result.' : 'All fares delivered. Nobody had to finish the journey on foot.'}</p>
+<p class="lead">${sim.level.fire ? 'Every fire is cold. The water damage is a separate department.' : sim.level.logistics ? 'Every parcel reached its address. The staff consider this entirely their achievement.' : sim.industry ? 'Useful metal. Unlikely methods. Dispatch accepts the result.' : 'All fares delivered. Nobody had to finish the journey on foot.'}</p>
 <div class="result-clock">${fmt(sim.time)}</div>
 <div class="result-caption">${newRecord ? 'NEW PERSONAL BEST · GHOST SAVED' : sim.assisted ? 'PRACTICE / ASSISTED RUN' : `PERSONAL BEST ${fmt(saved.best[sim.index]?.time || sim.time)}`}</div>
 <div class="result-stats">
@@ -134,7 +143,7 @@ export function panelMarkup(kind, { sim, saved, soundOn, showGhost, attempt, new
 </div>
 <div>
 <strong>${sim.delivered}</strong>
-<span>${sim.level.logistics ? 'Parcels delivered' : sim.industry ? 'Finished orders' : 'Happy fares'}</span>
+<span>${sim.level.fire ? 'Fires cooled' : sim.level.logistics ? 'Parcels delivered' : sim.industry ? 'Finished orders' : 'Happy fares'}</span>
 </div>
 </div>
 <p>Express target: ${fmt(sim.level.gold)}. Your best run is available as a ghost on the next attempt.</p>

@@ -11,7 +11,7 @@ of `dist/index.html`. Check the console for errors throughout.
    Continue up until its base is below the viewport. The roof and upper facade
    should remain visible until their complete visual bounds leave the screen.
    Descend and repeat at another window size; there should be no pop-out/pop-in.
-4. Check all four worlds and their twelve entries per page. Board and deliver on First fare;
+4. Check all five worlds and their twelve entries per page. Board and deliver on First fare;
    restart and check the best-run ghost. Debug-assisted runs must not save records.
 5. At a phone-sized viewport with touch enabled, use the thumb stick and both
    winch buttons. Releasing or cancelling a touch should release its control.
@@ -123,7 +123,7 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
 ## Fulfillment staff and parcels
 
 1. Open world four on desktop, portrait mobile and short landscape viewports.
-   All twelve jobs and four world buttons fit; keyboard focus remains usable.
+   All twelve jobs and five world buttons fit; keyboard focus remains usable.
 2. In Please put it down, hover with the parcel at Bea’s counter: no scan. Hold
    J to set it down; wait for the receipt and collect it. Try dispatching before
    scanning, then retry correctly. The parcel must remain recoverable.
@@ -150,3 +150,48 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
    It must stop pursuing high cargo and ignore delivered or unprocessed parcels.
 10. Tap a guard slowly with the magnet, then hit it fast while keeping the engine
     clear. Only the fast hit damages integrity, using the usual impact cooldown.
+
+
+## Fire service
+
+1. Open world five at desktop, 390×844, 320×568 and short landscape sizes.
+   All twelve calls and five world buttons fit. Select a call and check its
+   fire-specific briefing, counters, completion copy and controls.
+2. Fly with WASD while aiming with I/K, turning with L and spraying with J.
+   Turning reverses both jet and recoil; holding L must turn only once. Release
+   J, refill above a blue basin, and check that the tank mass changes gradually.
+   Rest on Tool rack, press U and test both directions of the tool exchange.
+3. Use the on-screen aim, turn, swap and spray buttons together with the thumb
+   stick. Cancel a pointer, lose focus, open Help and pause: no held tool input
+   may survive. Use Space/Enter on a focused button, and release steering keys
+   without interrupting the tool hold.
+4. Land the bucket on the basin floor and verify it fills to 30/30. Try an angled
+   dip and a moving scoop; a dry opening, an inverted bucket and a bucket outside
+   the pool must not fill. Carry a full bucket for at least ten seconds. Pour and verify water remains
+   airborne, can miss the target, and continues to fall. Dip for another load.
+   Water left inside the bucket must not feed a header through its closed walls.
+5. Shoot at a sheltered fire through its roof, then through the opening. Only
+   the clear entry succeeds. Fill the rooftop header and watch its blue pipes
+   supply actual sprinkler drops inside the sealed room. Empty headers stop.
+6. Push the wheeled crate with the jet, follow it, and extinguish it. The crate
+   remains solid to the rig. Fly into terrain gently and quickly: damage follows
+   ordinary impact speed, with no invisible kill zone around fire.
+7. On The warm way up, hover in rising air and extinguish its source; the lift
+   fades. On The neighbour’s shed, wait for spread along all five stacks, wet a
+   neighbouring stack, then finish the row. Its blue protection bar dries away
+   and a still-burning neighbour can restart it. Completion requires all heat
+   bars cold for two seconds. The finale needs multiple water loads.
+8. Pause while spraying or pouring. Water, heat, sprinklers and fire animation
+   must freeze. Restart twice and repeat inputs to check consistent behavior.
+   Check old world records and ghosts still refer to the same routes.
+9. Fly Both ends of the street using flight, J and L without I/K. Fly Under the
+   eaves around the roofs to reach its opposing openings. Reach both shelves in
+   Window of opportunity and check both fires remain visible on a phone.
+
+Automated witnesses in `scripts/verify-fire-flights.js` fly all twelve calls using
+normal controls, including bucket trips from the basin floor, sprinkler supply,
+left-facing shots, water-driven cargo motion and refills. The street witness
+never uses I/K. Unit tests cover momentum, finite supply, a normal basin landing
+and loaded takeoff, tilted dipping, wall occlusion, liquid retention, spread,
+input edges and render immutability.
+These checks supplement the interactive browser checks above.
