@@ -13,7 +13,7 @@ const momentum = bodies => bodies.reduce((v, b) => [v[0] + b.m * b.vx, v[1] + b.
   v[2] + b.I * b.w + b.m * (b.x * b.vy - b.y * b.vx)], [0, 0, 0]);
 
 test('pinned frames, counterweights and welded bridge sections stay put before demolition', () => {
-  for (const id of [60, 65, 66, 71]) {
+  for (const id of [60, 65, 66, 70, 71]) {
     const sim = new Sim(id), site = sim.industry, initial = site.pieces.map(p => ({x: p.x, y: p.y}));
     step(sim, 2);
     assert.equal(site.breakCount, 0);
@@ -26,6 +26,18 @@ test('pinned frames, counterweights and welded bridge sections stay put before d
       assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < .002);
     }
   }
+});
+
+test('the receiving chute clears the upper pier and tips onto its own lower support', () => {
+  const sim = new Sim(70), site = sim.industry, chute = site.pieces.find(p => p.id === 'lower');
+  const hinge = site.joints.find(j => j.id === 'lower-hinge');
+  step(sim, 1);
+  site.joints.find(j => j.id === 'lower-latch').broken = true;
+  step(sim, 6);
+  assert.ok(chute.a < -.25 && chute.a > -.55, `the released chute must form a useful slope, got ${chute.a}`);
+  const [a, b] = jointPoints(hinge);
+  assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < .002, 'the pier cannot displace the member from its hinge');
+  assert.ok(Math.hypot(chute.vx, chute.vy) < .1, 'the slope settles on its support');
 });
 
 test('dynamic beam and ball contact conserves momentum and dissipates energy', () => {

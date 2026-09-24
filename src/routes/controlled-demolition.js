@@ -105,7 +105,7 @@ export const demolitionRoutes = [
     rackX: 10}),
   contract({name: 'Downstream consequences', sub: 'The next department is directly underneath.', width: 48, gold: 65, silver: 95,
     hint: 'Use both floors to forward the heavy consignment. Lower the receiving chute first for a continuous slide, or catch the freight on its level deck and tip it afterward. Both routes must end in the striped bay.',
-    terrain: [block(20.4, 5.5, .6, 'metal'), block(27.3, 1.5, 1, 'metal'), rect(36, 0, .25, .8, 'metal')],
+    terrain: [block(19.75, 5.5, .5, 'metal'), block(27.3, 1.5, 1, 'metal'), rect(36, 0, .25, .8, 'metal')],
     members: [steel('upper', 17.5, 8, 7, .5, {mass: 5}), steel('lower', 24.6, 4.6, 8.3, .5, {mass: 5}),
       steel('freight', 18.6, 8.85, 1.1, 1.2, {mass: 30, metal: false, friction: .04, material: 'crate'})],
     joints: [bolt('upper-hinge', 'upper', 14, 8, {permanent: true}), bolt('upper-latch', 'upper', 20.8, 8, {approach: 1}),
