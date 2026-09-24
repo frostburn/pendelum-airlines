@@ -344,14 +344,13 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     if (sim.level.fire && sim.industry.tool === 'hose' && width < 640) {
       // A sheltered target can be several metres beyond the doorway. On a phone
       // keep the rig and the stock visible together, so the player can aim.
-      const work = sim.industry, target = work.fires.filter(f => f.heat > .08)
+      const work = sim.industry, targets = work.fires.filter(f => f.heat > .08)
         .map(f => work.fireBox(f)).filter(b => (b.x + b.w / 2 - c.x) * work.facing > 0 &&
-          Math.abs(b.x + b.w / 2 - c.x) < 12 && Math.abs(b.y + b.h - c.y) < 6)
-        .sort((a, b) => Math.abs(a.x + a.w / 2 - c.x) - Math.abs(b.x + b.w / 2 - c.x))[0];
-      if (target) {
-        const left = Math.min(e.x, c.x, target.x), right = Math.max(e.x, c.x, target.x + target.w);
-        const bottom = Math.min(e.y - .6, c.y - .9, target.y);
-        const top = Math.max(e.y + .8, c.y + .9, target.y + target.h + 3.8);
+          Math.abs(b.x + b.w / 2 - c.x) < 12 && Math.abs(b.y + b.h - c.y) < 6);
+      if (targets.length) {
+        const left = Math.min(e.x, c.x, ...targets.map(b => b.x)), right = Math.max(e.x, c.x, ...targets.map(b => b.x + b.w));
+        const bottom = Math.min(e.y - .6, c.y - .9, ...targets.map(b => b.y));
+        const top = Math.max(e.y + .8, c.y + .9, ...targets.map(b => b.y + b.h + 3.8));
         scale = Math.min(scale, width / (right - left + 3), height / (top - bottom + 2));
         tx = (left + right) / 2;
         ty = Math.max(height / (2 * scale) - 1.6, (top + bottom) / 2);

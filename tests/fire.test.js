@@ -5,6 +5,7 @@ import { DT } from '#game/constants';
 import { WATER, sweepWater } from '#game/fire/water';
 import { createRenderer } from '#game/render/renderer';
 import { panelMarkup } from '#game/ui/panels';
+import { steer } from '../scripts/flight-controls.js';
 
 const advance = (s, seconds, input = {}) => {
   for (let i = 0; i < Math.round(seconds / DT); i++) s.step(input);
@@ -146,19 +147,63 @@ test('stationary refill shares water momentum and stops while spraying', () => {
   assert.equal(w.tank, 11);
 });
 
+test('landing normally on the basin floor fills a bucket and still permits a loaded takeoff', () => {
+  const s = new Sim(51), w = s.industry, pool = w.incident.pools[0];
+  let stage = 0, settled = 0;
+  for (let i = 0; i < 35 / DT && stage < 4; i++) {
+    const [x, y] = [[3, 6], [pool.x, 6], [pool.x, pool.bottom + .50], [pool.x, 5]][stage];
+    const input = steer(s, x, y); input.y = Math.max(-.28, input.y);
+    s.step(input);
+    if (stage === 2) {
+      if (s.cabin.y < pool.bottom + .57) settled += DT;
+      if (settled > 2) {
+        assert.equal(w.water.contained(s.cabin).length, WATER.bucket, 'refilling must continue after touching the floor');
+        stage++;
+      }
+    } else if (Math.abs(s.cabin.x - x) < .2 && Math.abs(s.cabin.y - y) < .2 && Math.hypot(s.cabin.vx, s.cabin.vy) < .45) stage++;
+  }
+  assert.equal(stage, 4, 'the loaded bucket must leave the basin using ordinary flight controls');
+  assert.ok(w.water.contained(s.cabin).length >= WATER.bucket - 2);
+  assert.equal(s.hull, 100);
+});
+
+test('a tilted submerged opening can scoop, but a closed side or an inverted cup cannot', () => {
+  const s = new Sim(51), w = s.industry, c = s.cabin;
+  for (const pose of [{x: 8, y: 2, a: 0}, {x: 8, y: 1.3, a: Math.PI}, {x: 5.7, y: 1.2, a: .45}]) {
+    Object.assign(c, pose);
+    w.water.step(s, w, .05);
+    assert.equal(w.water.metrics.scooped, 0);
+  }
+  Object.assign(c, {x: 8, y: 2, a: .55, vx: 1.3, vy: -.8});
+  w.water.step(s, w, .05);
+  assert.ok(w.water.metrics.scooped > 0, 'ordinary tilt and movement must not disable an immersed opening');
+  assert.ok(w.water.drops.every(p => p.y < w.incident.pools[0].y), 'a partial dip cannot create water above the surface');
+});
+
+test('dense fuel takes a sustained stream and the finale requires more than one tank', () => {
+  const s = new Sim(59), w = s.industry, f = w.fires[3];
+  for (let i = 0; i < 8; i++) w.wetFire(f.id);
+  assert.ok(f.heat > .6, 'an incidental eight-drop burst must not clear dense stock');
+  for (let i = 8; i < f.soak; i++) w.wetFire(f.id);
+  assert.ok(f.heat < 1e-10, 'a direct, sustained stream still cools the fuel');
+  assert.ok(w.fires.reduce((sum, fire) => sum + fire.soak, 0) > WATER.tank * 2);
+});
+
 test('heat spreads to dry neighbours, wet fuel resists it, and all-cold completion waits two seconds', () => {
   const s = new Sim(57), w = s.industry;
   w.fires[1].heat = 0; w.fires[2].heat = 0;
   for (let i = 0; i < 300; i++) w.afterStep(s, .1);
   assert.ok(w.fires[1].heat > .4, 'a dry neighbour must ignite');
   w.fires[1].heat = 0; w.fires[1].wet = 1;
-  for (let i = 0; i < 30; i++) w.afterStep(s, .1);
+  for (let i = 0; i < 150; i++) w.afterStep(s, .1);
   assert.equal(w.fires[1].heat, 0);
+  for (let i = 0; i < 450; i++) w.afterStep(s, .1);
+  assert.ok(w.fires[1].heat > .4, 'protection must eventually dry away beside a still-burning stack');
   for (const f of w.fires) { f.heat = 0; f.wet = 1; }
   w.clearTime = 0;
   w.afterStep(s, 1.9); assert.equal(s.done, false);
   w.afterStep(s, .2); assert.equal(s.done, true);
-  assert.equal(s.delivered, 3);
+  assert.equal(s.delivered, w.fires.length);
 });
 
 test('flip and docked tool swap are press edges, never held-key oscillators', () => {
@@ -221,7 +266,8 @@ test('a phone camera includes the rig and the whole hose target on level, high a
     for (const b of s.bodies) { b.x += dx; b.ox = b.x; b.y += dy; b.oy = b.y; }
     renderer.reset(s); renderer.render(s, {alpha: 1});
     const {camera} = renderer.view();
-    for (const b of [s.engine, s.cabin, {x: f.x, y: f.y}, {x: f.x + f.w, y: f.y + f.h}]) {
+    const stock = id === 49 ? s.industry.fires : [f];
+    for (const b of [s.engine, s.cabin, ...stock.flatMap(f => [{x: f.x, y: f.y}, {x: f.x + f.w, y: f.y + f.h}])]) {
       assert.ok(Math.abs(b.x - camera.x) < 390 / camera.scale / 2 - .4, `horizontal approach ${gap}`);
       assert.ok(Math.abs(b.y - camera.y) < 550 / camera.scale / 2 - .4, `vertical approach ${gap}`);
     }

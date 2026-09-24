@@ -85,6 +85,10 @@ export function drawFireground(ctx, sim, draw, time, reduced) {
     const top = b.y + b.h + 3.25;
     box(b.x, top, b.w, .11, '#52656555');
     box(b.x, top, b.w * f.heat, .11, f.heat > .08 ? '#b85d3e' : '#438d8e');
+    if (f.spreadFrom?.length) {
+      box(b.x, top - .20, b.w, .08, '#52656555');
+      box(b.x, top - .20, b.w * f.wet, .08, blue);
+    }
     text(b.x + b.w / 2, top + .3, f.heat > .08 ? f.name : 'COOLED ✓', .23, ink);
     if (f.plume && f.heat > .15) for (const dx of [-.5, .5])
       line([[b.x + b.w / 2 + dx, top + .75], [b.x + b.w / 2 + dx, top + 1.2],

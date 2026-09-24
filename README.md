@@ -16,26 +16,32 @@ support touch and keyboard activation. Flight and winch controls stay the same.
 | Call | Job |
 | --- | --- |
 | Mandatory training | Aim the moving nozzle at two training stacks and manage the kick. |
-| Window of opportunity | Send water through a workshop opening while keeping the rotor outside. |
-| The other side of the fence | Clear the fence with the stream, then reach the raised stock. |
+| Window of opportunity | Reach a low bench and a high shelf through one workshop opening. |
+| The other side of the fence | Clear the fence with the stream while a crosswind swings the tank. |
 | The bucket list | Scoop water from a basin and pour across three timber beds. |
 | Both ends of the street | Turn the nozzle to attack stores on both sides of an alley. |
 | The warm way up | Cool elevated fires while their updrafts fade beneath the rig. |
 | Unscheduled delivery | Chase a burning wheeled crate that the water jet pushes away. |
-| Under the eaves | Find water trajectories into two workshops under stepped roofs. |
+| Under the eaves | Circle stepped roofs to attack the lower opening from the left and the upper from the right. |
 | Nobody told the sprinklers | Supply a rooftop header that feeds an enclosed storeroom. |
-| The neighbour’s shed | Wet the next stack and stop fire spreading along the row. |
+| The neighbour’s shed | Break a chain of five spreading fires and protect wet stock during refills. |
 | Water goes somewhere | Pour onto terraced stock; excess water runs off and keeps falling. |
 | All available appliances | Combine sprinkler supply, moving cargo, roof fires and refills. |
 
 Hover the hose low over a blue basin with J released to refill its finite tank.
-Dip an upright bucket below the surface to scoop. Water changes the suspended
+Dip the bucket opening below the surface to scoop; resting on the basin floor
+fills it in under a second. Moderate tilt and movement are allowed, and a partial
+dip only fills space below the waterline. Water changes the suspended
 load, follows ballistic paths, reacts against the bucket walls and loose cargo,
 and must cross an open header mouth to feed its sprinklers. Roofs and walls stop
 the stream. Cool every heat bar and keep them cold for two seconds to finish;
-wet stock resists reignition from still-burning neighbours.
+wet stock resists reignition from still-burning neighbours. Blue bars beneath
+spreading fires show that protection drying away. Later calls add gusts, stronger
+updrafts, denser stock and multiple fire fronts; incidental spray will not finish
+them. I/K remain optional fine adjustment: flying to change the stream's height
+and using L to turn are valid ways to aim.
 
-The 120 Hz water field is capped at 192 droplets, with 30 per bucket and 90 in
+The 120 Hz water field is capped at 192 droplets, with 30 per bucket and 60 in
 the tank. The hose has equal opposite recoil; refill shares momentum with the
 incoming stationary water. Bucket weight comes from liquid contact forces using
 the existing ladle walls. Swept water contacts prevent thin-wall tunnelling,

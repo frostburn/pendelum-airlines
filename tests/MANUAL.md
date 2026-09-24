@@ -165,7 +165,9 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
    stick. Cancel a pointer, lose focus, open Help and pause: no held tool input
    may survive. Use Space/Enter on a focused button, and release steering keys
    without interrupting the tool hold.
-4. Carry a full bucket for at least ten seconds. Pour and verify water remains
+4. Land the bucket on the basin floor and verify it fills to 30/30. Try an angled
+   dip and a moving scoop; a dry opening, an inverted bucket and a bucket outside
+   the pool must not fill. Carry a full bucket for at least ten seconds. Pour and verify water remains
    airborne, can miss the target, and continues to fall. Dip for another load.
    Water left inside the bucket must not feed a header through its closed walls.
 5. Shoot at a sheltered fire through its roof, then through the opening. Only
@@ -175,14 +177,21 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
    remains solid to the rig. Fly into terrain gently and quickly: damage follows
    ordinary impact speed, with no invisible kill zone around fire.
 7. On The warm way up, hover in rising air and extinguish its source; the lift
-   fades. On The neighbour’s shed, wait for spread, wet a neighbouring stack,
-   then finish the row. Completion requires all heat bars cold for two seconds.
+   fades. On The neighbour’s shed, wait for spread along all five stacks, wet a
+   neighbouring stack, then finish the row. Its blue protection bar dries away
+   and a still-burning neighbour can restart it. Completion requires all heat
+   bars cold for two seconds. The finale needs multiple water loads.
 8. Pause while spraying or pouring. Water, heat, sprinklers and fire animation
    must freeze. Restart twice and repeat inputs to check consistent behavior.
    Check old world records and ghosts still refer to the same routes.
+9. Fly Both ends of the street using flight, J and L without I/K. Fly Under the
+   eaves around the roofs to reach its opposing openings. Reach both shelves in
+   Window of opportunity and check both fires remain visible on a phone.
 
 Automated witnesses in `scripts/verify-fire-flights.js` fly all twelve calls using
-normal controls, including bucket trips, sprinkler supply, left-facing shots,
-water-driven cargo motion and refills. Unit tests cover momentum, finite supply,
-wall occlusion, liquid retention, spread, input edges and render immutability.
+normal controls, including bucket trips from the basin floor, sprinkler supply,
+left-facing shots, water-driven cargo motion and refills. The street witness
+never uses I/K. Unit tests cover momentum, finite supply, a normal basin landing
+and loaded takeoff, tilted dipping, wall occlusion, liquid retention, spread,
+input edges and render immutability.
 These checks supplement the interactive browser checks above.

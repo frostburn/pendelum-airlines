@@ -9,29 +9,35 @@ import { steer } from './flight-controls.js';
 
 // No teleporting, water injection, damage overrides or completion shortcuts:
 // this pilot uses exactly the flight, winch and tool inputs offered to players.
-export function flyFireRoute(id, observe = () => {}) {
+export function flyFireRoute(id, observe = () => {}, {fixedPitch = id === 52} = {}) {
   const sim = new Sim(id), work = sim.industry;
   let elapsed = 0, trim = 0, peakSpeed = 0;
   const value = v => typeof v === 'function' ? v() : v;
   function* move(x, y, name = 'position') {
-    yield {x, y, name, max: 40, until: () => Math.abs(sim.cabin.x - value(x)) < .3 &&
-      Math.abs(sim.cabin.y - value(y)) < .22 && Math.hypot(sim.cabin.vx, sim.cabin.vy) < .45};
+    yield {x, y, name, max: 40, until: () => Math.abs(sim.cabin.x - value(x)) < .55 &&
+      Math.abs(sim.cabin.y - value(y)) < .22 && Math.hypot(sim.cabin.vx, sim.cabin.vy) < .65};
   }
   function* travel(x, y) {
     yield* move(sim.cabin.x, 11, 'climb');
     yield* move(x, 11, 'cross');
     yield* move(x, y, 'descend');
   }
-  function* refill() {
-    const pool = work.incident.pools.reduce((a, b) => Math.abs(a.x - sim.cabin.x) < Math.abs(b.x - sim.cabin.x) ? a : b);
-    yield* travel(pool.x, 1.4);
-    yield {x: pool.x, y: 1.4, name: 'refill', max: 15,
-      until: () => work.tool === 'hose' ? work.tank === WATER.tank : work.water.contained(sim.cabin).length >= 28};
+  function* refill(destination = sim.cabin.x) {
+    const distance = p => Math.abs(p.x - sim.cabin.x) + Math.abs(p.x - destination);
+    const pool = work.incident.pools.reduce((a, b) => distance(a) < distance(b) ? a : b);
+    const y = work.tool === 'ladle' ? pool.bottom + .50 : 1.4;
+    yield* travel(pool.x, y);
+    yield {x: pool.x, y, name: 'refill', max: 15,
+      until: () => work.tool === 'hose' ? work.tank === WATER.tank : work.water.contained(sim.cabin).length === WATER.bucket};
   }
   function* hose(f, x, y, face = 1) {
     while (f.heat > .02 && !sim.done) {
-      if (work.tank < 25) yield* refill();
-      yield* travel(x, y);
+      if (work.tank < Math.ceil(f.heat * f.soak) + 4) yield* refill(value(x));
+      if (f.heat <= .02) break; // Residual embers can finish cooling during a refill.
+      // In the open row, start the next attack while steering along the same
+      // clear flight lane instead of waiting for the gust-driven swing to stop.
+      if (!(id === 57 && Math.abs(sim.cabin.y - y) < 1 && Math.abs(sim.cabin.x - value(x)) < 7))
+        yield* travel(x, y);
       yield {x, y, name: 'spray', max: 20, fire: f, face,
         until: () => f.heat <= .02 || work.tank === 0};
     }
@@ -63,18 +69,23 @@ export function flyFireRoute(id, observe = () => {}) {
       if (id === 59) {
         // The tank may also supply a header: aim downward through its open mouth.
         const h = work.headers[0];
-        yield* travel(h.x - 3, h.y + 3);
-        yield {x: h.x - 3, y: h.y + 3, name: 'spray header', max: 20, target: {x: h.x, y: h.y}, face: 1,
-          until: () => work.fires[0].heat <= .02 && work.fires[1].heat <= .02};
+        while (work.fires[0].heat > .02 || work.fires[1].heat > .02) {
+          if (work.tank < 25) yield* refill();
+          yield* travel(h.x - 3, h.y + 3);
+          yield {x: h.x - 3, y: h.y + 3, name: 'spray header', max: 20, target: {x: h.x, y: h.y}, face: 1,
+            until: () => (work.fires[0].heat <= .02 && work.fires[1].heat <= .02) || work.tank === 0};
+        }
       }
       for (let pass = 0; pass < 5 && !sim.done; pass++) for (const f of work.fires) {
         if (f.heat <= .02) continue;
         let x = () => work.fireBox(f).x - 5, y = f.y + 3, face = 1;
-        if (id === 49) { x = 17; y = 3.8; }
+        if (id === 49) { x = 17; y = f.id ? 5 : 3.8; }
         if (id === 50 && f.id === 0) { x = 16; y = 6.5; }
         if (id === 52) { x = f.id ? 27 : 18.5; y = 3; face = f.id ? 1 : -1; }
-        if (id === 55) { x = f.id ? 24 : 16; y = f.y + 1.8; }
-        if (id === 59 && f.id === 4) { x = 49; y = 3; }
+        if (id === 55) { x = f.id ? 36 : 16; y = f.y + 1.8; face = f.id ? -1 : 1; }
+        if (id === 57 && f.id === 3) x = 32; // Spray from above the basin's far lip.
+        if (id === 57 && f.id === 4) { x = 42; face = -1; } // Keep cooled stock out of the stream.
+        if (id === 59 && f.id >= 4) { x = 48.8; y = 3; }
         yield* hose(f, x, y, face);
       }
     }
@@ -84,8 +95,13 @@ export function flyFireRoute(id, observe = () => {}) {
   const started = performance.now();
   for (let frame = 0; frame < 900 / DT && command && !sim.failed && !sim.done; frame++) {
     const x = value(command.x), y = value(command.y);
-    if (Math.abs(x - sim.cabin.x) < 3) trim = clamp(trim + (x - sim.cabin.x) * DT * .5, -4, 4);
+    if (Math.abs(x - sim.cabin.x) < 3) trim = clamp(trim + (x - sim.cabin.x) * DT * (sim.level.wind ? .15 : .5), -4, 4);
     const input = steer(sim, x + trim, y); input.y = Math.max(-.28, input.y);
+    // Lean the rotor into a gust so the suspended tool can stay over its mark.
+    // This remains an ordinary bounded flight input, not a force on the cargo.
+    const wind = sim.windAt(sim.cabin.x, sim.cabin.y);
+    input.x = clamp(input.x - wind * (1.007 * (sim.length + .92) / 9.81 + 1 / 3.7) / 5 -
+      (sim.level.wind ? .6 * sim.cabin.vx / 5 : 0), -1, 1);
     input.action = !!command.action;
     if (command.fire || command.target) {
       const b = command.fire && work.fireBox(command.fire);
@@ -100,9 +116,9 @@ export function flyFireRoute(id, observe = () => {}) {
       }
       const angle = (low + high) / 2;
       const pitch = clamp(angle - command.face * sim.cabin.a, -1.35, 1.15);
-      input.aim = clamp(wrap(pitch - work.pitch) * 8, -1, 1);
+      input.aim = fixedPitch ? 0 : clamp(wrap(pitch - work.pitch) * 8, -1, 1);
       input.flip = work.facing !== command.face;
-      input.action = Math.abs(wrap(pitch - work.pitch)) < .025 && work.facing === command.face;
+      input.action = (fixedPitch || Math.abs(wrap(pitch - work.pitch)) < .025) && work.facing === command.face;
     }
     sim.step(input); elapsed += DT;
     peakSpeed = Math.max(peakSpeed, Math.hypot(sim.cabin.vx, sim.cabin.vy));

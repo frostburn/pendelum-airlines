@@ -11,7 +11,7 @@ export class Fireground extends Workshop {
     this.water = new WaterField(); this.tank = WATER.tank; this.pitch = -.18; this.facing = 1;
     this.emitter = 0; this.refillClock = 0; this.clearTime = 0; this.previousFlip = false; this.previousSwap = false;
     this.fires = this.incident.fires.map((f, i) => {
-      const fire = {...f, heat: f.heat ?? 1, wet: 0, id: i};
+      const fire = {soak: 16, ...f, heat: f.heat ?? 1, wet: 0, id: i};
       if (f.mobile) {
         const p = this.addPiece({x: f.x + .9, y: f.y + .45, fire: i, friction: .035});
         p.sections = [-.9, -.45, 0, .45, .9].map(x => ({x, lo: -.45, hi: .45}));
@@ -86,7 +86,8 @@ export class Fireground extends Workshop {
   fireBox(f) { return f.body ? {x: f.body.x - .9, y: f.body.y - .45, w: 1.8, h: .9} : f; }
   wetFire(id) {
     const f = this.fires[id];
-    f.heat = Math.max(0, f.heat - .13); f.wet = Math.min(1, f.wet + .10);
+    // Soak is the number of direct drops needed for a fully burning stack.
+    f.heat = Math.max(0, f.heat - 1 / f.soak); f.wet = Math.min(1, f.wet + .10);
   }
   afterStep(sim, dt) {
     this.tick++;
@@ -115,10 +116,10 @@ export class Fireground extends Workshop {
     // completely cold isolated fuel cannot reignite on its own.
     const previous = this.fires.map(f => f.heat);
     for (const f of this.fires) {
-      f.wet = Math.max(0, f.wet - dt * .008);
-      if (f.heat > .12 && f.wet < .35) f.heat = Math.min(1, f.heat + dt * .035);
-      for (const from of f.spreadFrom || []) if (previous[from] > .4 && f.wet < .35)
-        f.heat = Math.min(1, f.heat + dt * .045 * previous[from]);
+      f.wet = Math.max(0, f.wet - dt * .012);
+      if (f.heat > .12 && f.wet < .35) f.heat = Math.min(1, f.heat + dt * .060);
+      for (const from of f.spreadFrom || []) if (previous[from] > .4 && f.wet < .45)
+        f.heat = Math.min(1, f.heat + dt * .10 * previous[from]);
       if (f.heat > 0 && f.heat <= .12) f.heat = Math.max(0, f.heat - dt * .020);
       sim.jobs[f.id].state = f.heat <= .08 ? 'delivered' : 'waiting';
     }

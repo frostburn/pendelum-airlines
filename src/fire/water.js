@@ -2,7 +2,7 @@ import { localPoint, worldPoint, nearbyPairs } from '#game/industry/geometry';
 import { CUP_WALLS, vesselCollision } from '#game/industry/materials';
 import { point, vel, eff, impulse } from '#game/rigid-body';
 
-export const WATER = Object.freeze({limit: 192, bucket: 30, tank: 90, mass: .04, rate: 28, speed: 23});
+export const WATER = Object.freeze({limit: 192, bucket: 30, tank: 60, mass: .04, rate: 28, speed: 23});
 
 // Swept circles against expanded boxes: even a thin wall stops a fast jet.
 export function sweepWater(ax, ay, bx, by, r, box) {
@@ -66,13 +66,26 @@ export class WaterField {
   step(sim, work, dt) {
     const cabin = sim.cabin, bucket = work.tool === 'ladle';
     let inside = bucket ? this.contained(cabin) : [];
-    const pool = work.incident.pools.find(p => Math.abs(cabin.x - p.x) < p.w / 2 - .9 &&
-      cabin.y > p.bottom + .58 && worldPoint(cabin, 0, .59).y < p.y);
-    if (bucket && pool && Math.abs(cabin.a) < .35 && Math.hypot(cabin.vx, cabin.vy) < 1.1) {
-      this.fillClock += dt * 26;
+    const lips = [-.67, .67].map(x => worldPoint(cabin, x, .59));
+    // Water enters through the opening, including when the vessel rests on the
+    // basin floor. There is no narrow hover height or speed requirement.
+    const pool = bucket && Math.cos(cabin.a) > .5 && work.incident.pools.find(p =>
+      lips.every(q => Math.abs(q.x - p.x) < p.w / 2 - .16 && q.y > p.bottom) &&
+      Math.min(...lips.map(q => q.y)) < p.y - .02);
+    if (pool) {
+      this.fillClock += dt * 42;
       while (this.fillClock >= 1 && inside.length < WATER.bucket) {
         this.fillClock--;
-        const q = worldPoint(cabin, ((inside.length % 6) - 2.5) * .18, -.28 + Math.floor(inside.length / 6) * .15);
+        // Use free, submerged space; a tilted dip must not create water above
+        // the pool surface, inside a wall, or on top of an existing drop.
+        let q;
+        for (let i = 0; i < WATER.bucket; i++) {
+          const slot = worldPoint(cabin, ((i % 6) - 2.5) * .20, -.28 + Math.floor(i / 6) * .18);
+          if (slot.y > pool.bottom + .10 && slot.y < pool.y - .10 &&
+            Math.abs(slot.x - pool.x) < pool.w / 2 - .26 &&
+            inside.every(p => Math.hypot(p.x - slot.x, p.y - slot.y) > .13)) { q = slot; break; }
+        }
+        if (!q) break;
         if (!this.emit(q.x, q.y, 0, 0, 'bucket')) break;
         inside.push(this.drops.at(-1)); this.metrics.scooped++;
       }
