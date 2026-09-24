@@ -75,7 +75,7 @@ export function drawDemolition(ctx, sim, draw) {
     circle(a.x, a.y, j.permanent ? .16 : .23, j.permanent ? '#729caa' : orange, ink, .035);
     circle(a.x, a.y, .075, cream, ink);
     if (!j.permanent) {
-      if (site.goals.some(g => g.joined === j.id && !g.complete)) text(a.x, a.y + .6, 'KEEP JOINED', .23, '#965d32');
+      if (site.cutBlocker(j)) text(a.x, a.y + .6, 'KEEP JOINED', .23, '#965d32');
       const pulse = .32 + Math.sin(sim.time * 4) * .025;
       ctx.globalAlpha = .45; circle(a.x, a.y, pulse, null, orange, .025); ctx.globalAlpha = 1;
     }

@@ -31,7 +31,7 @@ The aircraft takes ordinary collision damage; the ball absorbs its working blows
 | Under new management | Swing under a canopy, then shorten the cable to extract the shutter. |
 | Fall away from each other | Topple two chimneys outward into separate bays. |
 | Leave the facade | Drop a floor, recover its machine, then carry the floor out beneath the roof. |
-| Downstream consequences | Prepare two fallen chutes in sequence for one heavy consignment. |
+| Downstream consequences | Make a continuous two-chute slide, or catch freight on the lower deck and tip it afterward. |
 | The bridge is still on the manifest | Catch two joined bridge sections on cradles, cut their splice, and deliver both. |
 
 Members retain their mass, angular inertia, collision shape and momentum after a
@@ -48,6 +48,9 @@ cosmetic dust/spark particles**; these contracts use at most three members. Ther
 is no recursive rubble generation. The existing stable industrial backdrop is
 joined by scaffolds, exposed bolts, brickwork, steel sections and marked catch bays.
 Progress follows settled pieces and actual recovered cargo, not a destruction score.
+The sign must lower on its left hanger, and the frame must fold with both knees
+connected. KEEP JOINED markers and the HUD identify those required connections;
+cutting them early physically breaks them and immediately loses the contract.
 The bridge contract requires both cradle catches while the splice is intact;
 cutting it early loses the contract with an immediate explanation. Chute contacts
 use the lower friction coefficient of the two participating bodies, so wheeled

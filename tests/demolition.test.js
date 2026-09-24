@@ -173,6 +173,7 @@ test('all demolition contracts stay within fixed body and joint budgets and rend
       if (g.piece) assert.ok(site.pieces.some(p => p.id === g.piece));
       for (const j of g.joints || []) assert.ok(site.joints.some(q => q.id === j && !q.permanent));
       for (const dependency of g.after || []) assert.ok(site.goals.some(q => q.id === dependency));
+      for (const id of site.requiredJoints(g)) assert.ok(site.joints.some(j => j.id === id));
     }
     const before = JSON.stringify(sim.snapshot());
     for (const [w, h] of [[1200, 680], [390, 550]]) {
@@ -212,7 +213,39 @@ test('the finale requires a joined landing and reports an early splice cut immed
     return sim;
   };
   const early = strike(false);
-  assert.equal(early.failed, true); assert.match(early.reason, /both cradles/);
+  assert.equal(early.failed, true); assert.match(early.reason, /cradle.*before cutting/);
   assert.equal(early.industry.goalMet(early.industry.goals.find(g => g.id === 'catch-west')), false);
   assert.equal(strike(true).failed, false);
+});
+
+test('the sign and frame must use their remaining joints before they can be detached', () => {
+  for (const [id, jointIds, next] of [[61, ['left-hanger'], 'left'], [66, ['left-knee', 'right-knee'], 'free']]) {
+    for (const jointId of jointIds) {
+      for (const lowered of [false, true]) {
+        const sim = new Sim(id), site = sim.industry, j = site.joints.find(j => j.id === jointId);
+        const g = site.goals.find(g => g.id === 'lower');
+        assert.ok(site.requiredJoints(g).includes(jointId));
+        g.complete = lowered;
+        assert.equal(site.goalReady(site.goals.find(g => g.id === next)), lowered);
+        assert.equal(!!site.cutBlocker(j), !lowered);
+        // Feed a physical ball/beam collision at the protected joint. The cut
+        // still happens; an impossible contract must fail immediately.
+        const q = jointPoints(j)[0];
+        Object.assign(sim.cabin, {x: q.x, y: j.a.y + j.a.height / 2 + .64, vx: 0, vy: -4});
+        site.pairContacts = []; circleMember(j.a, sim.cabin, site.samples(), site.pairContacts);
+        site.finishContacts(sim);
+        assert.equal(j.broken, true);
+        assert.equal(sim.failed, !lowered);
+        if (!lowered) {
+          assert.ok(sim.reason.includes(g.name));
+          for (const dep of g.after) site.goals.find(other => other.id === dep).complete = true;
+          assert.equal(site.goalMet(g), false, 'a detached member cannot substitute for a hinged lowering');
+        }
+      }
+    }
+  }
+  const site = new Sim(61).industry, sign = site.pieces[0], g = site.goals.find(g => g.id === 'lower');
+  site.goals.find(g => g.id === 'right').complete = true;
+  sign.y = .5;
+  assert.equal(site.goalMet(g), false, 'a low horizontal sign is not a lowered hanging sign');
 });

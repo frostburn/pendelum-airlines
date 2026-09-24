@@ -31,6 +31,8 @@ export class DemolitionSite extends Workshop {
   magnetPoles() { return [[0, -.18], [-.4, -.18], [.4, -.18]]; }
   clearInput() { this.previousSwap = this.action = false; this.swapRequest = 0; }
   activeJoints(p) { return this.joints.filter(j => !j.broken && (j.a === p || j.b === p)); }
+  requiredJoints(g) { return g.joined ? Array.isArray(g.joined) ? g.joined : [g.joined] : []; }
+  cutBlocker(j) { return this.goals.find(g => !g.complete && this.requiredJoints(g).includes(j.id)); }
   canPickup(p) { return p.metal && !this.activeJoints(p).length; }
   rackAt(sim) {
     const c = sim.cabin;
@@ -88,8 +90,8 @@ export class DemolitionSite extends Workshop {
         j.broken = true; this.breakCount++; this.cooldown = .28;
         // A premature cut still breaks physically. Report the lost contract
         // immediately instead of leaving impossible catch tasks on the HUD.
-        if (this.goals.some(g => g.joined === j.id && !g.complete))
-          sim.fail('The bridge split before both cradles had caught it. Keep the splice intact until both catches are signed off.');
+        const blocked = this.cutBlocker(j);
+        if (blocked) sim.fail(`Complete “${blocked.name}” before cutting ${j.name || 'this connection'}. Keep the marked joints intact until that task is signed off.`);
         this.burst(p.x, p.y, '#dfb582', 14);
         sim.events.push({type: 'machine', message: `${j.name || 'Connection'} released. Stand clear of the swing.`});
         break;
@@ -107,10 +109,10 @@ export class DemolitionSite extends Workshop {
   }
   goalReady(g) { return (g.after || []).every(id => this.goals.find(other => other.id === id)?.complete); }
   goalMet(g) {
-    if (!this.goalReady(g) || g.joined && this.joints.find(j => j.id === g.joined).broken) return false;
+    if (!this.goalReady(g) || this.requiredJoints(g).some(id => this.joints.find(j => j.id === id).broken)) return false;
     if (g.type === 'release') return g.joints.every(id => this.joints.find(j => j.id === id).broken);
     const p = this.pieces.find(p => p.id === g.piece);
-    if (g.type === 'rotate') return Math.abs(wrap(p.a - g.angle)) < (g.tolerance || .2) || bounds(p).top < 2;
+    if (g.type === 'rotate') return Math.abs(wrap(p.a - g.angle)) < (g.tolerance || .2);
     const b = bounds(p);
     return !p.attached && b.left > g.x - g.w / 2 && b.right < g.x + g.w / 2 &&
       Math.abs(b.bottom - g.y) < .22 && Math.hypot(p.vx, p.vy) < .65 && Math.abs(p.w) < .45 &&
@@ -147,9 +149,9 @@ export class DemolitionSite extends Workshop {
       const r = this.site.racks.reduce((a, b) => Math.abs(a.x - sim.cabin.x) < Math.abs(b.x - sim.cabin.x) ? a : b);
       x = r.x; y = r.y; name = 'Tool rack';
     }
-    const keepJoined = this.goals.some(g => g.joined && !g.complete);
+    const keepJoined = this.goals.find(g => g.joined && !g.complete);
     return {title: needsMagnet ? 'Tool rack · U fits the salvage magnet' : g.name,
-      detail: `${sim.delivered}/${this.goals.length} signed off · ${keepJoined ? 'Keep the marked splice joined until both catches are signed off' : this.tool === 'ball' ? 'Fast, direct hits on orange bolts · blue pins stay' : 'Magnet ON · hold J to release'}${this.site.racks.length ? ' · U swaps low and slow at the rack' : ''}`,
+      detail: `${sim.delivered}/${this.goals.length} signed off · ${keepJoined ? 'Keep marked joints intact: ' + keepJoined.name : this.tool === 'ball' ? 'Fast, direct hits on orange bolts · blue pins stay' : 'Magnet ON · hold J to release'}${this.site.racks.length ? ' · U swaps low and slow at the rack' : ''}`,
       x, y, name, progress: sim.delivered / this.goals.length};
   }
   snapshot() {
