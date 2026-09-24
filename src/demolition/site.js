@@ -74,6 +74,10 @@ export class DemolitionSite extends Workshop {
         if (!target) continue;
         const j = target.j, [p] = jointPoints(j);
         j.broken = true; this.breakCount++; this.cooldown = .28;
+        // A premature cut still breaks physically. Report the lost contract
+        // immediately instead of leaving impossible catch tasks on the HUD.
+        if (this.goals.some(g => g.joined === j.id && !g.complete))
+          sim.fail('The bridge split before both cradles had caught it. Keep the splice intact until both catches are signed off.');
         this.burst(p.x, p.y, '#dfb582', 14);
         sim.events.push({type: 'machine', message: `${j.name || 'Connection'} released. Stand clear of the swing.`});
         break;
@@ -91,7 +95,7 @@ export class DemolitionSite extends Workshop {
   }
   goalReady(g) { return (g.after || []).every(id => this.goals.find(other => other.id === id)?.complete); }
   goalMet(g) {
-    if (!this.goalReady(g)) return false;
+    if (!this.goalReady(g) || g.joined && this.joints.find(j => j.id === g.joined).broken) return false;
     if (g.type === 'release') return g.joints.every(id => this.joints.find(j => j.id === id).broken);
     const p = this.pieces.find(p => p.id === g.piece);
     if (g.type === 'rotate') return Math.abs(wrap(p.a - g.angle)) < (g.tolerance || .2) || bounds(p).top < 2;
@@ -131,8 +135,9 @@ export class DemolitionSite extends Workshop {
       const r = this.site.racks.reduce((a, b) => Math.abs(a.x - sim.cabin.x) < Math.abs(b.x - sim.cabin.x) ? a : b);
       x = r.x; y = r.y; name = 'Tool rack';
     }
+    const keepJoined = this.goals.some(g => g.joined && !g.complete);
     return {title: needsMagnet ? 'Tool rack · U fits the salvage magnet' : g.name,
-      detail: `${sim.delivered}/${this.goals.length} signed off · ${this.tool === 'ball' ? 'Swing at orange bolts · blue pins stay' : 'Magnet ON · hold J to release'} · U swaps at a rack`,
+      detail: `${sim.delivered}/${this.goals.length} signed off · ${keepJoined ? 'Keep the marked splice joined until both catches are signed off' : this.tool === 'ball' ? 'Swing at orange bolts · blue pins stay' : 'Magnet ON · hold J to release'} · U swaps at a rack`,
       x, y, name, progress: sim.delivered / this.goals.length};
   }
   snapshot() {

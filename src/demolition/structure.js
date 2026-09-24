@@ -125,6 +125,7 @@ export function contactVelocity(c) {
   const j = Math.max(0, -vn / (eff(ap, nx, ny) + eff(bp, nx, ny)));
   impulse(ap, nx, ny, -j); impulse(bp, nx, ny, j);
   const vt = (bv.x - av.x) * -ny + (bv.y - av.y) * nx;
-  const f = clamp(-vt / (eff(ap, -ny, nx) + eff(bp, -ny, nx)), -j * .4, j * .4);
+  const friction = Math.min(a.friction ?? .4, b.friction ?? .4);
+  const f = clamp(-vt / (eff(ap, -ny, nx) + eff(bp, -ny, nx)), -j * friction, j * friction);
   impulse(ap, -ny, nx, -f); impulse(bp, -ny, nx, f);
 }

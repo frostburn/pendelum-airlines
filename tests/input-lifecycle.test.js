@@ -9,11 +9,12 @@ test('actual keyboard handlers rearm fire and demolition controls across held ov
     {get: (target, key) => key in target ? target[key] : noop});
   class Element extends EventTarget {
     constructor() {
-      super(); this.style = {}; this.dataset = {}; this.value = ''; this.hidden = false;
+      super(); this.attributes = {}; this.style = {}; this.dataset = {}; this.value = ''; this.hidden = false;
       this.classList = {add: noop, remove: noop, toggle: noop};
     }
     matches() { return false; }
-    setAttribute() {}
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    getAttribute(name) { return this.attributes[name]; }
     setPointerCapture() {}
     getBoundingClientRect() { return {left: 0, top: 0, width: 390, height: 550}; }
     getContext() { return ctx; }
@@ -58,6 +59,8 @@ test('actual keyboard handlers rearm fire and demolition controls across held ov
     };
     for (const [name, mode] of Object.entries(modes)) for (const control of ['KeyL', 'KeyU']) {
       window.pendulum.load(48); frame();
+      assert.equal(node('#fireControls').getAttribute('aria-label'), 'Fire appliance controls');
+      assert.match(node('[data-fire="swap"]').getAttribute('aria-label'), /hose and bucket/);
       key(control); frame();
       assert.equal(control === 'KeyL' ? state().industry.facing : state().industry.tool, control === 'KeyL' ? -1 : 'ladle');
       mode.enter(); const stoppedAt = state().time;
@@ -72,6 +75,8 @@ test('actual keyboard handlers rearm fire and demolition controls across held ov
       window.pendulum.load(60); frame();
       assert.equal(node('#toolBtn').hidden, true);
       assert.equal(node('#fireControls').hidden, false);
+      assert.equal(node('#fireControls').getAttribute('aria-label'), 'Demolition tool controls');
+      assert.match(node('[data-fire="swap"]').getAttribute('aria-label'), /wrecking ball and magnet/);
       assert.equal(node('[data-fire="aimUp"]').hidden, true);
       assert.equal(node('[data-fire="swap"]').hidden, false);
       key('KeyU'); for (let i = 0; i < 7; i++) frame();

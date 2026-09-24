@@ -219,7 +219,9 @@ These checks supplement the interactive browser checks above.
    cable to fit below the roof and raise the load before taking it out sideways.
 8. In the finale, lower the connected bridge onto the two cradles, cut the middle
    splice with a downward ball strike, and deliver both numbered sections.
-   Merely breaking the bearings must not finish the contract.
+   Merely breaking the bearings must not finish the contract. Cut the splice
+   before the catches in a separate attempt: the contract should fail immediately
+   with an explanation, and the cut should still happen physically.
 9. Watch on a phone during an approach: the rig and nearby target should stay
    visible. Pan the overview and fly back: scaffold and backdrop positions stay
    fixed. Restart resets every member, connection and delivery.

@@ -116,3 +116,37 @@ test('all demolition contracts stay within fixed body and joint budgets and rend
   }
   assert.equal(levels[60].collection, 'Controlled demolition');
 });
+
+test('moving chute contacts respect the cargo friction coefficient', () => {
+  const slide = friction => {
+    const chute = member({x: 0, y: 0, width: 6, height: .5, mass: 5}, 'chute');
+    const crate = member({x: 0, y: .7, width: 1, height: 1, mass: 30, friction}, 'crate');
+    crate.vx = 3; crate.vy = -1;
+    const pairs = []; collideMembers(chute, crate, pairs);
+    assert.ok(pairs.length); contactVelocity(pairs[0]);
+    return {crate, chute};
+  };
+  const smooth = slide(0), wheels = slide(.04), rough = slide(.4);
+  assert.equal(smooth.crate.vx, 3, 'zero friction cannot apply a tangential impulse');
+  assert.ok(wheels.crate.vx > rough.crate.vx && wheels.crate.vx < 3);
+  assert.ok(wheels.chute.vx < rough.chute.vx, 'the chute receives the opposite friction impulse');
+});
+
+test('the finale requires a joined landing and reports an early splice cut immediately', () => {
+  const strike = caught => {
+    const sim = new Sim(71), site = sim.industry, beam = site.pieces[0];
+    const split = site.goals.find(g => g.id === 'split');
+    assert.deepEqual(split.after, ['catch-west', 'catch-east']);
+    if (caught) for (const id of split.after) site.goals.find(g => g.id === id).complete = true;
+    assert.equal(site.goalReady(split), caught);
+    Object.assign(sim.cabin, {x: 19.8, y: 7.87, vx: 0, vy: -4});
+    site.pairContacts = []; circleMember(beam, sim.cabin, [[0, 0, .66]], site.pairContacts);
+    site.finishContacts(sim);
+    assert.equal(site.joints.find(j => j.id === 'middle-splice').broken, true, 'an early cut is still a physical cut');
+    return sim;
+  };
+  const early = strike(false);
+  assert.equal(early.failed, true); assert.match(early.reason, /both cradles/);
+  assert.equal(early.industry.goalMet(early.industry.goals.find(g => g.id === 'catch-west')), false);
+  assert.equal(strike(true).failed, false);
+});

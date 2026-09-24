@@ -429,6 +429,8 @@ function updateUI() {
   const toolButton = $('#toolBtn');
   toolButton.hidden = !sim.industry || sim.industry.tool === 'ball';
   $('#fireControls').hidden = !sim.level.fire && !sim.level.demolition;
+  $('#fireControls').setAttribute('aria-label', sim.level.demolition ? 'Demolition tool controls' : 'Fire appliance controls');
+  $('[data-fire="swap"]').setAttribute('aria-label', sim.level.demolition ? 'Swap wrecking ball and magnet at Tool rack (U)' : 'Swap hose and bucket at Tool rack (U)');
   $$('[data-fire]').forEach(button => {
     button.hidden = (!!sim.level.demolition || !!sim.level.fire && sim.industry.tool !== 'hose') && button.dataset.fire !== 'swap';
   });

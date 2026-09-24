@@ -111,6 +111,7 @@ export const demolitionRoutes = [
     goals: [release('lower', 'Prepare the receiving chute', ['lower-latch']), release('upper', 'Send the consignment down', ['upper-latch']),
       place('receive', 'Catch the consignment beyond both chutes', 'freight', 32.5, 0, 8, {after: ['lower', 'upper']})]}),
   contract({name: 'The bridge is still on the manifest', sub: 'The form requests demolition and preservation.', width: 59, gold: 190, silver: 290,
+    tip: 'Keep the bridge joined until both cradle tasks are signed off. Cutting its middle splice early loses the contract. After the catches, strike down on the splice, then U fits the magnet at a rack.',
     hint: 'Lower both bridge sections onto the waiting cradles before cutting their middle splice. Change to the magnet and deliver each numbered section to its matching slab.',
     racks: [{x: 35, y: .8}],
     terrain: [block(17, 2.2, 6.2, 'metal'), block(23, 2.2, 6.2, 'metal'), block(43, .8, 7.5, 'metal')],
@@ -119,9 +120,9 @@ export const demolitionRoutes = [
       bolt('east-bearing', 'east-deck', 25.7, 7, {approach: 1}),
       bolt('middle-splice', 'west-deck', 20, 7, {b: 'east-deck', approach: 0, weld: true})],
     goals: [release('lower', 'Release the outer bridge bearings', ['west-bearing', 'east-bearing']),
-      place('catch-west', 'Set section 01 on its cradle', 'west-deck', 17, 2.2, 8.5, {angle: 0, after: ['lower']}),
-      place('catch-east', 'Set section 02 on its cradle', 'east-deck', 23, 2.2, 8.5, {angle: 0, after: ['lower']}),
-      release('split', 'Cut the middle splice', ['middle-splice']),
+      place('catch-west', 'Set section 01 on its cradle', 'west-deck', 17, 2.2, 8.5, {angle: 0, after: ['lower'], joined: 'middle-splice'}),
+      place('catch-east', 'Set section 02 on its cradle', 'east-deck', 23, 2.2, 8.5, {angle: 0, after: ['lower'], joined: 'middle-splice'}),
+      {...release('split', 'Cut the middle splice', ['middle-splice']), after: ['catch-west', 'catch-east']},
       deliver('one', 'Deliver section 01 to slab 01', 'west-deck', 43, .8, 7.5, ['catch-west', 'split']),
       deliver('two', 'Deliver section 02 to slab 02', 'east-deck', 54, .8, 8, ['catch-east', 'split'])]})
 ];

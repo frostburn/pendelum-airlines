@@ -40,6 +40,10 @@ cosmetic dust/spark particles**; these contracts use at most three members. Ther
 is no recursive rubble generation. The existing stable industrial backdrop is
 joined by scaffolds, exposed bolts, brickwork, steel sections and marked catch bays.
 Progress follows settled pieces and actual recovered cargo, not a destruction score.
+The bridge contract requires both cradle catches while the splice is intact;
+cutting it early loses the contract with an immediate explanation. Chute contacts
+use the lower friction coefficient of the two participating bodies, so wheeled
+freight retains its low rolling resistance on moving beams as well as terrain.
 
 `node scripts/verify-demolition-flights.js` flies all twelve contracts using only
 normal controls. Routine CI adds only the heavy-crate chute and the bridge finale.
