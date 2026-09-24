@@ -237,7 +237,7 @@ export class Workshop {
       // Approximate the field integrated over the bar by a central resultant.
       // Pulling only its nearest corner spins a level ingot onto its edge before
       // contact, and gives the head an implausible lever on the whole load.
-      attract(pole, point(p), 190, 1.65, dt);
+      attract(pole, point(p), this.magnetStrength ?? 190, 1.65, dt);
       const av = vel(pole), bv = vel(q);
       if (surface.distance < .055 && Math.hypot(av.x - bv.x, av.y - bv.y) < 2.5) {
         // Capture exactly where contact happened. Neither body is repositioned

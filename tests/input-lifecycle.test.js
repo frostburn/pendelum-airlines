@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('actual keyboard handlers rearm fire controls across held overview, pause and focus loss', async () => {
+test('actual keyboard handlers rearm fire and demolition controls across held overview, pause and focus loss', async () => {
   // A minimal DOM event surface for the real main module. This exercises input
   // wiring and frame scheduling in Node; it makes no browser/layout claims.
   const noop = () => {}, nodes = new Map(), frames = [], storage = new Map();
@@ -68,6 +68,24 @@ test('actual keyboard handlers rearm fire controls across held overview, pause a
         control === 'KeyL' ? 1 : 'hose', `${name}: the first new press must work without an intervening release step`);
       key(control, false);
     }
+    for (const [name, mode] of Object.entries(modes)) {
+      window.pendulum.load(60); frame();
+      assert.equal(node('#toolBtn').hidden, true);
+      assert.equal(node('#fireControls').hidden, false);
+      assert.equal(node('[data-fire="aimUp"]').hidden, true);
+      assert.equal(node('[data-fire="swap"]').hidden, false);
+      key('KeyU'); for (let i = 0; i < 7; i++) frame();
+      assert.equal(state().industry.tool, 'hook');
+      assert.equal(node('#toolBtn').hidden, false);
+      mode.enter(); key('KeyU', false); frame(); mode.leave(); key('KeyU'); frame();
+      assert.equal(state().industry.tool, 'ball', `${name}: demolition swap rearms`);
+      key('KeyU', false); frame();
+    }
+    const swapButton = node('[data-fire="swap"]');
+    swapButton.dispatchEvent(Object.assign(new Event('pointerdown', {cancelable: true}), {pointerId: 1})); frame();
+    assert.equal(state().industry.tool, 'hook', 'the visible touch swap button operates demolition tools');
+    swapButton.dispatchEvent(Object.assign(new Event('pointerup'), {pointerId: 1})); frame();
+
   } finally {
     for (const [key, descriptor] of Object.entries(previous)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
