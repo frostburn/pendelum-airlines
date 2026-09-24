@@ -38,6 +38,24 @@ test('full particle capacity cannot consume tank or header water without emittin
   assert.equal(w.headers[0].emitted, 0);
 });
 
+test('a translating and spinning hose balances the nozzle momentum on every shot', () => {
+  for (const facing of [-1, 1]) for (const spin of [-1.7, 1.7]) {
+    const s = new Sim(48), w = s.industry, c = s.cabin;
+    w.facing = facing;
+    Object.assign(c, {vx: 4, vy: -2, w: spin, a: .45});
+    for (let shot = 0; shot < 12; shot++) {
+      const before = {vx: c.vx, vy: c.vy, px: c.m * c.vx, py: c.m * c.vy, angular: c.I * c.w};
+      w.beforeStep(s, {action: true}, 1 / WATER.rate + 1e-6);
+      const p = w.water.drops.at(-1);
+      assert.ok(Math.abs(c.m * c.vx + WATER.mass * p.vx - before.px) < 1e-10);
+      assert.ok(Math.abs(c.m * c.vy + WATER.mass * p.vy - before.py) < 1e-10);
+      // Intrinsic angular momentum in the tank's pre-emission moving frame.
+      const carried = WATER.mass * ((p.x - c.x) * (p.vy - before.vy) - (p.y - c.y) * (p.vx - before.vx));
+      assert.ok(Math.abs(c.I * c.w + carried - before.angular) < 1e-10);
+    }
+  }
+});
+
 test('thin walls stop fast water and sheltered fires need an open line of entry', () => {
   assert.deepEqual(sweepWater(0, 1, 10, 1, .1, {x: 4, y: 0, w: .05, h: 2}), {t: .39, nx: -1, ny: -0});
   const s = new Sim(49), w = s.industry, f = w.fires[0];
@@ -156,6 +174,20 @@ test('flip and docked tool swap are press edges, never held-key oscillators', ()
   w.beforeStep(s, {swap: true, flip: true}, DT);
   assert.equal(w.tool, 'ladle', 'there is no airborne tool replacement');
   assert.equal(w.facing, 1);
+});
+
+test('clearing paused input rearms turn and swap before another physics step', () => {
+  const s = new Sim(48), w = s.industry;
+  advance(s, .2);
+  w.beforeStep(s, {swap: true, flip: true}, DT);
+  assert.equal(w.tool, 'ladle'); assert.equal(w.facing, -1);
+  // Help/blur can stop simulation before a released input is ever sampled.
+  w.clearInput();
+  w.beforeStep(s, {swap: true, flip: true}, DT);
+  assert.equal(w.tool, 'hose'); assert.equal(w.facing, 1);
+  w.beforeStep(s, {action: true}, .1);
+  w.clearInput();
+  assert.equal(w.action, false); assert.equal(w.emitter, 0);
 });
 
 test('fire routes restart deterministically and drawing cannot change water, heat or clocks', () => {

@@ -42,6 +42,10 @@ export class Fireground extends Workshop {
     return Math.abs(c.x - r.x) < 1.4 && c.y - r.y > .53 && c.y - r.y < .82 &&
       Math.abs(wrap(c.a)) < .3 && Math.hypot(c.vx, c.vy) < .8;
   }
+  clearInput() {
+    this.previousFlip = this.previousSwap = this.action = false;
+    this.emitter = 0;
+  }
   beforeStep(sim, input, dt) {
     super.beforeStep(sim, input, dt);
     const c = sim.cabin;
@@ -59,8 +63,12 @@ export class Fireground extends Workshop {
       while (this.emitter >= 1 && this.tank > 0) {
         this.emitter--; const {pole, dx, dy} = this.nozzle(c), v = vel(pole);
         if (!this.water.emit(pole.x, pole.y, v.x + dx * WATER.speed, v.y + dy * WATER.speed)) break;
-        this.tank--; this.updateMass(sim);
-        impulse(pole, -dx, -dy, WATER.mass * WATER.speed);
+        // The tank loses water moving with its centre. The jet also carries the
+        // nozzle's tangential motion, so that component needs an opposite reaction.
+        const rx = v.x - c.vx + dx * WATER.speed, ry = v.y - c.vy + dy * WATER.speed;
+        const speed = Math.hypot(rx, ry), angular = c.I * c.w;
+        this.tank--; this.updateMass(sim); c.w = angular / c.I;
+        if (speed) impulse(pole, -rx / speed, -ry / speed, WATER.mass * speed);
         this.water.metrics.fired++;
       }
     } else this.emitter = 0;

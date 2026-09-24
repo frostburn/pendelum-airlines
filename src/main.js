@@ -31,6 +31,7 @@ function toast(text) {
 }
 function clearInput() {
   keys.clear();
+  sim.industry?.clearInput?.();
   touch.x = touch.y = touch.winch = 0;
   clearToolInput();
   clearFireInputs.forEach(clear => clear());
