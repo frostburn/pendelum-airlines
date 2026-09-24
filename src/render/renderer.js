@@ -350,9 +350,11 @@ export function createRenderer(canvas, { reduced = false } = {}) {
         .sort((a, b) => Math.abs(a.x + a.w / 2 - c.x) - Math.abs(b.x + b.w / 2 - c.x))[0];
       if (target) {
         const left = Math.min(e.x, c.x, target.x), right = Math.max(e.x, c.x, target.x + target.w);
-        scale = Math.min(scale, width / (right - left + 3));
+        const bottom = Math.min(e.y - .6, c.y - .9, target.y);
+        const top = Math.max(e.y + .8, c.y + .9, target.y + target.h + 3.8);
+        scale = Math.min(scale, width / (right - left + 3), height / (top - bottom + 2));
         tx = (left + right) / 2;
-        ty = Math.max(height / (2 * scale) - 1.6, (e.y + c.y) / 2 + .3);
+        ty = Math.max(height / (2 * scale) - 1.6, (top + bottom) / 2);
       }
     }
     if (sim.level.fire) {

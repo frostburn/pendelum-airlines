@@ -209,16 +209,21 @@ test('fire routes restart deterministically and drawing cannot change water, hea
   }
 });
 
-test('a phone camera includes the rig and a sheltered hose target on approach', () => {
-  const s = new Sim(49), noop = () => {};
-  for (const b of s.bodies) { b.x += 14; b.ox = b.x; b.y += 2.3; b.oy = b.y; }
+test('a phone camera includes the rig and the whole hose target on level, high and low approaches', () => {
+  const noop = () => {};
   const ctx = new Proxy({measureText: text => ({width: text.length * 6}), createLinearGradient: () => ({addColorStop: noop})},
     {get: (target, key) => key in target ? target[key] : noop});
   const renderer = createRenderer({getContext: () => ctx}, {reduced: true});
-  renderer.resize(390, 550); renderer.render(s, {alpha: 1});
-  const {camera} = renderer.view(), f = s.industry.fires[0];
-  for (const b of [s.engine, s.cabin, {x: f.x + f.w, y: f.y + f.h}]) {
-    assert.ok(Math.abs(b.x - camera.x) < 390 / camera.scale / 2 - .4);
-    assert.ok(Math.abs(b.y - camera.y) < 550 / camera.scale / 2 - .4);
+  renderer.resize(390, 550);
+  for (const [id, gap] of [[49, .9], [49, 5.9], [53, -3.4]]) {
+    const s = new Sim(id), f = s.industry.fires[0];
+    const dx = f.x - 3 - s.cabin.x, dy = f.y + f.h + gap - s.cabin.y;
+    for (const b of s.bodies) { b.x += dx; b.ox = b.x; b.y += dy; b.oy = b.y; }
+    renderer.reset(s); renderer.render(s, {alpha: 1});
+    const {camera} = renderer.view();
+    for (const b of [s.engine, s.cabin, {x: f.x, y: f.y}, {x: f.x + f.w, y: f.y + f.h}]) {
+      assert.ok(Math.abs(b.x - camera.x) < 390 / camera.scale / 2 - .4, `horizontal approach ${gap}`);
+      assert.ok(Math.abs(b.y - camera.y) < 550 / camera.scale / 2 - .4, `vertical approach ${gap}`);
+    }
   }
 });
