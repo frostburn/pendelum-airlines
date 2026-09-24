@@ -14,8 +14,10 @@
     "check": "node scripts/check.js",
     "test": "node --test",
     "test:flights": "node scripts/verify-flights.js && node scripts/verify-freight-flights.js && node scripts/verify-metal-flights.js && node scripts/verify-logistics-flights.js && node scripts/verify-fire-flights.js",
+    "test:smoke": "node scripts/verify-flights.js && node scripts/verify-freight-flights.js && node scripts/verify-smoke-flights.js",
     "test:guides": "node scripts/verify-guide-flights.js",
     "test:watch": "node --test --watch",
-    "verify": "npm run check && npm test && npm run test:flights && npm run build"
+    "verify": "npm run check && npm test && npm run test:smoke && npm run build",
+    "verify:full": "npm run check && npm test && npm run test:flights && npm run build"
   }
 }

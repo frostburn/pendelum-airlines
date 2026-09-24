@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      full:
+        description: Run all 49 flight witnesses (slower)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -17,7 +22,7 @@ jobs:
   verify:
     name: Node 22.16.0
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: ${{ inputs.full && 15 || 5 }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -25,7 +30,12 @@ jobs:
           node-version-file: .nvmrc
           package-manager-cache: false
       - run: npm ci --ignore-scripts
-      - run: npm run verify
+      - name: Verify routine checks
+        if: ${{ !inputs.full }}
+        run: npm run verify
+      - name: Verify all flights
+        if: ${{ inputs.full }}
+        run: npm run verify:full
       - uses: actions/upload-artifact@v4
         with:
           name: pendulum-airlines

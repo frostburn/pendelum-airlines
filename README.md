@@ -198,9 +198,10 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify   # syntax, tests, 49 simulated flights, and a standalone build
-npm run build   # produces dist/index.html
-npm run preview # serves the built document on the same local port
+npm run verify      # syntax, all unit tests, 18 smoke flights, standalone build
+npm run verify:full # same checks with all 49 flight witnesses
+npm run build       # produces dist/index.html
+npm run preview     # serves the built document on the same local port
 ```
 
 Stop the development server before starting preview on the same port.
@@ -346,7 +347,7 @@ nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
 flight, winch and tool-button inputs. Every job must complete at full integrity.
 Passenger jobs must avoid damaging impacts; industrial jobs must keep the drone clear of the hammer and its frame. The witnesses never teleport the rig or bypass service logic. These are playability
 witnesses, not claims about how easy the routes are for a human pilot. The check
-also runs as part of `npm run verify`. Freight flights must gain height in every
+also runs as part of `npm run verify:full`. Freight flights must gain height in every
 plume and sink through cold gaps; the cycling route must wait for pressure, and
 the return must carry both mechanics and land outside hot air. An ablation test
 removes only the updrafts and confirms full throttle cannot lift any loaded route
@@ -366,6 +367,18 @@ contact, release, winching, and continuous cable clearance around their rims.
 
 CI has **one Ubuntu job, one Node version (22.16.0), and no matrix**. It runs
 `npm run verify` and uploads `dist/index.html` as the `pendulum-airlines` artifact.
+Routine verification keeps every unit/regression test and uses `npm run test:smoke`
+for 18 representative flights: all six moving-stop and four freight itineraries,
+plus ore collection, casting, forging, welding, both early-snatch transport
+checkpoints, a bucket route and the combined firefighting finale. The selected
+flights use the same pilots, physics and completion assertions as the full suite.
+Long multi-stage foundry/logistics routes and other flight variants remain in
+`npm run test:flights`; they no longer run on every push and pull request.
+
+For broader physics or level changes, run `npm run verify:full` locally, or open
+**Actions → CI → Run workflow** and enable **Run all 49 flight witnesses (slower)**.
+That uses the same job and artifact upload, with the exhaustive flight selection.
+Routine jobs have a five-minute timeout; the opt-in full run keeps fifteen minutes.
 The workflow does not deploy or change repository settings.
 
 For a visual smoke test, follow [tests/MANUAL.md](tests/MANUAL.md).
