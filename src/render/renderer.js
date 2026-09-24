@@ -341,6 +341,20 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     tx = Math.max(tx, e.x - halfW + 1.6, c.x - halfW + 1.6);
     if (sim.level.fire && sim.industry.tool === 'hose')
       tx = clamp(tx + sim.industry.facing * 1.8, Math.max(e.x, c.x) - halfW + 1.6, Math.min(e.x, c.x) + halfW - 1.6);
+    if (sim.level.fire && sim.industry.tool === 'hose' && width < 640) {
+      // A sheltered target can be several metres beyond the doorway. On a phone
+      // keep the rig and the stock visible together, so the player can aim.
+      const work = sim.industry, target = work.fires.filter(f => f.heat > .08)
+        .map(f => work.fireBox(f)).filter(b => (b.x + b.w / 2 - c.x) * work.facing > 0 &&
+          Math.abs(b.x + b.w / 2 - c.x) < 12 && Math.abs(b.y + b.h - c.y) < 6)
+        .sort((a, b) => Math.abs(a.x + a.w / 2 - c.x) - Math.abs(b.x + b.w / 2 - c.x))[0];
+      if (target) {
+        const left = Math.min(e.x, c.x, target.x), right = Math.max(e.x, c.x, target.x + target.w);
+        scale = Math.min(scale, width / (right - left + 3));
+        tx = (left + right) / 2;
+        ty = Math.max(height / (2 * scale) - 1.6, (e.y + c.y) / 2 + .3);
+      }
+    }
     if (sim.level.fire) {
       const h = sim.industry.headers.find(h => Math.abs(h.x - c.x) < 5 && c.y > h.y);
       if (h) {

@@ -208,3 +208,17 @@ test('fire routes restart deterministically and drawing cannot change water, hea
     assert.ok(Math.abs(e.x - view.camera.x) < view.width / view.camera.scale / 2);
   }
 });
+
+test('a phone camera includes the rig and a sheltered hose target on approach', () => {
+  const s = new Sim(49), noop = () => {};
+  for (const b of s.bodies) { b.x += 14; b.ox = b.x; b.y += 2.3; b.oy = b.y; }
+  const ctx = new Proxy({measureText: text => ({width: text.length * 6}), createLinearGradient: () => ({addColorStop: noop})},
+    {get: (target, key) => key in target ? target[key] : noop});
+  const renderer = createRenderer({getContext: () => ctx}, {reduced: true});
+  renderer.resize(390, 550); renderer.render(s, {alpha: 1});
+  const {camera} = renderer.view(), f = s.industry.fires[0];
+  for (const b of [s.engine, s.cabin, {x: f.x + f.w, y: f.y + f.h}]) {
+    assert.ok(Math.abs(b.x - camera.x) < 390 / camera.scale / 2 - .4);
+    assert.ok(Math.abs(b.y - camera.y) < 550 / camera.scale / 2 - .4);
+  }
+});
