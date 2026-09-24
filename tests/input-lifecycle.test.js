@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('actual keyboard handlers rearm fire controls across held overview, pause and focus loss', async () => {
+test('actual keyboard handlers rearm fire and demolition controls across held overview, pause and focus loss', async () => {
   // A minimal DOM event surface for the real main module. This exercises input
   // wiring and frame scheduling in Node; it makes no browser/layout claims.
   const noop = () => {}, nodes = new Map(), frames = [], storage = new Map();
@@ -9,11 +9,12 @@ test('actual keyboard handlers rearm fire controls across held overview, pause a
     {get: (target, key) => key in target ? target[key] : noop});
   class Element extends EventTarget {
     constructor() {
-      super(); this.style = {}; this.dataset = {}; this.value = ''; this.hidden = false;
+      super(); this.attributes = {}; this.style = {}; this.dataset = {}; this.value = ''; this.hidden = false;
       this.classList = {add: noop, remove: noop, toggle: noop};
     }
     matches() { return false; }
-    setAttribute() {}
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    getAttribute(name) { return this.attributes[name]; }
     setPointerCapture() {}
     getBoundingClientRect() { return {left: 0, top: 0, width: 390, height: 550}; }
     getContext() { return ctx; }
@@ -58,6 +59,8 @@ test('actual keyboard handlers rearm fire controls across held overview, pause a
     };
     for (const [name, mode] of Object.entries(modes)) for (const control of ['KeyL', 'KeyU']) {
       window.pendulum.load(48); frame();
+      assert.equal(node('#fireControls').getAttribute('aria-label'), 'Fire appliance controls');
+      assert.match(node('[data-fire="swap"]').getAttribute('aria-label'), /hose and bucket/);
       key(control); frame();
       assert.equal(control === 'KeyL' ? state().industry.facing : state().industry.tool, control === 'KeyL' ? -1 : 'ladle');
       mode.enter(); const stoppedAt = state().time;
@@ -68,6 +71,33 @@ test('actual keyboard handlers rearm fire controls across held overview, pause a
         control === 'KeyL' ? 1 : 'hose', `${name}: the first new press must work without an intervening release step`);
       key(control, false);
     }
+    for (const [name, mode] of Object.entries(modes)) {
+      window.pendulum.load(61); frame();
+      assert.equal(node('#toolBtn').hidden, true);
+      assert.equal(node('#fireControls').hidden, false);
+      assert.equal(node('#fireControls').getAttribute('aria-label'), 'Demolition tool controls');
+      assert.match(node('[data-fire="swap"]').getAttribute('aria-label'), /wrecking ball and magnet/);
+      assert.equal(node('[data-fire="aimUp"]').hidden, true);
+      assert.equal(node('[data-fire="swap"]').hidden, false);
+      key('KeyU'); for (let i = 0; i < 7; i++) frame();
+      assert.equal(state().industry.tool, 'hook');
+      assert.equal(node('#toolBtn').hidden, false);
+      mode.enter(); key('KeyU', false); frame(); mode.leave(); key('KeyU'); frame();
+      assert.equal(state().industry.tool, 'ball', `${name}: demolition swap rearms`);
+      key('KeyU', false); frame();
+    }
+    const swapButton = node('[data-fire="swap"]');
+    swapButton.dispatchEvent(Object.assign(new Event('pointerdown', {cancelable: true}), {pointerId: 1})); frame();
+    assert.equal(state().industry.tool, 'hook', 'the visible touch swap button operates demolition tools');
+    swapButton.dispatchEvent(Object.assign(new Event('pointerup'), {pointerId: 1})); frame();
+
+    window.pendulum.load(60); frame();
+    assert.equal(node('#fireControls').hidden, true, 'ball-only jobs have no irrelevant tool controls');
+    assert.equal(swapButton.hidden, true);
+    key('KeyU'); frame();
+    assert.equal(state().industry.tool, 'ball', 'ball-only jobs cannot exchange tools');
+    key('KeyU', false);
+
   } finally {
     for (const [key, descriptor] of Object.entries(previous)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);

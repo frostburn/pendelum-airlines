@@ -341,7 +341,7 @@ const clearToolInput = bindToolButton(toolButton, () => !panel && !mapHold && !m
   active => { touch.action = active; });
 const clearFireInputs = ['aimUp', 'aimDown', 'flip', 'swap'].map(name =>
   bindToolButton(document.querySelector(`[data-fire="${name}"]`),
-    () => !!sim.level.fire && !panel && !mapHold && !mapLatched,
+    () => (!!sim.level.fire || !!sim.level.demolition?.racks.length && name === 'swap') && !panel && !mapHold && !mapLatched,
     active => { touch[name] = active; }));
 function inputs() {
   return {
@@ -397,7 +397,7 @@ function updateUI() {
   $('#routeName').textContent = sim.level.name;
   $('#routeSub').textContent = sim.level.sub;
   $('#flightTip').textContent = sim.level.tip;
-  $('#fareCounter span').textContent = sim.level.fire ? 'FIRES COOLED' : sim.level.logistics ? 'PARCELS DELIVERED' : sim.industry ? 'WORK ORDERS' : 'FARES DELIVERED';
+  $('#fareCounter span').textContent = sim.level.demolition ? 'TASKS SIGNED OFF' : sim.level.fire ? 'FIRES COOLED' : sim.level.logistics ? 'PARCELS DELIVERED' : sim.industry ? 'WORK ORDERS' : 'FARES DELIVERED';
   $('#fareCount').textContent = sim.level.practice ? '∞' : `${sim.delivered} / ${sim.jobs.length}`;
   $('#clock').textContent = fmt(sim.time);
   $('#bestTime').textContent = saved.best[sim.index] ? fmt(saved.best[sim.index].time) : '—';
@@ -427,14 +427,17 @@ function updateUI() {
   $('#ticketDetail').textContent = sim.level.practice ? 'No damage from bumps. R resets the rig.' : sim.servicing >= 0 ? 'Hold the landing… boarding / drop-off in progress.' : aboard.length ? aboard.map(j => j.name + ' → ' + sim.level.pads[j.to].name).join(' · ') : sim.jobs.filter(j => j.state === 'waiting').map(j => j.name + ' at ' + sim.level.pads[j.from].name).join(' · ');
   $('#serviceBar').style.width = clamp(sim.service / .55 * 100, 0, 100) + '%';
   const toolButton = $('#toolBtn');
-  toolButton.hidden = !sim.industry;
-  $('#fireControls').hidden = !sim.level.fire;
+  toolButton.hidden = !sim.industry || sim.industry.tool === 'ball';
+  $('#fireControls').hidden = !sim.level.fire && !sim.level.demolition?.racks.length;
+  $('#fireControls').setAttribute('aria-label', sim.level.demolition ? 'Demolition tool controls' : 'Fire appliance controls');
+  $('[data-fire="swap"]').setAttribute('aria-label', sim.level.demolition ? 'Swap wrecking ball and magnet at Tool rack (U)' : 'Swap hose and bucket at Tool rack (U)');
   $$('[data-fire]').forEach(button => {
-    button.hidden = !!sim.level.fire && sim.industry.tool !== 'hose' && button.dataset.fire !== 'swap';
+    button.hidden = (!!sim.level.demolition || !!sim.level.fire && sim.industry.tool !== 'hose') && button.dataset.fire !== 'swap' ||
+      !!sim.level.demolition && !sim.level.demolition.racks.length;
   });
   if (sim.industry) {
     const work = sim.industry, order = work.order(sim);
-    $('#ticketLabel').textContent = `${sim.level.fire ? 'FIRE SERVICE' : sim.level.logistics ? 'FULFILLMENT' : 'METAL WORKS'} · ${(work.tool === 'hook' ? 'magnet' : sim.level.fire && work.tool === 'ladle' ? 'bucket' : work.tool).toUpperCase()}`;
+    $('#ticketLabel').textContent = `${sim.level.demolition ? 'DEMOLITION' : sim.level.fire ? 'FIRE SERVICE' : sim.level.logistics ? 'FULFILLMENT' : 'METAL WORKS'} · ${(work.tool === 'hook' ? 'magnet' : sim.level.fire && work.tool === 'ladle' ? 'bucket' : work.tool).toUpperCase()}`;
     $('#objective').textContent = order.title;
     $('#ticketDetail').textContent = order.detail;
     $('#serviceBar').style.width = clamp(order.progress * 100, 0, 100) + '%';

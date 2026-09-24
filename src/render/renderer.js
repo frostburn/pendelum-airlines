@@ -7,6 +7,7 @@ import { drawFoundry } from '#game/render/foundry';
 import { drawFireground, drawFireBackground } from '#game/render/fireground';
 import { cityBuildings } from '#game/render/city';
 import { drawUpdraft } from '#game/render/updrafts';
+import { drawDemolition } from '#game/render/demolition';
 import { drawWorkshop, drawTool } from '#game/render/workshop';
 import { boilerPower } from '#game/updrafts';
 import { clamp } from '#game/math';
@@ -364,6 +365,15 @@ export function createRenderer(canvas, { reduced = false } = {}) {
         ty = (e.y + 2 + bottom) / 2;
       }
     }
+    if (sim.level.demolition) {
+      const target = sim.industry.order(sim);
+      if (Math.hypot(target.x - c.x, target.y - c.y) < 11) {
+        const left = Math.min(e.x - 1, c.x - 1, target.x - 2), right = Math.max(e.x + 1, c.x + 1, target.x + 2);
+        const bottom = Math.min(c.y - 1, target.y - 2), top = Math.max(e.y + 1.5, target.y + 2);
+        scale = Math.min(scale, width / (right - left + 2), height / (top - bottom + 2));
+        tx = (left + right) / 2; ty = Math.max(height / (2 * scale) - 1.6, (top + bottom) / 2);
+      }
+    }
     // Keep a nearby NPC handoff in view while the empty magnet waits above it.
     if (sim.level.logistics && !sim.industry.heldPiece) {
       const worker = sim.industry.workers.find(w => w.cargo && Math.abs(w.x - e.x) < 12);
@@ -404,7 +414,8 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     for (const r of sim.level.terrain)
       if (r.style !== 'metal' && r.style !== 'fuel') building(r);
     const workshopDraw = {box, poly, circle, line, text};
-    if (sim.level.fire) drawFireground(ctx, sim, workshopDraw, sceneTime, reduced);
+    if (sim.level.demolition) drawDemolition(ctx, sim, workshopDraw);
+    else if (sim.level.fire) drawFireground(ctx, sim, workshopDraw, sceneTime, reduced);
     else if (sim.level.logistics) drawDepot(ctx, sim, workshopDraw, sceneTime);
     else if (sim.industry) drawWorkshop(ctx, sim, workshopDraw, sceneTime);
     sim.guides.forEach((guide, i) => {
@@ -415,7 +426,9 @@ export function createRenderer(canvas, { reduced = false } = {}) {
     const pads = sim.level.pads.map(p => stopAt(p, sceneTime));
     pads.forEach((p, i) => {
       if (p.motion) drawMovingStop(ctx, p, sim.level.pads[i], map);
-      station(p, i, clock);
+      // Demolition owns its bay markings and labels. A generic Reclamation
+      // station here would paint a second caption over the salvage placard.
+      if (!sim.level.demolition) station(p, i, clock);
     });
     if (sim.level.wind) {
       windsock(12, 2.4, clock);

@@ -11,7 +11,7 @@ of `dist/index.html`. Check the console for errors throughout.
    Continue up until its base is below the viewport. The roof and upper facade
    should remain visible until their complete visual bounds leave the screen.
    Descend and repeat at another window size; there should be no pop-out/pop-in.
-4. Check all five worlds and their twelve entries per page. Board and deliver on First fare;
+4. Check all six worlds and their twelve entries per page. Board and deliver on First fare;
    restart and check the best-run ghost. Debug-assisted runs must not save records.
 5. At a phone-sized viewport with touch enabled, use the thumb stick and both
    winch buttons. Releasing or cancelling a touch should release its control.
@@ -123,7 +123,7 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
 ## Fulfillment staff and parcels
 
 1. Open world four on desktop, portrait mobile and short landscape viewports.
-   All twelve jobs and five world buttons fit; keyboard focus remains usable.
+   All twelve jobs and six world buttons fit; keyboard focus remains usable.
 2. In Please put it down, hover with the parcel at Bea’s counter: no scan. Hold
    J to set it down; wait for the receipt and collect it. Try dispatching before
    scanning, then retry correctly. The parcel must remain recoverable.
@@ -155,7 +155,7 @@ Guide contact, winch and release witnesses remain available via `npm run test:gu
 ## Fire service
 
 1. Open world five at desktop, 390×844, 320×568 and short landscape sizes.
-   All twelve calls and five world buttons fit. Select a call and check its
+   All twelve calls and six world buttons fit. Select a call and check its
    fire-specific briefing, counters, completion copy and controls.
 2. Fly with WASD while aiming with I/K, turning with L and spraying with J.
    Turning reverses both jet and recoil; holding L must turn only once. Release
@@ -195,3 +195,33 @@ never uses I/K. Unit tests cover momentum, finite supply, a normal basin landing
 and loaded takeoff, tilted dipping, wall occlusion, liquid retention, spread,
 input edges and render immutability.
 These checks supplement the interactive browser checks above.
+
+
+## Controlled demolition (world six)
+
+1. At desktop, 390×844, 320×568 and short landscape sizes, check the six world
+   tabs and twelve contract tiles fit without scrolling. Old bests and ghosts
+   retain their route IDs.
+2. Read the orange/blue connection legend, the current task and catch-bay marks.
+   Swing at the wall brace; slow pushing and rotor collisions must not cut it.
+   Its blue foot stays pinned as the wall falls. Falling steel can hurt the drone.
+3. At a rack, press U or the on-screen swap control. Repeat after pause, overview
+   and focus loss. The magnet is normally on; hold J to release. No swap while
+   carrying a member or away from the rack.
+4. In The roof is the door, detach both bolts, lift the roof onto its marked slab,
+   then recover the motor through the opening. Pickup should not launch the rig.
+5. Release the chutes in Gravity forwarding and Downstream consequences. Observe
+   the heavy cargo sliding on the actual fallen beams, then settling in its bay.
+6. Fold The frame remains before cutting its crossbar connections. Check that
+   the crossbar can be lifted clear of the fallen legs.
+7. In Under new management, pay out cable for the canopy swing; reel in and
+   back out left with the recovered shutter. In Leave the facade, use a short
+   cable to fit below the roof and raise the load before taking it out sideways.
+8. In the finale, lower the connected bridge onto the two cradles, cut the middle
+   splice with a downward ball strike, and deliver both numbered sections.
+   Merely breaking the bearings must not finish the contract. Cut the splice
+   before the catches in a separate attempt: the contract should fail immediately
+   with an explanation, and the cut should still happen physically.
+9. Watch on a phone during an approach: the rig and nearby target should stay
+   visible. Pan the overview and fly back: scaffold and backdrop positions stay
+   fixed. Restart resets every member, connection and delivery.

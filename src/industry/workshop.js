@@ -226,29 +226,33 @@ export class Workshop {
     }
   }
   canPickup() { return true; }
+  magnetPoles() { return [[0, -.18]]; }
   pullPieces(sim, dt) {
     const c = sim.cabin, pole = point(c, 0, -.18);
     for (const p of this.pieces) {
       if (p.attached || p.jigSlot !== undefined || p.delivered || !this.canPickup(p)) continue;
       const local = localPoint(c, p.x, p.y);
       if (local.y >= -.18 || Math.abs(local.x) > 1.7) continue;
-      const surface = closestSurface(p, pole.x, pole.y), q = point(p, surface.x, surface.y);
+      const surface = closestSurface(p, pole.x, pole.y);
       if (surface.inside) continue;
       // Approximate the field integrated over the bar by a central resultant.
       // Pulling only its nearest corner spins a level ingot onto its edge before
       // contact, and gives the head an implausible lever on the whole load.
-      attract(pole, point(p), 190, 1.65, dt);
-      const av = vel(pole), bv = vel(q);
-      if (surface.distance < .055 && Math.hypot(av.x - bv.x, av.y - bv.y) < 2.5) {
+      attract(pole, point(p), this.magnetStrength ?? 190, 1.65, dt);
+      for (const [px, py] of this.magnetPoles()) {
+        const contact = point(c, px, py), face = closestSurface(p, contact.x, contact.y), q = point(p, face.x, face.y);
+        const av = vel(contact), bv = vel(q);
+        if (face.inside || face.distance >= .055 || Math.hypot(av.x - bv.x, av.y - bv.y) >= 2.5) continue;
         // Capture exactly where contact happened. Neither body is repositioned
         // or reoriented; a dissipative joint shares their existing momentum.
-        p.grip = {x: surface.x, y: surface.y, angle: wrap(p.a - c.a)};
+        p.grip = {x: face.x, y: face.y, poleX: px, poleY: py, angle: wrap(p.a - c.a)};
         p.attached = true; this.heldPiece = p;
         for (let i = 0; i < 8; i++) gripVelocity(c, p);
         sim.stats.pickups++;
         sim.events.push({type: 'machine', message: p.assembled ? 'Assembly attached. Take it to Dispatch.' : 'Magnet holding. Hold J to switch it off and drop the load.'});
         break;
       }
+      if (this.heldPiece) break;
     }
   }
   constrainGrip(sim) { constrainGrip(sim.cabin, this.heldPiece); }

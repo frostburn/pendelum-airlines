@@ -1,9 +1,63 @@
 # Pendulum Airlines
 
 A tiny flying taxi, a long cable, and a passenger cabin with its own plans.
-Five worlds, 59 handmade jobs, a practice yard, touch controls, synthesized sound,
+Six worlds, 71 handmade jobs, a practice yard, touch controls, synthesized sound,
 personal bests, and interpolated best-run ghosts. Each world fits twelve level
 tiles onto one screen; switch worlds instead of scrolling. All jobs are open.
+
+## Controlled demolition
+
+World six adds twelve contracts with a suspended wrecking ball, breakable orange
+connections, permanent blue hinges, and the normally-on salvage magnet. Fly to
+build a swing; a fast, direct ball contact close to a bolt breaks that connection.
+The ball has twice its original mass (11 versus 5.5), with solid-sphere inertia
+and the same finite rotor thrust. Allow room to accelerate and brake. Connections
+need more than 3.4 m/s approach speed within 0.9 m of the bolt; slow shoves and
+glancing hits further along a beam do not count. Salvage must fit inside narrower
+marked bays. **U** swaps ball and magnet low and slow at the single tool rack.
+Residual rolling and tool rotation are allowed, and a tap is buffered for 0.65 s
+while slowing down. Jobs without salvage have no rack. **Hold J** to release salvage.
+The aircraft takes ordinary collision damage; the ball absorbs its working blows.
+
+| Contract | What the collapse makes possible |
+| --- | --- |
+| Garden variety vandalism | Lay a hinged wall into its rubble bay. |
+| A sign of progress | Lower a sign on one hanger, detach it, and reclaim it. |
+| The roof is the door | Remove and park the roof to reach a motor inside a sealed workshop. |
+| Gravity forwarding | Turn the loading floor into a chute for freight too heavy to lift. |
+| A bridge too useful | Topple a wall across an excavation and catch it on the far bank. |
+| Counter offer | Release a counterweighted beam to send a heavy parcel downhill. |
+| The frame remains | Fold a linked frame, detach the lowered crossbar, and recover it. |
+| Under new management | Swing under a canopy, then shorten the cable to extract the shutter. |
+| Fall away from each other | Topple two chimneys outward into separate bays. |
+| Leave the facade | Drop a floor, recover its machine, then carry the floor out beneath the roof. |
+| Downstream consequences | Make a continuous two-chute slide, or catch freight on the lower deck and tip it afterward. |
+| The bridge is still on the manifest | Catch two joined bridge sections on cradles, cut their splice, and deliver both. |
+
+Members retain their mass, angular inertia, collision shape and momentum after a
+connection breaks. Connected bodies use pin or welded joints; detached steel can
+be captured with the existing dissipative magnet grip. Contacts apply equal and
+opposite impulses at a shared world point, including friction. Position repair
+is separated from velocity, so resolving overlap does not launch the cargo.
+The demolition magnet uses a gentler approach field for broad loose beams.
+Its face can grip a leaning slab at either end, retaining the actual contact
+point and orientation rather than snapping the load to the middle of the head.
+
+Physics runs at the existing 240 Hz with at most **16 members, 24 joints and 48
+cosmetic dust/spark particles**; these contracts use at most three members. There
+is no recursive rubble generation. The existing stable industrial backdrop is
+joined by scaffolds, exposed bolts, brickwork, steel sections and marked catch bays.
+Progress follows settled pieces and actual recovered cargo, not a destruction score.
+The sign must lower on its left hanger, and the frame must fold with both knees
+connected. KEEP JOINED markers and the HUD identify those required connections;
+cutting them early physically breaks them and immediately loses the contract.
+The bridge contract requires both cradle catches while the splice is intact;
+cutting it early loses the contract with an immediate explanation. Chute contacts
+use the lower friction coefficient of the two participating bodies, so wheeled
+freight retains its low rolling resistance on moving beams as well as terrain.
+
+`node scripts/verify-demolition-flights.js` flies all twelve contracts using only
+normal controls. Routine CI adds only the heavy-crate chute and the bridge finale.
 
 ## Fire service
 
@@ -198,8 +252,8 @@ Open `http://127.0.0.1:4173`. Edit a source file and reload the page. The develo
 server binds to loopback only; `npm run dev -- --port 3000` changes its port.
 
 ```sh
-npm run verify      # syntax, all unit tests, 18 smoke flights, standalone build
-npm run verify:full # same checks with all 49 flight witnesses
+npm run verify      # syntax, all unit tests, 20 smoke flights, standalone build
+npm run verify:full # same checks with all 61 flight witnesses
 npm run build       # produces dist/index.html
 npm run preview     # serves the built document on the same local port
 ```
@@ -309,7 +363,7 @@ trim. A base below the viewport is not grounds to hide a roof that is still visi
 The original `pendulum-airlines-v1` storage key and 20 Hz ghost format are retained.
 Route array indices are persistent save IDs: the original seven services stay at
 0–6, Sunday service stays at 7, On the move occupies 8–13, Around the bend occupies
-14–19, Heavy lifting occupies 20–23, Metal works occupies 24–35, and Fulfillment occupies 36–47, and Fire service is appended at 48–59.
+14–19, Heavy lifting occupies 20–23, Metal works occupies 24–35, and Fulfillment occupies 36–47, Fire service occupies 48–59, and Controlled demolition is appended at 60–71.
 `worlds` declares picker order separately from those IDs. Next route follows world
 order and skips free practice. Every earlier route remains directly resumable;
 reopening the guide routes does not remap their records. Append definitions rather
@@ -343,7 +397,7 @@ City regressions cross the old wrap boundary in both directions and check the
 real renderer. Guide tests cover contact geometry, both vehicle bodies, cable
 nodes and midpoints, rendering, restarts, and preservation of earlier route IDs.
 
-`npm run test:flights` completes 49 moving-stop, freight, foundry, fulfillment and fire-service flights using normal analog
+`npm run test:flights` completes 61 moving-stop, freight, foundry, fulfillment, fire-service and demolition flights using normal analog
 flight, winch and tool-button inputs. Every job must complete at full integrity.
 Passenger jobs must avoid damaging impacts; industrial jobs must keep the drone clear of the hammer and its frame. The witnesses never teleport the rig or bypass service logic. These are playability
 witnesses, not claims about how easy the routes are for a human pilot. The check
@@ -368,15 +422,15 @@ contact, release, winching, and continuous cable clearance around their rims.
 CI has **one Ubuntu job, one Node version (22.16.0), and no matrix**. It runs
 `npm run verify` and uploads `dist/index.html` as the `pendulum-airlines` artifact.
 Routine verification keeps every unit/regression test and uses `npm run test:smoke`
-for 18 representative flights: all six moving-stop and four freight itineraries,
+for 20 representative flights: all six moving-stop and four freight itineraries,
 plus ore collection, casting, forging, welding, both early-snatch transport
-checkpoints, a bucket route and the combined firefighting finale. The selected
+checkpoints, a bucket route, the combined firefighting finale, a demolition chute and the bridge salvage finale. The selected
 flights use the same pilots, physics and completion assertions as the full suite.
 Long multi-stage foundry/logistics routes and other flight variants remain in
 `npm run test:flights`; they no longer run on every push and pull request.
 
 For broader physics or level changes, run `npm run verify:full` locally, or open
-**Actions → CI → Run workflow** and enable **Run all 49 flight witnesses (slower)**.
+**Actions → CI → Run workflow** and enable **Run all 61 flight witnesses (slower)**.
 That uses the same job and artifact upload, with the exhaustive flight selection.
 Routine jobs have a five-minute timeout; the opt-in full run keeps fifteen minutes.
 The workflow does not deploy or change repository settings.

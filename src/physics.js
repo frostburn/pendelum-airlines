@@ -1,4 +1,5 @@
 import { Body, point, eff, move, vel, impulse } from '#game/rigid-body';
+import { DemolitionSite } from '#game/demolition/site';
 import { Fireground } from '#game/fire/fireground';
 export { Body, point } from '#game/rigid-body';
 import { DT, G, N, MIN, MAX, MAX_THRUST } from '#game/constants';
@@ -54,7 +55,7 @@ export class Sim {
     this.guideVisits = this.guides.map(() => false);
     this.terrain = [...this.level.terrain, ...this.platforms, ...this.guides];
     const p = this.pads[this.level.start];
-    const launchY = p.y + .565 + (this.level.industry?.startPiece ? .65 : 0);
+    const launchY = p.y + (this.level.demolition ? .67 : .565) + (this.level.industry?.startPiece ? .65 : 0);
     this.engine = new Body(p.x, launchY + .60 + this.level.cable + .32, 3.6, .78, 'engine');
     this.cabin = new Body(p.x, launchY, 2.5, .58, 'cabin');
     this.length = this.level.cable;
@@ -86,7 +87,7 @@ export class Sim {
     this._prevCab = { x: this.cabin.x, y: this.cabin.y };
     this.stats = { bumps: 0, pickups: 0 };
     this.assisted = false;
-    this.industry = this.level.fire ? new Fireground(this) : this.level.logistics ? new Depot(this) : this.level.industry ? new Workshop(this) : null;
+    this.industry = this.level.demolition ? new DemolitionSite(this) : this.level.fire ? new Fireground(this) : this.level.logistics ? new Depot(this) : this.level.industry ? new Workshop(this) : null;
   }
   updateStops() {
     for (const platform of this.platforms) {
@@ -290,9 +291,9 @@ export class Sim {
     const blend = 1 - Math.exp(-DT * 16);
     this.tensionX += (this._tx - this.tensionX) * blend;
     this.tensionY += (this._ty - this.tensionY) * blend;
-    // Metalworking tools absorb their working impacts. Other worlds use
+    // Metalworking tools and the wrecking ball absorb working impacts. Others use
     // ordinary rig damage, including fast magnet collisions with guards/staff.
-    const hit = this.industry && !this.level.logistics && !this.level.fire ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
+    const hit = this.industry && !this.level.logistics && !this.level.fire && (!this.level.demolition || this.industry.tool === 'ball') ? this.engine.impact : Math.max(this.engine.impact, this.cabin.impact);
     if (hit > 2.6 && this.hitCooldown <= 0) {
       this.hitCooldown = .32;
       this.lastImpact = hit;

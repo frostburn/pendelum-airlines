@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       full:
-        description: Run all 49 flight witnesses (slower)
+        description: Run all 61 flight witnesses (slower)
         type: boolean
         default: false
 
